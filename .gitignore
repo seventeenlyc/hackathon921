@@ -1,47 +1,68 @@
-# 依赖
+# Dependencies
 node_modules/
+jspm_packages/
+typings/
 
-# 构建产物
+# Build output
 dist/
 build/
-
-# Vite / TypeScript
+build/Release/
 .vite/
 *.tsbuildinfo
-
-# Parcel 遗留产物。inert 原版 `npm run dev` 输出到 ./dev，
-# 迁到 Vite 之后（#1）这三条可以删。
 .cache/
 .parcel-cache/
 dev/
+.persistence/
 
-# 环境变量。本项目会持有 LLM API key，这几行是防事故的关键：
-# 真实值只存在于被忽略的 .env，.env.example 里只放占位符。
+# Environment variables and local secrets
 .env
 .env.*
 !.env.example
 !.env.*.example
 
-# 日志
+# Logs
+logs/
 *.log
 npm-debug.log*
+yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# 测试与覆盖率
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Tests and coverage
 coverage/
+.nyc_output/
 playwright-report/
 test-results/
 
-# 运维 / 部署私记。主机、凭据、部署细节不进仓库，
-# 只有运维负责人在本地持有。
-*.local.md
-ops.local/
-
-# 工具缓存
+# Package/tool caches
+.grunt/
+bower_components/
+.lock-wscript
+.npm/
+.eslintcache
+.node_repl_history
+.yarn-integrity
 .firecrawl/
+*.tgz
 
-# 编辑器 / 操作系统
+# IDE and operating system files
 .idea/
+.vscode/
 .DS_Store
 Thumbs.db
+
+# Temporary and local project files
+tmp/
+.nodeenv/
+package-lock.json.old.bak
+package.json.before-*.bak
+
+# Operations notes and local deployment data
+*.local.md
+ops.local/
