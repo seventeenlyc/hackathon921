@@ -1,690 +1,690 @@
-# User Story — First-Time Player Journey
+# 用户故事 — 首次游玩之旅
 
-## Product Premise
+## 产品前提
 
-**Prompt Defense** is an endless tower-defense game for young players learning how to work with AI through play.
+**Prompt Defense** 是一款无限塔防游戏，面向通过游玩来学习如何与 AI 协作的年轻玩家。
 
-The player does not directly control towers.
+玩家不直接控制防御塔。
 
-The player writes the strategy Prompt. The AI observes the battlefield, makes decisions, and plays autonomously.
+玩家编写策略 Prompt。AI 观察战场、做出决策，并自主游玩。
 
-The core loop is:
+核心循环是：
 
-> **Write Prompt → AI fights → observe the result → improve the Prompt → spend another Coin → try again**
+> **写 Prompt → AI 作战 → 观察结果 → 改进 Prompt → 再花一枚 Coin → 再试一次**
 
-The educational goal is not to teach players to memorize Prompt templates. It is to help them learn how to communicate intent to AI:
+教育目标不是教玩家背下 Prompt 模板。而是帮助他们学会如何向 AI 传达意图：
 
-- define a goal;
-- provide context;
-- set constraints;
-- establish priorities;
-- handle exceptions;
-- observe actual AI behavior;
-- revise instructions based on evidence.
+- 定义目标；
+- 提供上下文；
+- 设定约束；
+- 确立优先级；
+- 处理例外；
+- 观察 AI 的实际行为；
+- 基于证据修订指令。
 
-The game should teach these concepts through consequences in the game world rather than through conventional lessons.
-
----
-
-# User Story
-
-## Persona
-
-**Alex, age 13**
-
-Alex has used AI chat products before, but does not understand Prompt Engineering as a formal concept.
-
-Alex enters Prompt Defense because it looks like a game, not because they intend to take an AI course.
-
-Their motivation is simple:
-
-> **“Can I teach my AI to survive longer than everyone else's?”**
+游戏应该通过游戏世界中的结果来教授这些概念，而不是通过传统课程。
 
 ---
 
-## Story 1 — First Launch
+# 用户故事
 
-### As a first-time player
+## 人物设定
 
-I want to immediately understand what makes this tower-defense game different,
+**Alex，13 岁**
 
-so that I know what I am supposed to do without reading a long tutorial.
+Alex 以前用过 AI 聊天产品，但并不把 Prompt Engineering 理解为一个正式概念。
 
-### Experience
+Alex 进入 Prompt Defense 是因为它看起来像个游戏，而不是因为他们想上一门 AI 课。
 
-The opening screen says:
+他们的动机很简单：
 
-> # PROMPT DEFENSE
->
-> You don't control the towers.
->
-> **You teach the AI how to fight.**
->
-> The AI will enter the battlefield alone and follow the strategy it understands from your Prompt.
->
-> **How many waves can your AI survive?**
-
-Primary action:
-
-> **START TRAINING**
-
-The player should understand one fundamental idea before entering the game:
-
-> **I am not controlling the character. I am teaching the AI player.**
+> **“我能教会我的 AI 比别人活得更久吗？”**
 
 ---
 
-# Story 2 — First Tutorial Run
+## 故事 1 — 首次启动
 
-### As a new player
+### 作为一名首次游玩的玩家
 
-I want to see a working example Prompt before I have to write one,
+我希望立刻理解这款塔防游戏有什么不同，
 
-so that I can understand how natural-language instructions affect the AI.
+这样我不用读很长的教程就知道自己该做什么。
 
-### Experience
+### 体验
 
-The first tutorial run provides a pre-written Prompt.
+开场界面写着：
 
-Example:
-
-> **Goal:** Protect the base for as long as possible.
+> # PROMPT DEFENSE（提示词防线）
 >
-> **Strategy:** Build damage towers where enemies stay in range for the longest time.
+> 你不控制防御塔。
 >
-> **Resource Rule:** Do not spend all available gold. Keep at least 20% in reserve.
+> **你教 AI 如何战斗。**
 >
-> **Exception:** When fast enemies appear, prioritize slowing them.
-
-The interface explains:
-
-> **This is your AI's Prompt.**
+> AI 将独自进入战场，并遵循它从你的 Prompt 中理解的策略。
 >
-> It tells the AI:
->
-> - what it should achieve;
-> - how it should behave;
-> - what rules it must follow;
-> - what to do when special situations occur.
+> **你的 AI 能活过多少波？**
 
-The player does not need to edit anything yet.
+主要操作：
 
-Primary action:
+> **开始训练（START TRAINING）**
 
-> **LET AI FIGHT**
+玩家在进入游戏前应该理解一个基本观念：
+
+> **我不是在操控角色。我是在训练这个 AI 玩家。**
 
 ---
 
-# Story 3 — Watch the Prompt Become Behavior
+# 故事 2 — 首次教程局
 
-### As a new player
+### 作为一名新玩家
 
-I want to see the AI act according to the example Prompt,
+我希望在必须自己写 Prompt 之前，先看到一个可用的示例 Prompt，
 
-so that I understand that the Prompt changes real behavior rather than merely producing text.
+这样我就能理解自然语言指令如何影响 AI。
 
-### Experience
+### 体验
 
-The battle starts.
+首次教程局提供一个预先写好的 Prompt。
 
-The player cannot directly:
+示例：
 
-- build towers;
-- upgrade towers;
-- sell towers;
-- target enemies.
-
-The AI makes these decisions.
-
-Important decisions are made visible with concise explanations such as:
-
-> **FAST ENEMIES DETECTED**
+> **目标：** 尽可能长时间地保护基地。
 >
-> Prompt rule matched:
+> **策略：** 在敌人停留在射程内时间最长的地方建造伤害塔。
 >
-> “When fast enemies appear, prioritize slowing them.”
+> **资源规则：** 不要花光所有可用金币。至少保留 20% 作为储备。
 >
-> **AI ACTION: BUILD SLOW TOWER**
+> **例外：** 当出现快速敌人时，优先减速它们。
 
-The game should show decision summaries and actions, not hidden model chain-of-thought.
+界面解释道：
 
-The player observes a direct causal relationship:
+> **这是你的 AI 的 Prompt。**
+>
+> 它告诉 AI：
+>
+> - 它应该达成什么；
+> - 它应该如何行动；
+> - 它必须遵守什么规则；
+> - 当特殊状况出现时该做什么。
 
-> **My instruction → AI decision → battlefield consequence**
+玩家此时还不需要编辑任何东西。
+
+主要操作：
+
+> **让 AI 开战（LET AI FIGHT）**
 
 ---
 
-# Story 4 — The Tutorial AI Must Fail
+# 故事 3 — 看 Prompt 变成行为
 
-### As a new player
+### 作为一名新玩家
 
-I want the first Prompt to contain an understandable weakness,
+我希望看到 AI 按照示例 Prompt 行动，
 
-so that failure creates a reason for me to improve the Prompt myself.
+这样我就能理解 Prompt 改变的是真实行为，而不只是产出一段文字。
 
-### Experience
+### 体验
 
-The tutorial Prompt is intentionally incomplete.
+战斗开始。
 
-For example, it contains no strategy for Boss enemies.
+玩家不能直接：
 
-The AI successfully clears several waves.
+- 建造防御塔；
+- 升级防御塔；
+- 出售防御塔；
+- 指定敌人作为目标。
 
-Then:
+这些决策由 AI 做出。
 
-> **WAVE 5 — BOSS**
+重要决策会被展示出来，并附上简明解释，例如：
 
-The AI continues following its normal strategy.
-
-Eventually:
-
-> # BASE DESTROYED
+> **检测到快速敌人**
 >
-> **Your AI survived to Wave 5.**
-
-The game then explains the failure in simple language:
-
-> Your AI followed its instructions.
+> 匹配到 Prompt 规则：
 >
-> But your Prompt never told it what to prioritize when a Boss appeared.
+> “当出现快速敌人时，优先减速它们。”
+>
+> **AI 行动：建造减速塔**
 
-The game asks:
+游戏应展示决策摘要和行动，而不是隐藏的模型思维链。
 
-> **What should your AI learn before the next run?**
+玩家观察到直接的因果关系：
+
+> **我的指令 → AI 决策 → 战场结果**
 
 ---
 
-# Story 5 — First Prompt Edit
+# 故事 4 — 教程里的 AI 必须失败
 
-### As a new player
+### 作为一名新玩家
 
-I want to improve one part of the Prompt after seeing a concrete failure,
+我希望第一个 Prompt 包含一个可以理解的弱点，
 
-so that I can experience the effect of giving AI a better instruction.
+这样失败就会给我一个自己改进 Prompt 的理由。
 
-### Experience
+### 体验
 
-The game highlights the editable Prompt.
+教程 Prompt 是故意不完整的。
 
-The player adds a rule such as:
+例如，它没有针对 Boss 敌人的策略。
 
-> **If a Boss appears, prioritize upgrading the highest-damage tower.**
+AI 成功清掉了好几波。
 
-A Prompt Budget is visible:
+然后：
 
-> **Prompt: 147 / 200**
+> **第 5 波 — BOSS**
 
-Primary action:
+AI 继续遵循它的常规策略。
 
-> **INSERT 1 COIN — TRY AGAIN**
+最终：
 
-Every real run costs one Coin.
+> # 基地被摧毁
+>
+> **你的 AI 活到了第 5 波。**
 
-Editing and thinking are free.
+接着游戏用简单的语言解释失败：
 
-Testing a strategy costs a Coin.
+> 你的 AI 遵循了它的指令。
+>
+> 但你的 Prompt 从未告诉它，当 Boss 出现时应该优先做什么。
 
-This gives each attempt meaning:
+游戏问道：
 
-> **1 Coin = 1 Experiment**
+> **在下一局之前，你的 AI 应该学会什么？**
 
 ---
 
-# Story 6 — The First Magic Moment
+# 故事 5 — 第一次编辑 Prompt
 
-### As a player
+### 作为一名新玩家
 
-I want my modified Prompt to cause a clearly different AI action,
+我希望在看到具体的失败之后改进 Prompt 的某一部分，
 
-so that I can see that my instruction mattered.
+这样我就能体验到给 AI 更好指令的效果。
 
-### Experience
+### 体验
 
-The second run reaches Wave 5.
+游戏高亮显示可编辑的 Prompt。
 
-The Boss appears.
+玩家加上一条规则，例如：
 
-The interface shows:
+> **如果出现 Boss，优先升级伤害最高的塔。**
 
-> **BOSS DETECTED**
->
-> Prompt rule matched:
->
-> “If a Boss appears, prioritize upgrading the highest-damage tower.”
->
-> **AI ACTION: UPGRADE CANNON → LV.2**
+一个 Prompt 预算会显示出来：
 
-The AI clears the wave.
+> **Prompt：147 / 200**
 
-The player sees:
+主要操作：
 
-> **NEW PERSONAL BEST**
->
-> Previous: Wave 5  
-> Current: Wave 8
+> **投入 1 枚硬币 — 再试一次**
 
-This is the primary product magic moment:
+每一局真实游戏花费一枚 Coin。
 
-> **“I changed one sentence, the AI changed its behavior, and I survived longer.”**
+编辑和思考是免费的。
 
-If the product cannot reliably create this moment, additional systems should not be prioritized.
+测试一个策略要花一枚 Coin。
+
+这让每次尝试都有意义：
+
+> **1 Coin = 1 次实验**
 
 ---
 
-# Story 7 — Learn Prompt Structure Through Gameplay
+# 故事 6 — 第一个神奇时刻
 
-### As a returning player
+### 作为一名玩家
 
-I want to gradually learn better ways to instruct my AI,
+我希望我修改后的 Prompt 能导致明显不同的 AI 行动，
 
-so that improving at Prompting feels like improving at the game.
+这样我就能看到我的指令确实起了作用。
 
-### Principle
+### 体验
 
-The game should not begin with:
+第二局打到了第 5 波。
 
-> “Lesson 1: Prompt Engineering”
+Boss 出现了。
 
-Prompt concepts should be introduced as tools for solving game problems.
+界面显示：
 
-The learning progression can gradually introduce concepts such as:
+> **检测到 BOSS**
+>
+> 匹配到 Prompt 规则：
+>
+> “如果出现 Boss，优先升级伤害最高的塔。”
+>
+> **AI 行动：升级加农炮 → 2 级**
 
-### Goal
+AI 清掉了这一波。
 
-> What should the AI ultimately achieve?
+玩家看到：
 
-### Context
+> **新的个人最佳**
+>
+> 之前：第 5 波
+> 现在：第 8 波
 
-> What information matters when the AI makes a decision?
+这是首要的产品神奇时刻：
 
-### Constraint
+> **“我改了一句话，AI 改变了行为，我活得更久了。”**
 
-> What must the AI always or never do?
-
-### Priority
-
-> When multiple problems occur, which one matters most?
-
-### Exception
-
-> What should happen in unusual or dangerous situations?
-
-### Verification
-
-> How should the AI check whether its previous action worked?
-
-### Feedback
-
-> What should the AI learn from a failed run?
-
-The player therefore learns Prompt structure because it helps them survive more waves.
+如果产品无法稳定地创造这个时刻，就不应该优先去做额外的系统。
 
 ---
 
-# Story 8 — Prompt Frameworks
+# 故事 7 — 通过游玩学习 Prompt 结构
 
-### As a more experienced player
+### 作为一名回访玩家
 
-I want to discover structured Prompt frameworks,
+我希望逐渐学会更好的方式来给 AI 下指令，
 
-so that I can organize increasingly complex instructions without simply making the Prompt longer.
+这样提升 Prompt 技巧就像是在提升游戏水平。
 
-### Experience
+### 原则
 
-Established frameworks such as **CO-STAR** can be introduced as optional learning material or advanced Prompt-building techniques.
+游戏不应该以这句话开场：
 
-However, the game should not imply that one framework is universally correct.
+> “第 1 课：Prompt Engineering”
 
-Different frameworks solve different communication problems.
+Prompt 概念应该作为解决游戏问题的工具被引入。
 
-For the tower-defense environment, the game may eventually introduce a game-native structure focused on Agent behavior, for example:
+学习推进可以逐渐引入如下概念：
+
+### 目标（Goal）
+
+> AI 最终应该达成什么？
+
+### 上下文（Context）
+
+> AI 做决策时，哪些信息是重要的？
+
+### 约束（Constraint）
+
+> AI 必须始终做什么，或绝对不能做什么？
+
+### 优先级（Priority）
+
+> 当多个问题同时出现时，哪一个最重要？
+
+### 例外（Exception）
+
+> 在不寻常或危险的情况下应该怎么办？
+
+### 验证（Verification）
+
+> AI 应该如何检查它上一个行动是否奏效？
+
+### 反馈（Feedback）
+
+> AI 应该从一局失败中学到什么？
+
+因此，玩家学习 Prompt 结构，是因为这能帮他们活过更多波。
+
+---
+
+# 故事 8 — Prompt 框架
+
+### 作为一名更有经验的玩家
+
+我希望发现结构化的 Prompt 框架，
+
+这样我就能组织越来越复杂的指令，而不是单纯把 Prompt 写得更长。
+
+### 体验
+
+**CO-STAR** 这类成熟框架可以作为可选的学习材料或进阶的 Prompt 构建技巧被引入。
+
+然而，游戏不应暗示某一种框架是普遍正确的。
+
+不同的框架解决不同的沟通问题。
+
+对于塔防环境，游戏最终可能引入一种聚焦于 Agent 行为的游戏原生结构，例如：
 
 ## GEAR
 
-**G — Goal**
+**G — Goal（目标）**
 
-What should the AI achieve?
+AI 应该达成什么？
 
-**E — Environment**
+**E — Environment（环境）**
 
-What battlefield information should it pay attention to?
+它应该关注哪些战场信息？
 
-**A — Action Rules**
+**A — Action Rules（行动规则）**
 
-What actions should it take under specific conditions?
+在特定条件下它应该采取哪些行动？
 
-**R — Restrictions**
+**R — Restrictions（限制）**
 
-What resource, risk, or behavioral limits must it respect?
+它必须遵守哪些资源、风险或行为上的限制？
 
-This naming is exploratory rather than a finalized learning standard.
+这个命名是探索性的，而不是最终确定的学习标准。
 
-The important product principle is:
+重要的产品原则是：
 
-> **Prompt structure is learned because it improves gameplay, not because the player is required to memorize terminology.**
-
----
-
-# Story 9 — Endless Mode
-
-### As a player who has completed the tutorial
-
-I want to send my AI into an endless tower-defense run,
-
-so that I can discover how strong my Prompt really is.
-
-### Rules
-
-The game uses an endless sequence of increasingly difficult waves.
-
-The battlefield remains deliberately simple.
-
-Complexity should come primarily from:
-
-- increasing enemy strength;
-- different enemy compositions;
-- resource pressure;
-- strategic tradeoffs;
-- the player's Prompt.
-
-The player's final score is:
-
-> # WAVE REACHED
-
-For example:
-
-> **WAVE 23**
-
-Secondary metrics may include:
-
-- survival time;
-- tokens used;
-- AI cost;
-- average decision latency;
-- number of actions.
-
-But these should not obscure the primary score.
-
-A young player should immediately understand:
-
-> **Higher Wave = my AI survived longer.**
+> **学习 Prompt 结构是因为它能提升游戏表现，而不是因为要求玩家背术语。**
 
 ---
 
-# Story 10 — Coin Economy
+# 故事 9 — 无限模式
 
-### As a player
+### 作为一名完成教程的玩家
 
-I want each run to have a small cost,
+我希望把我的 AI 送进一局无限塔防，
 
-so that I think about how to improve my Prompt before testing it again.
+这样我就能发现我的 Prompt 到底有多强。
 
-### Rule
+### 规则
 
-> **1 Coin = 1 Run**
+游戏使用无穷无尽的、越来越难的波次序列。
 
-Prompt editing is free.
+战场刻意保持简单。
 
-Reading previous results is free.
+复杂度应主要来自：
 
-Viewing leaderboard strategies is free.
+- 敌人强度提升；
+- 不同的敌人组成；
+- 资源压力；
+- 战略取舍；
+- 玩家的 Prompt。
 
-Thinking is free.
+玩家的最终得分是：
 
-Sending the AI into another battle costs one Coin.
+> # 到达的波次（WAVE REACHED）
 
-For the hackathon version, monetization is not required.
+例如：
 
-A player can simply receive a fixed number of Coins, for example:
+> **第 23 波**
 
-> **3 Coins available**
+次要指标可能包括：
 
-After a failed run:
+- 存活时间；
+- 使用的 token；
+- AI 成本；
+- 平均决策延迟；
+- 行动次数。
 
-> **2 Coins remaining**
+但这些都不应遮蔽主要得分。
 
-Before the final attempt:
+年轻玩家应该立刻理解：
 
-> **LAST COIN**
-
-The Coin therefore represents an experiment budget rather than merely a payment mechanism.
+> **波次越高 = 我的 AI 活得越久。**
 
 ---
 
-# Story 11 — Leaderboard
+# 故事 10 — 硬币经济
 
-### As a player
+### 作为一名玩家
 
-I want to compare my AI's performance with other players,
+我希望每一局都有一点成本，
 
-so that I have a reason to improve my Prompt beyond beating my own score.
+这样在再次测试之前，我会思考如何改进我的 Prompt。
 
-### Experience
+### 规则
 
-The game provides a leaderboard:
+> **1 Coin = 1 局**
 
-| Rank | Player | Wave | Strategy |
+编辑 Prompt 免费。
+
+阅读以往结果免费。
+
+查看排行榜上的策略免费。
+
+思考免费。
+
+把 AI 送入下一场战斗花费一枚 Coin。
+
+对黑客松版本而言，不需要变现设计。
+
+玩家可以简单地获得固定数量的 Coin，例如：
+
+> **可用 3 枚硬币**
+
+一局失败后：
+
+> **剩余 2 枚硬币**
+
+最后一次尝试前：
+
+> **最后一枚硬币**
+
+因此，Coin 代表的是一种实验预算，而不仅仅是一种支付机制。
+
+---
+
+# 故事 11 — 排行榜
+
+### 作为一名玩家
+
+我希望把我 AI 的表现和其他玩家比较，
+
+这样我就有理由去改进 Prompt，而不只是打破自己的记录。
+
+### 体验
+
+游戏提供一个排行榜：
+
+| 排名 | 玩家 | 波次 | 策略 |
 |---|---|---:|---|
-| 1 | Luna | 37 | View Prompt |
-| 2 | Alex | 31 | View Prompt |
-| 3 | Max | 28 | View Prompt |
+| 1 | Luna | 37 | 查看 Prompt |
+| 2 | Alex | 31 | 查看 Prompt |
+| 3 | Max | 28 | 查看 Prompt |
 
-The primary ranking metric is:
+主要排名指标是：
 
-> **Highest Wave Reached**
+> **到达的最高波次**
 
-The leaderboard transforms Prompt writing from a private exercise into a competitive game.
+排行榜把写 Prompt 从私人练习变成竞技游戏。
 
-The question becomes:
+问题变成：
 
-> **Who can teach the same AI to survive the longest?**
-
----
-
-# Story 12 — Learn From Other Players
-
-### As a player
-
-I want to inspect successful strategies from stronger players,
-
-so that the community itself becomes part of the learning system.
-
-### Experience
-
-Alex sees:
-
-> **Luna — Wave 37**
-
-Alex opens Luna's run.
-
-The game shows the Prompt used for that run.
-
-Alex can study:
-
-- what rules Luna included;
-- what Luna prioritized;
-- how much gold Luna told the AI to reserve;
-- how Luna handled fast enemies and Bosses;
-- how concise or complex the Prompt was.
-
-The player can then choose:
-
-> **FORK THIS PROMPT**
-
-The game creates:
-
-> **Luna's Prompt → Alex's Version**
-
-Alex modifies the strategy and spends one Coin to test it.
-
-The resulting learning loop is:
-
-> **Observe → Copy → Understand → Modify → Test**
-
-The leaderboard is therefore not only competitive.
-
-It is also a shared library of strategies.
+> **谁能教会同一个 AI 活得更久？**
 
 ---
 
-# Story 13 — Prompt Budget
+# 故事 12 — 向其他玩家学习
 
-### As an experienced player
+### 作为一名玩家
 
-I want the game to limit how much instruction I can give the AI,
+我希望查看更强玩家的成功策略，
 
-so that writing a better Prompt requires prioritization rather than endlessly adding rules.
+这样社区本身就成为学习系统的一部分。
 
-### Rule
+### 体验
 
-Example:
+Alex 看到：
 
-> **PROMPT BUDGET: 200 characters**
+> **Luna — 第 37 波**
 
-The exact limit should be tuned through playtesting.
+Alex 打开 Luna 的那一局。
 
-The purpose is to prevent the dominant strategy from becoming an enormous instruction document containing an answer for every possible situation.
+游戏显示该局使用的 Prompt。
 
-A constrained Prompt forces the player to ask:
+Alex 可以研究：
 
-- Which instruction matters most?
-- Is this sentence redundant?
-- Can several cases be expressed as one general rule?
-- Is this rule too vague?
-- Which lesson from the previous run is worth keeping?
+- Luna 包含了哪些规则；
+- Luna 优先考虑了什么；
+- Luna 让 AI 保留多少金币；
+- Luna 如何处理快速敌人和 Boss；
+- 这个 Prompt 有多简洁或多复杂。
 
-This makes abstraction and concise communication part of the game.
+然后玩家可以选择：
 
----
+> **分叉这个 Prompt（FORK THIS PROMPT）**
 
-# Complete First-Time Journey
+游戏会创建：
 
-The intended first-session flow is:
+> **Luna 的 Prompt → Alex 的版本**
 
-**Enter game**
+Alex 修改策略，并花一枚 Coin 来测试它。
 
-↓
+由此产生的学习循环是：
 
-> “I teach the AI instead of controlling the towers.”
+> **观察 → 复制 → 理解 → 修改 → 测试**
 
-↓
+因此，排行榜不仅是竞争性的。
 
-**See example Prompt**
-
-↓
-
-> “A Prompt contains goals and rules.”
-
-↓
-
-**Watch AI fight**
-
-↓
-
-> “It actually follows those instructions.”
-
-↓
-
-**AI dies**
-
-↓
-
-> “Why did it fail?”
-
-↓
-
-**Game identifies an understandable Prompt gap**
-
-↓
-
-**Player adds one instruction**
-
-↓
-
-**Spend 1 Coin**
-
-↓
-
-**AI encounters the same situation**
-
-↓
-
-**AI behaves differently**
-
-↓
-
-**Survive longer**
-
-↓
-
-> “My sentence changed what the AI did.”
-
-↓
-
-**Gradually learn Goal / Context / Constraint / Priority / Exception / Feedback**
-
-↓
-
-**Enter Endless Mode**
-
-↓
-
-**Set a personal record**
-
-↓
-
-**Open Leaderboard**
-
-↓
-
-**Study a stronger player's Prompt**
-
-↓
-
-**Fork it**
-
-↓
-
-**Modify it**
-
-↓
-
-**Spend another Coin**
-
-↓
-
-**Try to beat the record**
-
-↓
-
-**Repeat**
+它也是一个共享的策略库。
 
 ---
 
-# Core Learning Loop
+# 故事 13 — Prompt 预算
 
-The game ultimately teaches:
+### 作为一名有经验的玩家
 
-> **Intent → Instruction → Behavior → Observation → Revision**
+我希望游戏限制我能给 AI 的指令量，
 
-The player is not rewarded for knowing Prompt terminology.
+这样写一个更好的 Prompt 就需要取舍，而不是无休止地加规则。
 
-The player is rewarded for successfully communicating with an autonomous AI.
+### 规则
 
-The educational outcome emerges from the gameplay loop:
+示例：
 
-> **Play → Fail → Reflect → Prompt → Test → Compare → Learn → Retry**
+> **PROMPT 预算：200 个字符**
+
+确切的限制应通过试玩来调整。
+
+其目的是防止主流策略变成一份包含应对所有可能情况答案的、极其庞大的指令文档。
+
+受约束的 Prompt 迫使玩家思考：
+
+- 哪条指令最重要？
+- 这句话是否多余？
+- 能否把多种情况表达为一条通用规则？
+- 这条规则是否太含糊？
+- 上一局中的哪个经验值得保留？
+
+这让抽象能力与简洁沟通成为游戏的一部分。
 
 ---
 
-# Product North Star
+# 完整的首次旅程
 
-The player's explicit motivation should be:
+预期的首次游玩流程是：
 
-> **“I want to train an AI that can survive longer than yours.”**
+**进入游戏**
 
-The learning outcome underneath that motivation is:
+↓
 
-> **“I am getting better at expressing goals, constraints, priorities, exceptions, and feedback to AI.”**
+> “我教 AI，而不是控制防御塔。”
 
-The game succeeds when a young player does not feel that they are completing an AI course, but nevertheless becomes measurably better at communicating intent to an AI system through repeated play.
+↓
+
+**看到示例 Prompt**
+
+↓
+
+> “一个 Prompt 包含目标和规则。”
+
+↓
+
+**观看 AI 作战**
+
+↓
+
+> “它确实遵循了那些指令。”
+
+↓
+
+**AI 阵亡**
+
+↓
+
+> “它为什么失败？”
+
+↓
+
+**游戏指出一个可以理解的 Prompt 缺口**
+
+↓
+
+**玩家添加一条指令**
+
+↓
+
+**花费 1 枚 Coin**
+
+↓
+
+**AI 遇到相同情况**
+
+↓
+
+**AI 的行为不同了**
+
+↓
+
+**活得更久**
+
+↓
+
+> “我的这句话改变了 AI 的行为。”
+
+↓
+
+**逐步学会 目标 / 上下文 / 约束 / 优先级 / 例外 / 反馈**
+
+↓
+
+**进入无限模式**
+
+↓
+
+**创造个人记录**
+
+↓
+
+**打开排行榜**
+
+↓
+
+**研究更强玩家的 Prompt**
+
+↓
+
+**分叉它**
+
+↓
+
+**修改它**
+
+↓
+
+**再花一枚 Coin**
+
+↓
+
+**尝试打破记录**
+
+↓
+
+**重复**
+
+---
+
+# 核心学习循环
+
+游戏最终教的是：
+
+> **意图 → 指令 → 行为 → 观察 → 修订**
+
+玩家不会因为知道 Prompt 术语而获得奖励。
+
+玩家因为成功与一个自主 AI 沟通而获得奖励。
+
+教育成果从游戏循环中自然涌现：
+
+> **游玩 → 失败 → 反思 → 写 Prompt → 测试 → 比较 → 学习 → 重试**
+
+---
+
+# 产品北极星
+
+玩家的显性动机应该是：
+
+> **“我想训练一个能比你那个活得更久的 AI。”**
+
+在这个动机之下的学习成果是：
+
+> **“我越来越擅长向 AI 表达目标、约束、优先级、例外和反馈。”**
+
+当一位年轻玩家并不觉得自己在上 AI 课，却通过反复游玩，在与 AI 系统沟通意图方面变得可测量地更强时，这款游戏就成功了。

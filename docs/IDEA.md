@@ -1,248 +1,248 @@
-# Hackathon 921 — Idea Document
+# Hackathon 921 — 创意文档
 
-## Working Concept
+## 工作概念
 
-**A roguelike tower defense game played by humans and AI together.**
+**一款由人类与 AI 共同游玩的 roguelike 塔防游戏。**
 
-> **The player does not control the towers. The player writes the strategy Prompt; the AI goes onto the battlefield and acts on it.**
+> **玩家不操控防御塔。玩家编写策略 Prompt；AI 走上战场，按 Prompt 行事。**
 
-The goal for the hackathon is to build a **genuinely playable version**, not a broad platform.
-
----
-
-## 1. Core Idea
-
-Traditional tower defense asks the player to directly place towers, upgrade them, sell them, and react to enemies.
-
-This game changes the control interface.
-
-The human does **not** directly operate the battlefield. Instead, the human writes natural-language strategy instructions such as:
-
-- Keep at least 25% of gold in reserve.
-- Prioritize slowing fast enemies before adding damage.
-- Build area-of-effect towers near choke points.
-- If enemies are close to the base, act immediately instead of spending time on long deliberation.
-
-Once a run starts, the AI observes the game state, makes decisions, and uses game tools to act.
-
-The player then watches the consequences of their Prompt.
-
-The central loop is:
-
-**Write Prompt → AI fights → AI succeeds/fails → understand what happened → rewrite Prompt → try again**
-
-Or, in roguelike language:
-
-**Fight → Die → Learn → Rewrite Prompt → Fight Again**
+本次黑客松的目标是做出一个**真正可玩的版本**，而不是一个庞大的平台。
 
 ---
 
-## 2. The Core Fantasy
+## 1. 核心创意
 
-The player is not the battlefield operator.
+传统塔防要求玩家直接放置防御塔、升级、出售，并应对敌人。
 
-The player is the **strategist / trainer / architect of an AI player**.
+本作改变了操控界面。
 
-The fantasy is:
+人类**不**直接操作战场，而是编写自然语言的策略指令，例如：
 
-> **“I trained this AI. Now I have to let it fight on its own.”**
+- 始终保持至少 25% 的金币作为储备。
+- 在增加伤害之前，优先减速快速敌人。
+- 在隘口附近建造范围伤害塔。
+- 如果敌人逼近基地，立即行动，而不是花时间做长时间思考。
 
-This creates a different kind of tension from normal tower defense. Once the battle begins, the player cannot rescue the AI through micro-control. The quality of the player's instructions must survive contact with the game world.
+一旦一局开始，AI 会观察游戏状态、做出决策，并用游戏工具执行行动。
 
----
+接着玩家观看自己 Prompt 所造成的结果。
 
-## 3. Why This Is Interesting
+核心循环是：
 
-### 3.1 It should be a real game first
+**写 Prompt → AI 作战 → AI 成功/失败 → 理解发生了什么 → 重写 Prompt → 再试一次**
 
-The project should not feel like an Agent benchmark with a game UI attached.
+或者用 roguelike 的语言来说：
 
-The player should experience:
-
-- experimentation;
-- anticipation;
-- failure;
-- iteration;
-- build optimization;
-- surprise when the AI interprets an instruction differently than expected;
-- satisfaction when a small Prompt change visibly improves behavior.
-
-The key gameplay skill is not clicking faster.
-
-It is **communicating strategy to an intelligence**.
-
-### 3.2 Prompt becomes a game mechanic
-
-For many people, Prompt Engineering is abstract. They type words into a chat box and receive more words back.
-
-This game makes Prompt effects physical and observable inside a simulated world:
-
-**Human language → AI decision → game action → world consequence**
-
-Example:
-
-Run 1:
-
-> Defend the base.
-
-The AI spends aggressively and dies at Wave 5.
-
-The player adds:
-
-> Keep at least 25% of gold for emergencies.
-
-Run 2 reaches Wave 7.
-
-The player immediately understands that a Prompt is not merely a question. It can define behavioral policy, constraints, priorities, strategy, and exceptions.
-
-The game should teach this through play rather than through a “Prompt Engineering 101” tutorial.
-
-### 3.3 Learning Prompting through failure
-
-A player can naturally discover concepts such as:
-
-- goals;
-- constraints;
-- priorities;
-- strategy;
-- exceptions;
-- ambiguity;
-- conflicting instructions;
-- feedback;
-- memory;
-- excessive deliberation;
-- latency vs decision quality.
-
-A good failure screen should therefore not only say:
-
-> GAME OVER — WAVE 8
-
-It should help answer:
-
-> **Why did your AI die?**
-
-Then invite the player to change the Prompt and immediately test the hypothesis.
-
-### 3.4 An Agent testbed underneath the game
-
-The same environment can measure real Agent-system properties:
-
-- decision latency;
-- time to first action;
-- time to correct action;
-- token usage;
-- cost;
-- decision quality;
-- tool-use correctness;
-- resource allocation;
-- adaptation;
-- memory use;
-- robustness;
-- communication overhead;
-- multi-Agent coordination.
-
-The important metric is not raw model TPS alone.
-
-A more useful concept is **effective agency under real-time pressure**:
-
-> How quickly can an Agent produce a useful action before the world changes?
-
-A model can reason correctly but still lose because its decision arrives too late.
-
-The game turns latency into a visible gameplay constraint:
-
-> **Think fast or die.**
+**战斗 → 死亡 → 学习 → 重写 Prompt → 再战**
 
 ---
 
-## 4. Why Tower Defense
+## 2. 核心幻想
 
-Tower defense is useful because it naturally provides:
+玩家不是战场操作员。
 
-- continuous decisions rather than one-shot Q&A;
-- real-time pressure;
-- resource constraints;
-- long-term planning;
-- objective consequences;
-- escalating difficulty;
-- clear visual state;
-- reproducible seeds;
-- simple tool actions;
-- an immediately understandable win/fail condition.
+玩家是 **AI 玩家的战略家 / 训练师 / 架构师**。
 
-A spectator does not need to understand LLM evaluation.
+这种幻想是：
 
-They only need to understand:
+> **“我训练了这个 AI。现在我得让它独自上战场。”**
 
-> **How long did the AI keep the base alive?**
+这与普通塔防制造出不同类型的张力。战斗一旦开始，玩家无法通过微操来拯救 AI。玩家指令的质量必须经得起游戏世界的检验。
 
 ---
 
-## 5. Human and AI Roles
+## 3. 为什么这很有趣
 
-### Human
+### 3.1 首先它应该是一款真正的游戏
 
-The human writes and iterates the strategy Prompt.
+项目不应该让人感觉像是一个套了游戏 UI 的 Agent 基准测试。
 
-Later versions may allow the human to:
+玩家应该体验到：
 
-- choose Prompt perks;
-- select inherited lessons;
-- configure Agent roles;
-- choose models;
-- design a swarm;
-- fork or mutate successful Prompt builds.
+- 试验；
+- 期待；
+- 失败；
+- 迭代；
+- 构筑优化；
+- 当 AI 对指令的理解与预期不同时的惊喜；
+- 当小小的 Prompt 改动带来可见行为改善时的满足感。
+
+关键的游戏技巧不是点得更快。
+
+而是**把策略传达给一个智能体**。
+
+### 3.2 Prompt 成为一种游戏机制
+
+对许多人来说，Prompt Engineering 很抽象。他们往聊天框里输入文字，又收到一堆文字。
+
+本作把 Prompt 的效果变得具体、可观察，并呈现在一个模拟世界中：
+
+**人类语言 → AI 决策 → 游戏行动 → 世界结果**
+
+举例：
+
+第 1 局：
+
+> 守住基地。
+
+AI 激进地花钱，在第 5 波阵亡。
+
+玩家加上：
+
+> 至少保留 25% 的金币以备不时之需。
+
+第 2 局撑到了第 7 波。
+
+玩家立刻明白，Prompt 不只是一个问题。它可以定义行为策略、约束、优先级、战略与例外情况。
+
+游戏应该通过游玩来教会这一点，而不是通过一个“Prompt Engineering 101”教程。
+
+### 3.3 通过失败学习 Prompt 技巧
+
+玩家可以自然地发现这些概念：
+
+- 目标；
+- 约束；
+- 优先级；
+- 战略；
+- 例外；
+- 歧义；
+- 冲突指令；
+- 反馈；
+- 记忆；
+- 过度思考；
+- 延迟与决策质量。
+
+因此，一个好的失败界面不应只说：
+
+> 游戏结束 — 第 8 波
+
+它应该帮助回答：
+
+> **你的 AI 为什么会死？**
+
+然后邀请玩家修改 Prompt，并立刻验证这个假设。
+
+### 3.4 游戏之下的 Agent 测试平台
+
+同一套环境可以测量真实的 Agent 系统属性：
+
+- 决策延迟；
+- 首次行动时间；
+- 纠正行动时间；
+- token 用量；
+- 成本；
+- 决策质量；
+- 工具使用正确性；
+- 资源分配；
+- 适应能力；
+- 记忆使用；
+- 鲁棒性；
+- 通信开销；
+- 多 Agent 协作。
+
+重要的指标不只是模型原始的 TPS。
+
+一个更有用的概念是**实时压力下的有效能动性**：
+
+> 在世界发生变化之前，Agent 能多快地产出一个有用的行动？
+
+一个模型可能推理正确，却因为决策来得太晚而落败。
+
+游戏把延迟变成一种可见的游戏约束：
+
+> **想得快，否则就死。**
+
+---
+
+## 4. 为什么是塔防
+
+塔防很有用，因为它天然提供了：
+
+- 持续决策，而非一次性的问答；
+- 实时压力；
+- 资源约束；
+- 长期规划；
+- 客观结果；
+- 逐步升级的难度；
+- 清晰的视觉状态；
+- 可复现的随机种子；
+- 简单的工具动作；
+- 一眼就能理解的胜负条件。
+
+旁观者不需要理解 LLM 评测。
+
+他们只需要理解：
+
+> **这个 AI 让基地活了多久？**
+
+---
+
+## 5. 人类与 AI 的角色
+
+### 人类
+
+人类编写并迭代策略 Prompt。
+
+后续版本可能允许人类：
+
+- 选择 Prompt 天赋；
+- 挑选可继承的经验教训；
+- 配置 Agent 角色；
+- 选择模型；
+- 设计一个 swarm（智能体集群）；
+- 对成功的 Prompt 构筑进行分叉或变异。
 
 ### AI
 
-The AI:
+AI：
 
-1. observes a compressed game state;
-2. interprets the player's Prompt;
-3. decides what to do;
-4. invokes allowed game tools;
-5. observes the consequences;
-6. repeats until victory or death.
+1. 观察压缩后的游戏状态；
+2. 解读玩家的 Prompt；
+3. 决定要做什么；
+4. 调用被允许的游戏工具；
+5. 观察结果；
+6. 循环往复，直到胜利或死亡。
 
-The AI should make **strategic decisions**, not control every animation frame.
+AI 应该做**战略决策**，而不是控制每一帧动画。
 
-The deterministic game engine handles:
+确定性的游戏引擎负责：
 
-- movement;
-- targeting;
-- damage;
-- projectiles;
-- pathfinding;
-- tower attack loops;
-- frame-by-frame simulation.
+- 移动；
+- 索敌；
+- 伤害；
+- 弹道；
+- 寻路；
+- 防御塔攻击循环；
+- 逐帧模拟。
 
 ---
 
 ## 6. MVP
 
-The hackathon MVP should prove one thing:
+黑客松 MVP 应该只证明一件事：
 
-> **Changing the Prompt causes visibly different AI strategy and visibly different game outcomes.**
+> **改变 Prompt 会导致明显不同的 AI 策略，以及明显不同的游戏结果。**
 
-### One map
+### 一张地图
 
-A simple fixed route with a small number of build positions.
+一条简单的固定路线，带少量建造位置。
 
-### Three enemy types
+### 三种敌人类型
 
-- Normal
-- Fast
-- Tank
+- 普通
+- 快速
+- 坦克
 
-### Three tower types
+### 三种防御塔类型
 
-- Single-target damage
-- Area-of-effect damage
-- Slow / crowd control
+- 单体伤害
+- 范围伤害
+- 减速 / 群体控制
 
-### Minimal Agent tools
+### 最小 Agent 工具集
 
-Conceptually:
+概念上：
 
 ```
 inspect_game()
@@ -251,362 +251,362 @@ upgrade_tower(id)
 sell_tower(id)
 ```
 
-### Player interface
+### 玩家界面
 
-One major input:
+一个主要输入：
 
-**YOUR STRATEGY PROMPT**
+**你的策略 PROMPT**
 
-Then:
+然后：
 
-**START RUN**
+**开始本局（START RUN）**
 
-Once the run begins, the human does not directly control the battlefield.
+本局开始后，人类不再直接控制战场。
 
-### Agent decision loop
+### Agent 决策循环
 
-The game itself runs normally at browser-game speed.
+游戏本身以浏览器游戏的正常速度运行。
 
-The LLM is called only periodically or on meaningful events, for example:
+LLM 只被周期性地调用，或在有意义的事件发生时调用，例如：
 
-- wave starts;
-- enemy composition changes;
-- enough gold becomes available;
-- base becomes threatened;
-- a major tactical condition changes.
+- 波次开始；
+- 敌人组成变化；
+- 积累了足够金币；
+- 基地受到威胁；
+- 重大战术条件变化。
 
-The LLM receives a compressed game state and returns a structured action.
+LLM 收到压缩后的游戏状态，并返回一个结构化动作。
 
-This avoids trying to use an LLM as a 30/60 FPS controller.
+这避免了试图把 LLM 当作 30/60 FPS 控制器来使用。
 
 ---
 
-## 7. The MVP Magic Moment
+## 7. MVP 的神奇时刻
 
-The most important experiment should happen before visual polish.
+最重要的实验应该在视觉打磨之前完成。
 
-Run the exact same map and random seed with two Prompts.
+用完全相同的 map 和随机种子，跑两个 Prompt。
 
 ### Prompt A
 
-> Spend aggressively. Maximize damage immediately.
+> 激进花钱。立即最大化伤害。
 
 ### Prompt B
 
-> Keep 30% of gold in reserve. Prioritize slowing fast enemies before adding more damage.
+> 保留 30% 的金币作为储备。在继续增加伤害之前，优先减速快速敌人。
 
-If a spectator can visibly see the two AIs behave differently, the core idea works.
+如果旁观者能肉眼看出两个 AI 行为不同，核心创意就成立了。
 
-The desired reaction is:
+期望的反应是：
 
-> **“I changed one sentence and it actually changed how the AI played.”**
+> **“我改了一句话，它真的改变了 AI 的打法。”**
 
-That is the project's primary magic moment.
-
----
-
-## 8. Roguelike Loop
-
-The first version does not need a complex item or relic system.
-
-A minimal roguelike loop is enough:
-
-1. Player writes Prompt.
-2. AI fights.
-3. AI dies.
-4. Game shows a short postmortem.
-5. Player edits the Prompt.
-6. Same or comparable challenge is replayed.
-7. Player tries to survive longer.
-
-Later, Prompt instructions themselves can become roguelike perks.
-
-Examples:
-
-### EMERGENCY FUND
-
-> Keep 25% of available gold in reserve.
-
-### THREAT FIRST
-
-> Prioritize enemies by time-to-base rather than HP.
-
-### REFLEX
-
-> If threat ETA is below 3 seconds, act immediately instead of performing long strategic deliberation.
-
-### REFLECT
-
-> After each wave, identify the largest tactical mistake.
-
-These are not fake RPG statistics. Equipping a perk actually modifies the Agent's instruction stack.
-
-Therefore:
-
-> **Prompt is the build.**
+这就是本项目首要的神奇时刻。
 
 ---
 
-## 9. Multi-Agent / Swarm Direction
+## 8. Roguelike 循环
 
-The MVP should begin with one Agent.
+第一个版本不需要复杂的道具或遗物系统。
 
-Once the single-Agent loop works, it can expand into a swarm.
+一个最小的 roguelike 循环就够了：
 
-Possible roles:
+1. 玩家写 Prompt。
+2. AI 作战。
+3. AI 阵亡。
+4. 游戏展示简短的事后复盘。
+5. 玩家修改 Prompt。
+6. 重玩相同或相近的挑战。
+7. 玩家尝试存活更久。
 
-- **Scout** — observes enemy composition and threats;
-- **Builder** — executes tower placement and upgrades;
-- **Economy** — manages resource policy;
-- **Commander** — coordinates strategic decisions;
-- **Critic** — checks high-risk decisions;
-- **Memory** — retrieves useful lessons from previous runs.
+之后，Prompt 指令本身可以成为 roguelike 天赋。
 
-Then the same game can compare:
+示例：
 
-**Solo Agent vs Agent Swarm**
+### 应急资金（EMERGENCY FUND）
 
-under the same map, seed, model budget, and constraints.
+> 保留 25% 的可用金币作为储备。
 
-Possible measurements:
+### 威胁优先（THREAT FIRST）
 
-- wave reached;
-- decision latency;
-- tokens;
-- cost;
-- failed actions;
-- communication overhead;
-- survival;
-- quality of adaptation.
+> 按“到基地的时间”而非 HP 来对敌人排优先级。
 
-A central question becomes:
+### 反射（REFLEX）
 
-> **Does adding more Agents actually make the system better?**
+> 如果威胁 ETA 低于 3 秒，立即行动，而不是进行长时间的战略思考。
 
-More Agents may improve parallelism and specialization, but may also introduce latency, communication overhead, conflict, and cost.
+### 反思（REFLECT）
 
-That tradeoff should be visible in the game rather than hidden in logs.
+> 每一波结束后，找出最大的战术失误。
+
+这些不是虚假的 RPG 数值。装备一个天赋会真正修改 Agent 的指令栈。
+
+因此：
+
+> **Prompt 就是构筑。**
 
 ---
 
-## 10. Longer-Term Game Mechanics
+## 9. 多 Agent / Swarm 方向
 
-These are extensions, not MVP requirements.
+MVP 应该从单个 Agent 开始。
+
+一旦单 Agent 循环跑通，就可以扩展成 swarm。
+
+可能的角色：
+
+- **侦察兵（Scout）** — 观察敌人组成与威胁；
+- **建造者（Builder）** — 执行防御塔放置与升级；
+- **经济（Economy）** — 管理资源策略；
+- **指挥官（Commander）** — 协调战略决策；
+- **批评者（Critic）** — 检查高风险决策；
+- **记忆（Memory）** — 从过往局中检索有用的经验教训。
+
+然后同一个游戏可以比较：
+
+**单 Agent vs Agent Swarm**
+
+在相同的地图、种子、模型预算和约束下。
+
+可能的测量项：
+
+- 到达的波次；
+- 决策延迟；
+- token；
+- 成本；
+- 失败动作；
+- 通信开销；
+- 存活时长；
+- 适应质量。
+
+一个核心问题变成：
+
+> **加入更多 Agent 真的能让系统更好吗？**
+
+更多 Agent 可能提升并行度与专业化，但也可能引入延迟、通信开销、冲突和成本。
+
+这种权衡应该呈现在游戏中，而不是藏在日志里。
+
+---
+
+## 10. 更长期的游戏机制
+
+这些是扩展，而非 MVP 要求。
 
 ### Prompt vs Prompt
 
-Two humans use the same base model, map, seed, and budget.
+两名人类使用相同的基础模型、地图、种子和预算。
 
-The only difference is their strategy Prompt.
+唯一的区别是他们的策略 Prompt。
 
-Their AIs fight independently and the better Prompt build survives longer.
+双方的 AI 独立作战，更好的 Prompt 构筑存活更久。
 
-### Prompt Cards
+### Prompt 卡牌
 
-Casual players construct strategy using understandable cards instead of writing everything from scratch.
+休闲玩家用可理解的卡牌来构建策略，而不是从零写所有内容。
 
-Advanced players can edit raw Prompt text.
+进阶玩家可以编辑原始 Prompt 文本。
 
-### Prompt Inheritance
+### Prompt 继承
 
-After death, the AI proposes lessons learned.
+死亡之后，AI 提出所获经验教训。
 
-The player can preserve only a limited number for the next generation.
+玩家只能为下一代保留有限数量的经验。
 
-This creates a meaningful distinction between full episodic history and reusable experience.
+这在完整的回合制历史与可复用的经验之间创造出有意义的区分。
 
-### Prompt Evolution
+### Prompt 演化
 
-Successful Prompts can be:
+成功的 Prompt 可以：
 
-- forked;
-- mutated;
-- compared;
-- crossed over;
-- selected.
+- 分叉；
+- 变异；
+- 比较；
+- 交叉；
+- 选择。
 
-The Prompt becomes analogous to a genome.
+Prompt 变得类似于基因组。
 
-### Human Architect vs AI Architect
+### 人类架构师 vs AI 架构师
 
-The human designs an Agent team under a fixed compute budget.
+人类在固定算力预算下设计一支 Agent 团队。
 
-An AI designs another.
+AI 设计另一支。
 
-Both fight the same challenge.
+双方对抗同一个挑战。
 
-### Bring Your Own Agent
+### 自带 Agent（Bring Your Own Agent）
 
-A future competitive mode could allow developers to submit their own:
+未来的一种竞技模式可以允许开发者提交自己的：
 
-- model;
-- Prompt;
-- Agent topology;
-- memory strategy;
-- tool policy.
+- 模型；
+- Prompt；
+- Agent 拓扑；
+- 记忆策略；
+- 工具策略。
 
-The game then becomes an Agent arena.
-
----
-
-## 11. Product Layers
-
-The project can have three layers without requiring three separate products.
-
-### For ordinary players
-
-**A fun roguelike tower defense where you train an AI through language.**
-
-### For AI beginners
-
-**A fast way to understand how Prompt changes AI behavior.**
-
-The player learns through immediate consequences rather than tutorials.
-
-### For Agent builders
-
-**A reproducible environment for experimenting with Agent architecture under real-time pressure.**
-
-The order matters:
-
-> **Game → Discovery → Benchmark**
-
-Not:
-
-> Benchmark → game-themed visualization.
+游戏于是变成一个 Agent 竞技场。
 
 ---
 
-## 12. Design Principles
+## 11. 产品层次
 
-### Game first
+项目可以有三个层次，而不需要三个独立产品。
 
-If it is not fun to iterate the Prompt and watch the AI fight, the project fails regardless of benchmark sophistication.
+### 面向普通玩家
 
-### Observable consequences
+**一款有趣的 roguelike 塔防，你通过语言训练一个 AI。**
 
-Every important AI decision should have a visible effect on the battlefield.
+### 面向 AI 初学者
 
-### Prompt sensitivity
+**一种快速理解 Prompt 如何改变 AI 行为的方式。**
 
-Different reasonable Prompts must produce meaningfully different behavior.
+玩家通过即时结果学习，而不是通过教程。
 
-### Real-time pressure
+### 面向 Agent 构建者
 
-Thinking time must matter.
+**一个可复现的环境，用于在实时压力下实验 Agent 架构。**
 
-### Deterministic core
+顺序很重要：
 
-The underlying game simulation should be conventional, reliable, and reproducible.
+> **游戏 → 发现 → 基准测试**
 
-### Narrow Agent action space
+而不是：
 
-The Agent chooses strategy and invokes a small number of explicit tools.
-
-### Failure is content
-
-Bad AI decisions should be visible, understandable, and useful for the player's next attempt.
-
-### Scope discipline
-
-A polished one-map game with a strong Prompt → behavior → consequence loop is more valuable than a half-built platform.
+> 基准测试 → 套上游戏外衣的可视化。
 
 ---
 
-## 13. Hackathon Scope
+## 12. 设计原则
 
-The target is:
+### 游戏优先
 
-> **A genuinely playable version within the hackathon.**
+如果迭代 Prompt、观看 AI 作战这件事本身不好玩，无论基准测试做得多精巧，项目都会失败。
 
-Priority order:
+### 结果可观察
 
-### P0 — Prove the mechanic
+每一个重要的 AI 决策都应对战场产生可见影响。
 
-- deterministic tower-defense simulation;
-- LLM tool calling;
-- strategy Prompt input;
-- Agent can autonomously play;
-- two different Prompts produce visibly different behavior.
+### Prompt 敏感度
 
-### P1 — Complete the game loop
+不同的合理 Prompt 必须产生有实质差异的行为。
 
-- Start Run;
-- watch AI decisions;
-- Game Over;
-- simple postmortem;
-- edit Prompt;
-- Retry;
-- Wave score.
+### 实时压力
 
-### P2 — Make AI legible
+思考时间必须是有代价的。
 
-Show, without overwhelming the player:
+### 确定性内核
 
-- Agent thinking / waiting;
-- current decision;
-- action;
-- latency;
-- perhaps token usage.
+底层游戏模拟应该是常规、可靠、可复现的。
 
-### P3 — One swarm feature
+### 收窄的 Agent 动作空间
 
-Only after the above is stable.
+Agent 选择策略，并调用少量明确的工具。
 
-Prefer a simple **Solo vs Swarm** comparison over a large configurable multi-Agent platform.
+### 失败即内容
 
-### P4 — Polish
+糟糕的 AI 决策应该是可见的、可理解的，并且对玩家的下一次尝试有用。
 
-- onboarding;
-- visual clarity;
-- reliable demo;
-- fallback behavior;
-- spectator-friendly presentation.
+### 范围纪律
+
+一款打磨精致、只有一张地图但拥有强大“Prompt → 行为 → 结果”循环的游戏，比一个半成品平台更有价值。
 
 ---
 
-## 14. Working Positioning
+## 13. 黑客松范围
 
-### One sentence
+目标是：
 
-> **A roguelike tower defense where your Prompt is your build and AI is your player.**
+> **在黑客松期间做出一个真正可玩的版本。**
 
-### Three-line explanation
+优先级顺序：
 
-> **Prompt is the build.**  
-> **AI is the player.**  
-> **Tower defense is the world.**
+### P0 — 验证机制
 
-### Gameplay line
+- 确定性的塔防模拟；
+- LLM 工具调用；
+- 策略 Prompt 输入；
+- Agent 能自主游玩；
+- 两个不同的 Prompt 产生明显不同的行为。
 
-> **Fight → Die → Learn → Rewrite Prompt → Fight Again.**
+### P1 — 完成游戏循环
 
-### Educational line
+- 开始本局；
+- 观看 AI 决策；
+- 游戏结束；
+- 简单的事后复盘；
+- 编辑 Prompt；
+- 重试；
+- 波次计分。
 
-> **Learn how to work with AI by watching your words change its behavior.**
+### P2 — 让 AI 变得可读
 
-### Agent-engineering line
+在不给玩家造成信息过载的前提下展示：
 
-> **Underneath the game, every run is a real-time experiment in Agent latency, decision quality, cost, adaptation, and coordination.**
+- Agent 正在思考 / 等待；
+- 当前决策；
+- 动作；
+- 延迟；
+- 或许还有 token 用量。
+
+### P3 — 一个 swarm 功能
+
+只在上述内容稳定之后再做。
+
+优先做一个简单的**单 Agent vs Swarm**对比，而不是一个大型可配置的多 Agent 平台。
+
+### P4 — 打磨
+
+- 新手引导；
+- 视觉清晰度；
+- 可靠的演示；
+- 兜底行为；
+- 适合旁观者观看的呈现方式。
 
 ---
 
-## 15. North Star
+## 14. 工作定位
 
-The player is not really playing with towers.
+### 一句话
 
-The player is learning:
+> **一款 roguelike 塔防，你的 Prompt 就是你的构筑，AI 就是你的玩家。**
 
-> **How do I communicate intent to an intelligence so that it can act successfully without me?**
+### 三行解释
 
-Traditional games teach:
+> **Prompt 是构筑。**
+> **AI 是玩家。**
+> **塔防是世界。**
 
-**Human → direct control → world**
+### 玩法一句话
 
-This game explores:
+> **战斗 → 死亡 → 学习 → 重写 Prompt → 再战。**
 
-**Human → intent → AI → decision → action → world**
+### 教育一句话
 
-The tower-defense environment makes that relationship visible, playable, comparable, fallible, and improvable.
+> **通过观察你的文字如何改变它的行为，学会如何与 AI 协作。**
 
-The hackathon version succeeds if a player changes one sentence in their Prompt, watches the AI change its behavior, survives longer, and immediately wants to try again.
+### Agent 工程一句话
+
+> **在游戏之下，每一局都是关于 Agent 延迟、决策质量、成本、适应与协作的实时实验。**
+
+---
+
+## 15. 北极星
+
+玩家实际上并不是在玩防御塔。
+
+玩家在学习的是：
+
+> **我该如何把意图传达给一个智能体，让它能在没有我的情况下成功行动？**
+
+传统游戏教的是：
+
+**人类 → 直接控制 → 世界**
+
+本作探索的是：
+
+**人类 → 意图 → AI → 决策 → 行动 → 世界**
+
+塔防环境让这种关系变得可见、可玩、可比较、可犯错、可改进。
+
+如果一位玩家改了自己 Prompt 里的一句话，看着 AI 改变行为、活得更久，并立刻想再试一次，那么黑客松版本就成功了。
