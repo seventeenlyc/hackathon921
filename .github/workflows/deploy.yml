@@ -90,9 +90,36 @@ jobs:
           set -euo pipefail
           SSH_CMD="ssh -i $HOME/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes"
           TARGET="$DEPLOY_USER@$DEPLOY_HOST"
+
+          # 产物里 95% 是贴图（3.4MB / 3.5MB），而贴图几乎从不变化。每个版本落在一个
+          # 全新的空目录，rsync 没有可比对的基准，默认会把整个 3.5MB 每次重传一遍——
+          # 跨境链路约 11KB/s，这一步实测要 313 秒。
+          #
+          # --link-dest 让 rsync 拿上一个版本当基准，只把真正变了的文件送过境。
+          # --checksum 是必需的搭档：CI 每次都是全新构建，文件 mtime 全是新的，
+          # rsync 默认的 size+mtime 快速比对会判定所有贴图都变了，优化直接失效。
+          # 实测（同内容、mtime 差两天）：不加 --checksum 传 300,009 字节，加了传 9 字节。
+          #
+          # 注意 rsync 此时不会做硬链接——-a 要保留新的 mtime，而硬链接共享 inode 也就
+          # 共享 mtime，二者不可兼得。它改为在服务器本地从上一版复制。这正是我们要的：
+          # 数据不过境，本地复制在服务器上是白菜价。
+          PREV="$($SSH_CMD "$TARGET" "readlink '$APP_DIR/current' 2>/dev/null || true")"
+          LINK_DEST=""
+          if [ -n "$PREV" ] && [ "$PREV" != "releases/$GITHUB_SHA" ]; then
+            LINK_DEST="--link-dest=$APP_DIR/$PREV"
+            echo "增量基准: $PREV"
+          else
+            echo "无可用基准，本次全量传输"
+          fi
+
           $SSH_CMD "$TARGET" "mkdir -p '$APP_DIR/releases/$GITHUB_SHA'"
-          rsync -az --delete --chmod=D755,F644 -e "$SSH_CMD" \
-            dist/ "$TARGET:$APP_DIR/releases/$GITHUB_SHA/"
+
+          # 先落盘再 grep：直接管道给 grep 的话，grep 无匹配时返回 1，
+          # 配合 pipefail 会把一次成功的传输报成失败。
+          rsync -az --checksum --delete --chmod=D755,F644 $LINK_DEST \
+            -e "$SSH_CMD" --stats \
+            dist/ "$TARGET:$APP_DIR/releases/$GITHUB_SHA/" > rsync-stats.log
+          grep -E "Number of regular files transferred|Total transferred file size" rsync-stats.log || true
 
       - name: Activate release
         env:
