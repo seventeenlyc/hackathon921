@@ -1,0 +1,42 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+build/
+
+# Vite / TypeScript
+.vite/
+*.tsbuildinfo
+
+# Parcel 遗留产物。inert 原版 `npm run dev` 输出到 ./dev，
+# 迁到 Vite 之后（#1）这三条可以删。
+.cache/
+.parcel-cache/
+dev/
+
+# 环境变量。本项目会持有 LLM API key，这几行是防事故的关键：
+# 真实值只存在于被忽略的 .env，.env.example 里只放占位符。
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# 日志
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 测试与覆盖率
+coverage/
+playwright-report/
+test-results/
+
+# 工具缓存
+.firecrawl/
+
+# 编辑器 / 操作系统
+.idea/
+.DS_Store
+Thumbs.db
