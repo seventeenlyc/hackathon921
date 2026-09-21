@@ -33,6 +33,11 @@ coverage/
 playwright-report/
 test-results/
 
+# 运维 / 部署私记。主机、凭据、部署细节不进仓库，
+# 只有运维负责人在本地持有。
+*.local.md
+ops.local/
+
 # 工具缓存
 .firecrawl/
 
