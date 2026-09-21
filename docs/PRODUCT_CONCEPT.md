@@ -251,7 +251,8 @@ DeepSeek 走国内 CDN 线路，实测 TLS 握手 25–80ms、请求总计约 10
   代价是与提供该证书的应用存在续期耦合，已知并接受。
 
 具体主机、域名以外的凭据与路径仍不在本仓库记录，落在 GitHub Secrets 与服务器本地。
-操作说明见 `deploy/README.md`。
+开发者须知见 `docs/DEPLOYMENT.md`（代码怎么上线、写代码时的约束）；
+服务器初始化与回滚等运维操作见 `deploy/README.md`。
 
 本流水线与打包器无关（入口始终是 `npm run build` → `dist/`），issue #1 迁移到 Vite 后无需改动。
 
