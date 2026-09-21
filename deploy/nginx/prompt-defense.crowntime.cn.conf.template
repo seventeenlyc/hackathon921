@@ -1,0 +1,47 @@
+# prompt-defense.crowntime.cn —— 静态前端站点
+#
+# 这是一个模板：__SSL_CERT__ / __SSL_KEY__ 由 deploy/bootstrap-server.sh 在安装时替换。
+# 证书路径不写进仓库，因为它指向本机上另一个无关应用的内部目录，属于
+# docs/PRODUCT_CONCEPT.md §14 所说的「不在本仓库记录」的运维细节。
+#
+# 本文件只新增，不修改目标机上任何既有站点的配置。
+
+server {
+    server_name prompt-defense.crowntime.cn;
+
+    # current 是指向 releases/<commit-sha>/ 的符号链接。
+    # nginx 在每次请求时才解析 root 下的符号链接，所以切换版本无需 reload，
+    # 部署用户因此完全不需要 sudo。
+    root /srv/apps/prompt-defense.crowntime.cn/current;
+    index index.html;
+
+    # index.html 必须不缓存。构建产物带内容 hash 可以长缓存，但 HTML 不行：
+    # 原子切换版本后若浏览器仍用旧 HTML，它引用的旧 hash 资源已被清理，页面直接白屏。
+    location = /index.html {
+        add_header Cache-Control "no-cache, must-revalidate" always;
+    }
+
+    # 部署校验用，内容是当前线上版本的 commit sha，同样不可缓存。
+    location = /version.txt {
+        add_header Cache-Control "no-cache, must-revalidate" always;
+        default_type text/plain;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    ssl_certificate     __SSL_CERT__;
+    ssl_certificate_key __SSL_KEY__;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name prompt-defense.crowntime.cn;
+    return 301 https://$host$request_uri;
+}

@@ -1,0 +1,144 @@
+name: Deploy
+
+# 构建在 CI 完成，服务器只接收产物 —— docs/PRODUCT_CONCEPT.md §14：
+# 目标机是内存余量有限的共享生产服务器，构建峰值会挤压既有业务。
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  DOMAIN: prompt-defense.crowntime.cn
+  APP_DIR: /srv/apps/prompt-defense.crowntime.cn
+  KEEP_RELEASES: 5
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # package.json 的 engines 写的是 >=14 <18，那是上游 inert 留下的过时声明：
+      # 它描述的是 Windows 上缺 VS Build Tools 时 deasync 装不上的情况（见 .NODE_ENV_README.md），
+      # 不是跨平台约束。Linux runner 自带编译工具链，Node 22 下 npm ci / build / test 均通过。
+      # engines 字段的清理属于 issue #1（迁移到 Vite）的范围，不在本分支处理。
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # npm run test == parcel build + tests/texture-assets.test.js，
+      # 一步同时覆盖构建与产物贴图校验。
+      - name: Build and validate
+        run: npm run test
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # 线上可用 curl /version.txt 确认当前跑的是哪个 commit。
+      - name: Stamp build with commit sha
+        run: echo "$GITHUB_SHA" > dist/version.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+          if-no-files-found: error
+
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # 固定 host key，不使用 StrictHostKeyChecking=no：
+          # 部署流量走公网，接受任意主机密钥等于放弃中间人防护。
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload release
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          SSH_CMD="ssh -i $HOME/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes"
+          TARGET="$DEPLOY_USER@$DEPLOY_HOST"
+          $SSH_CMD "$TARGET" "mkdir -p '$APP_DIR/releases/$GITHUB_SHA'"
+          rsync -az --delete --chmod=D755,F644 -e "$SSH_CMD" \
+            dist/ "$TARGET:$APP_DIR/releases/$GITHUB_SHA/"
+
+      - name: Activate release
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i "$HOME/.ssh/deploy_key" -o IdentitiesOnly=yes -o BatchMode=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "APP_DIR='$APP_DIR' SHA='$GITHUB_SHA' KEEP='$KEEP_RELEASES' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "$APP_DIR"
+          [ -d "releases/$SHA" ] || { echo "release releases/$SHA 不存在" >&2; exit 1; }
+          [ -f "releases/$SHA/index.html" ] || { echo "产物缺少 index.html" >&2; exit 1; }
+
+          # 切换之前先记下上一版，它是天然的回滚目标，下面的清理要保护它。
+          previous="$(readlink current 2>/dev/null || true)"
+
+          # mv -T 是原子 rename，切换过程中不存在 current 不指向任何版本的瞬间。
+          # nginx 每次请求才解析 root 下的符号链接，所以这里不需要 reload nginx，
+          # 部署用户也因此不需要任何 sudo 权限。
+          ln -sfn "releases/$SHA" current.tmp
+          mv -Tf current.tmp current
+
+          # 只保留最近 KEEP 个版本，但本次版本与上一版永不清理。
+          # 上一版必须单独保护：人工回滚到某个旧版本后，它的 mtime 已经很旧，
+          # 会排在 KEEP 窗口之外，照常清理就会把刚刚回滚上去、正要再回滚的那一版删掉。
+          stale="$(ls -1dt releases/*/ | tail -n "+$((KEEP + 1))" || true)"
+          while IFS= read -r rel; do
+            [ -n "$rel" ] || continue
+            rel="${rel%/}"
+            [ "$rel" = "releases/$SHA" ] && continue
+            [ "$rel" = "$previous" ] && continue
+            rm -rf -- "$rel"
+            echo "已清理旧版本 $rel"
+          done <<< "$stale"
+
+          echo "已切换到 $SHA"
+          ls -1dt releases/*/
+          REMOTE
+
+      - name: Verify deployment
+        run: |
+          set -euo pipefail
+          LIVE="$(curl -fsS --retry 5 --retry-delay 3 --retry-all-errors "https://$DOMAIN/version.txt")"
+          echo "线上版本: $LIVE"
+          echo "期望版本: $GITHUB_SHA"
+          [ "$LIVE" = "$GITHUB_SHA" ] || { echo "版本不匹配" >&2; exit 1; }
+          curl -fsS -o /dev/null -w 'index.html HTTP %{http_code}\n' "https://$DOMAIN/"
