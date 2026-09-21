@@ -1,282 +1,282 @@
-# Prompt Defense — Current Product Concept
+# Prompt Defense — 当前产品概念
 
-> Status: confirmed product direction as of 2026-09-21.
-> This document records only decisions that have been made. Unresolved items are listed separately at the end.
+> 状态：截至 2026-09-21 已确认的产品方向。
+> 本文档只记录已经做出的决定。未决事项在文末单独列出。
 
-## 1. Product Concept
+## 1. 产品概念
 
-**Prompt Defense** is a web-based endless roguelike tower-defense game in which the human does not directly control the battlefield.
+**Prompt Defense** 是一款基于网页的无限 roguelike 塔防游戏，其中人类不直接控制战场。
 
-The human writes and updates natural-language strategy Prompts. An AI player observes the game state and operates the tower-defense game according to those instructions.
+人类编写并更新自然语言的策略 Prompt。一个 AI 玩家观察游戏状态，并按照这些指令操作塔防游戏。
 
-The core relationship is:
+核心关系是：
 
-**Human intent → Prompt → AI decision → game action → battlefield consequence**
+**人类意图 → Prompt → AI 决策 → 游戏行动 → 战场结果**
 
-The core player fantasy is: **“I teach the AI how to play, then watch whether my strategy survives.”**
+核心玩家幻想是：**“我教 AI 怎么玩，然后看我的策略能不能活下来。”**
 
-The game is intended to be playable by people at the hackathon directly in a web browser, including on-site participants, rather than existing only as a judge-facing demo.
+这款游戏应该让黑客松现场的人可以直接在网页浏览器中游玩，包括现场参与者，而不是仅仅作为一个给评委看的 demo。
 
-## 2. Target Experience
+## 2. 目标体验
 
-The long-term target audience is teenagers / young people learning how to interact with AI.
+长期目标受众是正在学习如何与 AI 互动的青少年 / 年轻人。
 
-The game should attract them as a game first. The learning outcome comes from repeatedly instructing an AI, observing what it actually does, and revising the strategy.
+游戏首先应该以游戏的身份吸引他们。学习成果来自反复地给 AI 下指令、观察它实际做了什么，并修订策略。
 
-The product should not primarily feel like a Prompt Engineering course.
+产品不应主要让人感觉像一门 Prompt Engineering 课程。
 
-The underlying learning loop is:
+底层的学习循环是：
 
-**Intent → Instruction → Behavior → Observation → Revision**
+**意图 → 指令 → 行为 → 观察 → 修订**
 
-Through gameplay, players can learn goals, context, constraints, priorities, exceptions, feedback, how general strategies differ from hard-coded instructions, and how AI behavior changes when instructions change.
+通过游玩，玩家可以学到目标、上下文、约束、优先级、例外、反馈、通用策略与硬编码指令有何不同，以及当指令改变时 AI 行为会如何变化。
 
-Structured Prompt methods such as CO-STAR can be introduced through the learning experience, but no single Prompt framework has been selected as the game's canonical framework.
+诸如 CO-STAR 这类结构化 Prompt 方法可以通过学习体验引入，但目前尚未选定任何单一的 Prompt 框架作为游戏的官方框架。
 
-## 3. Core Game Loop
+## 3. 核心游戏循环
 
-A formal run begins when the player spends one Coin.
+当玩家花费一枚硬币（Coin）时，一局正式游戏开始。
 
-**1 Coin = 1 Run / one life**
+**1 Coin = 1 局 / 一条命**
 
-During that run:
+在该局中：
 
-1. The player gives the AI an initial strategy Prompt.
-2. The AI plays the tower-defense game autonomously.
-3. Waves continue and become increasingly difficult.
-4. The player observes the battlefield and the AI's behavior.
-5. While the run is still alive, the player may update the strategy by writing a new Prompt.
-6. The updated strategy affects subsequent AI decisions.
-7. The process continues until the base is destroyed.
-8. The player's score is the highest Wave reached in that run.
+1. 玩家给 AI 一个初始策略 Prompt。
+2. AI 自主游玩塔防游戏。
+3. 波次持续进行，并越来越难。
+4. 玩家观察战场与 AI 的行为。
+5. 在该局仍在进行时，玩家可以通过编写新的 Prompt 来更新策略。
+6. 更新后的策略影响后续的 AI 决策。
+7. 这个过程持续到基地被摧毁。
+8. 玩家的得分是该局中到达的最高波次。
 
-The Prompt is therefore **not locked at the beginning of a run**. A run can contain Prompt v1 → Prompt v2 → Prompt v3 → ... → Base destroyed.
+因此，Prompt 在**一局开始时并不被锁定**。一局可以包含 Prompt v1 → Prompt v2 → Prompt v3 → …… → 基地被摧毁。
 
-This makes the game about ongoing human–AI collaboration rather than writing one perfect instruction before play begins.
+这让游戏变成持续的人机协作，而不是在开玩前写下一条完美指令。
 
-## 4. Endless Roguelike Tower Defense
+## 4. 无限 roguelike 塔防
 
-The tower-defense foundation must support **endless Waves**. There is no fixed final level. Difficulty continues increasing until the player's defense fails.
+塔防基础必须支持**无限波次（endless Waves）**。没有固定的最终关卡。难度持续上升，直到玩家的防御失败。
 
-The game also contains roguelike randomness. The same strategy does **not** have to produce the same result on every run.
+游戏还包含 roguelike 随机性。同一个策略**不一定**在每一局都产生相同结果。
 
-**Prompt determines strategy / policy. RNG determines the situations the strategy encounters.**
+**Prompt 决定策略 / 方针。RNG 决定策略所遇到的情境。**
 
-A good Prompt should therefore express reusable decision rules rather than memorize a fixed sequence of Waves.
+因此，一个好的 Prompt 应该表达可复用的决策规则，而不是记住固定的波次序列。
 
-Example:
+示例：
 
-- Brittle instruction: “At Wave 5, upgrade the Cannon.”
-- General strategy: “When a high-HP enemy appears, prioritize high single-target damage.”
+- 脆弱的指令：“在第 5 波升级加农炮。”
+- 通用策略：“当出现高 HP 敌人时，优先选择高单体伤害。”
 
-The roguelike environment makes this difference observable.
+roguelike 环境让这种差别变得可观察。
 
-## 5. Human and AI Roles
+## 5. 人类与 AI 的角色
 
-### Human
+### 人类
 
-The human is the AI's strategist / trainer. The human writes the strategy Prompt, watches the AI play, observes failures and changing battlefield conditions, updates the Prompt during an active run, and decides how to communicate goals, constraints, priorities and exceptions.
+人类是 AI 的战略家 / 训练师。人类编写策略 Prompt，观看 AI 游玩，观察失败和不断变化的战场条件，在一局进行中更新 Prompt，并决定如何传达目标、约束、优先级和例外。
 
-The human does **not** directly operate the towers during normal play.
+在正常游玩中，人类**不**直接操作防御塔。
 
 ### AI
 
-The AI is the battlefield player. It receives the player's current strategy Prompt, observes the current game state, decides what tower-defense actions to take, executes only actions exposed by the game, and continues acting as the game evolves.
+AI 是战场上的玩家。它接收玩家当前的策略 Prompt，观察当前游戏状态，决定要采取哪些塔防行动，只执行游戏所暴露的动作，并随着游戏演进而持续行动。
 
-The conventional game engine, not the LLM, handles frame-by-frame simulation such as enemy movement, tower attacks, damage and animation.
+逐帧模拟（例如敌人移动、防御塔攻击、伤害与动画）由常规游戏引擎处理，而非 LLM。
 
-## 6. Tutorial / First-Time Experience
+## 6. 教程 / 首次体验
 
-A first-time player must see an example Prompt before being expected to write one independently.
+首次游玩的玩家在需要自己写 Prompt 之前，必须先看到一个示例 Prompt。
 
-The tutorial should demonstrate that a Prompt can contain different kinds of instructions, such as a goal, strategy, resource constraints, priorities and special-case rules.
+教程应该演示一个 Prompt 可以包含不同种类的指令，例如目标、策略、资源约束、优先级和特殊规则。
 
-The essential tutorial outcome is:
+教程的关键成果是：
 
-**The player changes an instruction and then sees the AI behave differently in the game.**
+**玩家改变一条指令，然后看到 AI 在游戏中表现出不同行为。**
 
-This establishes the causal model:
+这建立起因果模型：
 
-**My words changed the AI's behavior.**
+**我的话改变了 AI 的行为。**
 
-After the player understands the basic interaction, the game can progressively introduce more sophisticated Prompt structures and strategies.
+在玩家理解基本交互之后，游戏可以逐步引入更复杂的 Prompt 结构和策略。
 
-The exact tutorial scenario and progression are not yet fixed.
+具体的教程场景与推进方式尚未确定。
 
-## 7. Mid-Run Strategy Updates
+## 7. 局内策略更新
 
-Strategy updates are a confirmed part of the game.
+策略更新是游戏已确认的一部分。
 
-A player must be able to observe an active run and decide that the AI needs new instructions. The system should preserve the strategy evolution of a run rather than storing only its final Prompt.
+玩家必须能够观察一局进行中的游戏，并判断 AI 需要新的指令。系统应保留一局的策略演化过程，而不是只存储其最终 Prompt。
 
-Conceptually:
+概念上：
 
-Run
-- Prompt v1 — active from Wave ...
-- Prompt v2 — active from Wave ...
-- Prompt v3 — active from Wave ...
-- Final result
+本局
+- Prompt v1 — 从第 … 波起生效
+- Prompt v2 — 从第 … 波起生效
+- Prompt v3 — 从第 … 波起生效
+- 最终结果
 
-This history can later support post-run learning and inspection of strong leaderboard runs.
+这段历史之后可以支持局后学习，以及对排行榜上强势局的分析。
 
-The exact cost, cooldown, timing or limits for changing Prompt during a run are unresolved.
+在一局中更改 Prompt 的具体成本、冷却、时机或限制尚未确定。
 
-## 8. Coin
+## 8. 硬币（Coin）
 
-The game uses the metaphor **INSERT 1 COIN**.
+游戏使用 **投入 1 枚硬币（INSERT 1 COIN）** 这一隐喻。
 
-A Coin represents one attempt / one life in the endless tower defense. Spending a Coin starts a formal run. If the base is destroyed, that run ends. Starting another run requires another Coin.
+一枚硬币代表无限塔防中的一次尝试 / 一条命。花费一枚硬币开始一局正式游戏。如果基地被摧毁，该局结束。开始另一局需要另一枚硬币。
 
-For the hackathon, Coin is a game mechanic and **does not imply real-money payment**.
+对本次黑客松而言，Coin 是一种游戏机制，**并不意味着真实货币支付**。
 
-The exact initial Coin allocation and replenishment mechanism are unresolved.
+初始硬币配额与补充机制尚未确定。
 
-## 9. Score and Leaderboard
+## 9. 得分与排行榜
 
-The primary score is **Wave Reached**.
+主要得分是**到达的波次（Wave Reached）**。
 
-The web game has a shared leaderboard so hackathon participants can compare their runs.
+网页游戏有一个共享排行榜，方便黑客松参与者比较各自的成绩。
 
-The leaderboard is based on run performance, while acknowledging that roguelike randomness means a single best run is not a scientific measurement of Prompt quality.
+排行榜基于每局表现，同时承认 roguelike 随机性意味着单次最佳成绩并不是对 Prompt 质量的科学测量。
 
-Players should be able to inspect other players' successful strategies / Prompt history so that competition also creates peer learning.
+玩家应该能够查看其他玩家成功的策略 / Prompt 历史，让竞争同时带来同伴学习。
 
-The resulting social loop is:
+由此形成的社交循环是：
 
-**Play → Rank → Inspect → Learn → Change Strategy → Try Again**
+**游玩 → 排名 → 查看 → 学习 → 改变策略 → 再试一次**
 
-The exact ranking formula, tie-breaking rules and amount of Prompt information exposed are unresolved.
+确切的排名公式、平局规则以及公开的 Prompt 信息量尚未确定。
 
-## 10. Web / On-Site Experience
+## 10. 网页 / 现场体验
 
-The product is a **web game**.
+产品是一款**网页游戏**。
 
-The hackathon version should allow people at the venue to participate directly from their own browser rather than requiring installation.
+黑客松版本应允许现场的人直接用自己的浏览器参与，而不需要安装。
 
-The desired on-site loop is:
+期望的现场循环是：
 
-Open game → understand “I teach the AI” → play / spend a Coin → AI fights → update strategy when needed → run ends → score appears → leaderboard → see other strategies → try again.
+打开游戏 → 理解“我教 AI” → 游玩 / 花费一枚 Coin → AI 作战 → 需要时更新策略 → 本局结束 → 出现得分 → 排行榜 → 查看其他策略 → 再试一次。
 
-A shared live leaderboard is part of the product concept.
+共享的实时排行榜是产品概念的一部分。
 
-## 11. Core Product Magic Moment
+## 11. 核心产品神奇时刻
 
-The project's central proof is:
+本项目的核心证明是：
 
-**A player changes the Prompt, the AI changes its behavior, and the battlefield visibly changes as a consequence.**
+**玩家改变 Prompt，AI 改变行为，战场作为结果发生可见变化。**
 
-This should be observable both between different runs and after a strategy update during the same run.
+这应该在不同局之间，以及同一局内策略更新之后，都可以被观察到。
 
-If Prompt changes do not create legible behavioral differences, the core product does not work.
+如果 Prompt 的改变不能产生清晰可辨的行为差异，核心产品就不成立。
 
-## 12. Product Positioning
+## 12. 产品定位
 
-Current concise formulation:
+当前简洁表述：
 
-**Prompt is your strategy. AI is your player. Tower defense is the world.**
+**Prompt 是你的策略。AI 是你的玩家。塔防是这个世界。**
 
-Player-facing formulation:
+面向玩家的表述：
 
-**Teach your AI. Send it into battle. See how far it survives.**
+**教你的 AI。把它送上战场。看它能活多久。**
 
-The deeper educational proposition is that the player learns how to communicate intent to an autonomous AI by watching instructions become actions and revising them based on real outcomes.
+更深层的教育命题是：玩家通过观察指令如何变成行动，并基于真实结果修订它们，学会如何向一个自主 AI 传达意图。
 
-## 13. Current MVP Boundary
-
-The MVP must establish:
-
-- a web-based tower-defense game;
-- endless Waves;
-- roguelike/randomized encounters;
-- an AI that autonomously operates the game;
-- a player-editable strategy Prompt;
-- Prompt updates during an active run;
-- visible AI actions and battlefield consequences;
-- one Coin per formal run;
-- Wave Reached as the primary score;
-- a shared leaderboard for participants;
-- a first-time tutorial containing an example Prompt;
-- the ability to learn from other players' successful strategies.
-
-The first engineering milestone is to obtain a simple open-source web tower-defense foundation that can support endless play and can be adapted for AI control.
-
-**No tower-defense repository has been selected yet.**
-
-# Open Questions / Legacy Decisions
-
-The following items have **not** been decided and must not be treated as requirements yet.
-
-### Tower-defense foundation
-
-- Which open-source web tower-defense project should be used?
-- Whether to adapt an existing endless game or convert a simpler finite game to endless mode.
-- Exact map design.
-- Fixed route vs other pathing model.
-- Exact tower types and enemy types.
-- Tower placement model.
-- Difficulty scaling formula.
-- RNG / seed design.
-
-### Agent runtime
-
-- Which LLM/model/provider to use.
-- Exact GameState schema.
-- Exact action/tool schema.
-- How often the AI is allowed to make decisions.
-- Whether decisions happen per Wave, event-driven, or through another cadence.
-- How model latency should affect gameplay.
-
-### Prompt system
-
-- Exact Prompt length/budget.
-- Whether Prompt updates have a cooldown, limited charges, resource cost or Wave restriction.
-- Whether the game adopts a custom Prompt framework.
-- How CO-STAR or other Prompt frameworks are taught.
-- Exact strategy-history UI.
-- Whether players can fork/copy another player's Prompt.
-
-### Tutorial
-
-- Exact tutorial Waves.
-- Whether the tutorial intentionally kills the AI or allows the player to intervene before failure.
-- Exact example Prompt.
-- Exact teaching progression.
-
-### Coin economy
-
-- Number of starting Coins.
-- Coin replenishment.
-- Whether Coin ever becomes a monetization mechanic.
-
-### Leaderboard
-
-- Whether ranking is purely Best Wave or includes additional modes.
-- Tie-breaking.
-- How randomness is represented.
-- Whether average/median performance is shown.
-- How much of a player's Prompt / Prompt history is public.
-- Replay requirements.
-- Anti-cheat / run-verification design.
-
-### Identity and backend
-
-- Nickname-only vs account.
-- Persistence mechanism.
-- Database choice.
-- Backend stack.
-- Hosting/deployment.
-- Mobile/desktop UI details.
-
-### Future scope — not currently MVP
-
-The following ideas have been discussed but are not current MVP commitments:
-
-- Multi-Agent / Swarm;
-- Solo vs Swarm;
-- Prompt cards;
-- Prompt inheritance / memory;
-- Prompt evolution;
-- Prompt vs Prompt competition;
-- Bring Your Own Agent;
-- multi-model competition;
-- advanced Agent benchmarking.
+## 13. 当前 MVP 边界
+
+MVP 必须建立：
+
+- 一款网页版塔防游戏；
+- 无限波次；
+- roguelike / 随机化遭遇；
+- 一个能自主操作游戏的 AI；
+- 玩家可编辑的策略 Prompt；
+- 一局进行中的 Prompt 更新；
+- 可见的 AI 行动与战场结果；
+- 每局正式游戏消耗一枚 Coin；
+- 以“到达的波次”为主要得分；
+- 面向参与者的共享排行榜；
+- 包含示例 Prompt 的首次教程；
+- 能够学习其他玩家成功策略的能力。
+
+第一个工程里程碑是获得一个简单的开源网页塔防基础，使其能够支持无限游玩，并且可以改造为受 AI 控制。
+
+**目前尚未选定任何塔防仓库。**
+
+# 未决问题 / 遗留决策
+
+以下事项**尚未**决定，目前不得视为需求。
+
+### 塔防基础
+
+- 应使用哪个开源网页塔防项目？
+- 是改造一个已有的无限游戏，还是把一个更简单的有限游戏改造成无限模式。
+- 确切的地图设计。
+- 固定路线还是其他路径模型。
+- 确切的防御塔类型与敌人类型。
+- 防御塔放置模型。
+- 难度缩放公式。
+- RNG / 种子设计。
+
+### Agent 运行时
+
+- 使用哪个 LLM / 模型 / 供应商。
+- 确切的 GameState schema。
+- 确切的 action / tool schema。
+- 允许 AI 多久做一次决策。
+- 决策是按波次、事件驱动，还是按其他节奏。
+- 模型延迟应如何影响游戏体验。
+
+### Prompt 系统
+
+- 确切的 Prompt 长度 / 预算。
+- Prompt 更新是否有冷却、有限次数、资源成本或波次限制。
+- 游戏是否采用自定义的 Prompt 框架。
+- 如何教授 CO-STAR 或其他 Prompt 框架。
+- 确切的策略历史 UI。
+- 玩家是否可以分叉 / 复制其他玩家的 Prompt。
+
+### 教程
+
+- 确切的教程波次。
+- 教程是否故意让 AI 死亡，还是允许玩家在失败前介入。
+- 确切的示例 Prompt。
+- 确切的教学推进方式。
+
+### 硬币经济
+
+- 初始硬币数量。
+- 硬币补充。
+- Coin 是否会成为某种变现机制。
+
+### 排行榜
+
+- 排名是纯粹的最佳波次，还是包含其他模式。
+- 平局规则。
+- 随机性如何呈现。
+- 是否展示平均 / 中位数表现。
+- 玩家的 Prompt / Prompt 历史有多少是公开的。
+- 回放要求。
+- 反作弊 / 对局校验设计。
+
+### 身份与后端
+
+- 仅昵称还是账号。
+- 持久化机制。
+- 数据库选择。
+- 后端技术栈。
+- 托管 / 部署。
+- 移动端 / 桌面端 UI 细节。
+
+### 未来范围 — 目前不属于 MVP
+
+以下想法已经讨论过，但不是当前 MVP 的承诺：
+
+- 多 Agent / Swarm；
+- 单人 vs Swarm；
+- Prompt 卡牌；
+- Prompt 继承 / 记忆；
+- Prompt 演化；
+- Prompt vs Prompt 对抗；
+- 自带 Agent；
+- 多模型竞赛；
+- 进阶 Agent 基准测试。
