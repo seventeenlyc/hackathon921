@@ -2,10 +2,11 @@ name: Deploy
 
 # 构建在 CI 完成，服务器只接收产物 —— docs/PRODUCT_CONCEPT.md §14：
 # 目标机是内存余量有限的共享生产服务器，构建峰值会挤压既有业务。
+# 只在 main 上触发。PR 的构建校验在 ci.yml —— 分开是为了让 PR 的检查列表里
+# 不再出现一个永远被 skip 的 deploy job。
 on:
   push:
     branches: [main]
-  pull_request:
   workflow_dispatch:
 
 concurrency:
@@ -58,7 +59,10 @@ jobs:
 
   deploy:
     needs: build
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    # 这个守卫不能去掉：workflow_dispatch 可以从任意分支手动触发，
+    # 没有它就能把一个功能分支的产物推上生产。push 到 main 时它恒为真，
+    # 所以正常流程里不会产生 skipped job。
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -88,7 +92,11 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
           set -euo pipefail
-          SSH_CMD="ssh -i $HOME/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes"
+          # 用数组而不是字符串拼参数：字符串展开必须去掉引号才能分词，
+          # 那正是 SC2086 要拦的写法（注意本行不能以 shellcheck 一词开头，
+          # 否则会被当成 shellcheck 指令解析）。rsync 的 -e 需要单个字符串，
+          # 用 "${SSH[*]}" 拼回去即可 —— runner 上 $HOME 是 /home/runner，不含空格。
+          SSH=(ssh -i "$HOME/.ssh/deploy_key" -o IdentitiesOnly=yes -o BatchMode=yes)
           TARGET="$DEPLOY_USER@$DEPLOY_HOST"
 
           # 产物里 95% 是贴图（3.4MB / 3.5MB），而贴图几乎从不变化。每个版本落在一个
@@ -103,21 +111,21 @@ jobs:
           # 注意 rsync 此时不会做硬链接——-a 要保留新的 mtime，而硬链接共享 inode 也就
           # 共享 mtime，二者不可兼得。它改为在服务器本地从上一版复制。这正是我们要的：
           # 数据不过境，本地复制在服务器上是白菜价。
-          PREV="$($SSH_CMD "$TARGET" "readlink '$APP_DIR/current' 2>/dev/null || true")"
-          LINK_DEST=""
+          PREV="$("${SSH[@]}" "$TARGET" "readlink '$APP_DIR/current' 2>/dev/null || true")"
+
+          RSYNC_OPTS=(-az --checksum --delete "--chmod=D755,F644")
           if [ -n "$PREV" ] && [ "$PREV" != "releases/$GITHUB_SHA" ]; then
-            LINK_DEST="--link-dest=$APP_DIR/$PREV"
+            RSYNC_OPTS+=("--link-dest=$APP_DIR/$PREV")
             echo "增量基准: $PREV"
           else
             echo "无可用基准，本次全量传输"
           fi
 
-          $SSH_CMD "$TARGET" "mkdir -p '$APP_DIR/releases/$GITHUB_SHA'"
+          "${SSH[@]}" "$TARGET" "mkdir -p '$APP_DIR/releases/$GITHUB_SHA'"
 
           # 先落盘再 grep：直接管道给 grep 的话，grep 无匹配时返回 1，
           # 配合 pipefail 会把一次成功的传输报成失败。
-          rsync -az --checksum --delete --chmod=D755,F644 $LINK_DEST \
-            -e "$SSH_CMD" --stats \
+          rsync "${RSYNC_OPTS[@]}" -e "${SSH[*]}" --stats \
             dist/ "$TARGET:$APP_DIR/releases/$GITHUB_SHA/" > rsync-stats.log
           grep -E "Number of regular files transferred|Total transferred file size" rsync-stats.log || true
 

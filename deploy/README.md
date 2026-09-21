@@ -96,7 +96,7 @@ SSL_KEY=/绝对路径/privkey.pem \
 
 ### 6. 触发首次部署
 
-push 到 `main` 即可。PR 上只跑 `build` job，不部署。
+push 到 `main` 即可。PR 上跑的是另一个 workflow（`ci.yml`），只做构建校验，不部署。
 
 ## 回滚
 

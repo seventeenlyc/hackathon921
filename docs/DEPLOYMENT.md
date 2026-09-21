@@ -13,16 +13,16 @@
 |---|---|
 | 线上地址 | `https://prompt-defense.crowntime.cn` |
 | 上线方式 | **合并到 `main` 自动部署**，没有手动步骤 |
-| PR 上会发生什么 | 只跑构建检查，不部署 |
+| PR 上会发生什么 | 跑 `CI` workflow（构建 + 类型检查），不部署 |
 | 线上现在是什么 | **纯静态前端**，inert 塔防底座本身 |
 | 后端 / 数据库 / LLM 代理 | **都还不存在** |
 
 ## 一、你的代码怎么上线
 
 ```
-开 PR  ─────────►  build job 跑构建检查（不部署）
+开 PR  ─────────►  CI workflow：构建 + 类型检查 + workflow 校验
    │
-合并到 main ─────►  build job  ─►  deploy job  ─►  线上
+合并到 main ─────►  Deploy workflow：build job ─► deploy job ─► 线上
 ```
 
 合并后大约一两分钟生效。在仓库 Actions 页面看 `Deploy` workflow，
@@ -134,7 +134,8 @@ Vite 的默认输出目录同样是 `dist`，workflow 一个字都不用改。
 | `Verify deployment` 失败但站点其实是好的 | GitHub runner 在境外，访问国内服务器可能超时。已带 5 次重试。先本地 `curl` 确认；本地正常就是网络问题，不是部署失败 |
 | 页面白屏、控制台报资源 404 | `index.html` 被缓存成旧版，而它引用的旧 hash 资源已被清理。nginx 已对 `index.html` 配 `no-cache`，仍出现的话检查中间层缓存 |
 
-deploy job 只在 `main` 上跑。你在 PR 上看到 `deploy` 显示为跳过，那是正常的。
+PR 与部署是两个独立的 workflow：PR 上跑 `CI`，合并到 `main` 才跑 `Deploy`。
+所以 PR 的检查列表里不会出现任何与部署有关的条目。
 
 ## 五、这些你不用管
 
