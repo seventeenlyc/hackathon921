@@ -1,0 +1,39 @@
+{
+  "name": "inert",
+  "version": "1.0.0-beta.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "parcel public/index.pug public/*.txt public/*.xml -d ./dev",
+    "build": "parcel build public/index.pug public/*.txt public/*.xml -d ./dist",
+    "test": "npm run build && node tests/texture-assets.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CorentinTh/inert.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CorentinTh/inert/issues"
+  },
+  "browserslist": [
+    "last 1 Chrome versions"
+  ],
+  "homepage": "https://github.com/CorentinTh/inert#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "less": "^3.11.1",
+    "parcel-bundler": "^1.12.4",
+    "pug": "^3.0.0",
+    "typescript": "^3.8.3"
+  },
+  "overrides": {
+    "deasync": "0.1.31",
+    "htmlnano": "0.2.5"
+  },
+  "engines": {
+    "node": ">=14 <18"
+  }
+}
