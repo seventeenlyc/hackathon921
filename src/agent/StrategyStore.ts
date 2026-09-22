@@ -99,6 +99,23 @@ export class StrategyStore {
         return this.current;
     }
 
+    /**
+     * Apply the opening prompt at the moment the player presses Start, instead
+     * of waiting for the first PLANNING notification.
+     *
+     * PLANNING locks the queue before wave 1 too, so this is usually a no-op
+     * after that transition. Doing it here makes "apply the strategy, then
+     * begin" explicit and means wave 1 can never plan with the previous/empty
+     * version if that notification is missed (stale HMR module instance, a
+     * listener that throws, etc.). Returns null when there is no prompt to run
+     * with, so the caller can refuse to start.
+     */
+    activateForRun(): StrategyVersion | null {
+        const pending = this.queuedVersion ? this.queuedVersion.text : this.current.text;
+        if (pending.trim() === '') return null;
+        return this.lock();
+    }
+
     private notify() {
         this.listeners.forEach(listener => listener(this));
     }
