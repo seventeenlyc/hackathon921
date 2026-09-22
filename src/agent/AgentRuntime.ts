@@ -1,6 +1,7 @@
 import {ActionResult, GameSnapshot} from './types';
 import {Planner} from './GameLoop';
 import {StrategyStore} from './StrategyStore';
+import {t} from '../i18n';
 
 /**
  * The AI player's decision loop (issue #25).
@@ -90,7 +91,7 @@ export class AgentRuntime implements Planner {
         try {
             state = this.actions.getState();
         } catch (error) {
-            this.onError('Could not read the game state; skipping this decision round.');
+            this.onError(t('agent.stateReadFailed'));
             return;
         }
 
@@ -99,7 +100,7 @@ export class AgentRuntime implements Planner {
         const wave = state.wave;
 
         if (!strategy.trim()) {
-            this.onError('No strategy set; the AI will not act this wave.');
+            this.onError(t('agent.noStrategy'));
             return;
         }
 
@@ -123,8 +124,8 @@ export class AgentRuntime implements Planner {
         } catch (error) {
             const aborted = error && (error as {name?: string}).name === 'AbortError';
             this.onError(aborted
-                ? `The agent proxy did not answer within ${this.timeoutMs}ms; continuing without new orders.`
-                : 'Could not reach the agent proxy; continuing without new orders.');
+                ? t('agent.timeout', {ms: this.timeoutMs})
+                : t('agent.unreachable'));
             return;
         } finally {
             clearTimeout(timeout);
@@ -134,7 +135,7 @@ export class AgentRuntime implements Planner {
             // The proxy returns a readable reason (e.g. PROVIDER_NOT_CONFIGURED);
             // prefer it over a bare status code so the player can act on it.
             const detail = await this.readErrorMessage(response);
-            this.onError(detail || `The agent proxy returned HTTP ${response.status}; continuing without new orders.`);
+            this.onError(detail || t('agent.httpError', {status: response.status}));
             return;
         }
 
@@ -142,14 +143,14 @@ export class AgentRuntime implements Planner {
         try {
             payload = await response.json();
         } catch (error) {
-            this.onError('The agent proxy returned an unreadable response.');
+            this.onError(t('agent.unreadable'));
             return;
         }
 
         if (!payload || payload.ok !== true || !Array.isArray(payload.actions)) {
             const message = payload && payload.message
                 ? payload.message
-                : 'The agent proxy rejected the decision request.';
+                : t('agent.rejected');
             this.onError(message);
             return;
         }
@@ -198,7 +199,7 @@ export class AgentRuntime implements Planner {
             action: String(action.name),
             detail: '',
             ok: false,
-            message: `Ignored unknown action "${String(action.name)}".`,
+            message: t('agent.unknownAction', {name: String(action.name)}),
         });
     }
 }

@@ -1,4 +1,5 @@
 import type {DecisionEntry} from './agent/AgentRuntime';
+import {t} from './i18n';
 
 /**
  * Read-only view of what the AI actually did (docs/USER_STORY.md「AI 行为的可读性」).
@@ -19,7 +20,7 @@ export class DecisionLog {
 
     add(entry: DecisionEntry) {
         const detail = entry.detail ? `${entry.detail} — ` : '';
-        this.append(`Wave ${entry.wave} · ${entry.action}: ${detail}${entry.message}`, entry.ok ? 'ok' : 'rejected');
+        this.append(t('decision.entry', {wave: entry.wave, action: entry.action, detail, message: entry.message}), entry.ok ? 'ok' : 'rejected');
     }
 
     error(message: string) {

@@ -12,6 +12,7 @@ import {textureManager} from "./tools/TextureManager";
 import {gameLoop, GameState, nextSpeed} from "./agent/GameLoop";
 import {otherMode, playMode, switchPlayMode} from "./PlayMode";
 import {requestSpawnCount, spawnSettings} from "./SpawnQueue";
+import {applyStaticTranslations, onLangChange, t, toggleLang} from "./i18n";
 
 /** Summary shown on the settlement screen after the base falls. */
 export interface RunStats {
@@ -46,6 +47,8 @@ class InterfaceManager {
     private speedElement = document.getElementById('speed')!;
     private gameOverElement = document.getElementById('game-over')!;
     public snackbar = new Snackbar();
+    /** Kept so the tower stat rows can be re-rendered when the language changes. */
+    private lastTower: Tower | null = null;
 
     constructor() {
         this.versionElement.textContent = 'v' + version;
@@ -61,6 +64,11 @@ class InterfaceManager {
 
         document.getElementById('pause')!.onclick = () => gameLoop.pause();
         document.getElementById('resume')!.onclick = () => gameLoop.resume();
+        // Language toggle: static markup is re-filled, dynamic text re-rendered.
+        document.getElementById('lang')!.onclick = () => {
+            toggleLang();
+            applyStaticTranslations();
+        };
         this.speedElement.onclick = () => {
             gameLoop.setSpeed(nextSpeed(gameLoop.speed));
             this.updateSpeedLabel();
@@ -81,14 +89,23 @@ class InterfaceManager {
         // it is hidden and never populated (docs/PRODUCT_CONCEPT.md §5).
         if (playMode === 'human') this.setTowers();
         this.setupModeButton();
+
+        onLangChange(() => {
+            this.setState(gameLoop.state);
+            this.updateSpeedLabel();
+            this.renderSpawners();
+            this.setupModeButton();
+            if (this.lastTower) this.showTowerStats(this.lastTower);
+        });
+        applyStaticTranslations();
     }
 
     /** One button that restarts the game in the other play mode. */
     private setupModeButton() {
         const button = document.getElementById('mode') as HTMLButtonElement;
         const target = otherMode(playMode);
-        button.textContent = `Switch to ${target} play`;
-        button.title = `Restart the game in ${target} mode`;
+        button.textContent = target === 'human' ? t('mode.toHuman') : t('mode.toAi');
+        button.title = target === 'human' ? t('mode.toHumanTitle') : t('mode.toAiTitle');
         button.onclick = () => switchPlayMode(target);
     }
 
@@ -106,12 +123,11 @@ class InterfaceManager {
     }
 
     setState(state: GameState) {
-        // `idle` is the not-started state shown before the player presses Start.
-        this.stateElement.textContent = state === 'idle' ? 'NOT STARTED' : state.toUpperCase();
+        this.stateElement.textContent = t('state.' + state);
     }
 
     updateSpeedLabel() {
-        this.speedElement.textContent = `Speed x${gameLoop.speed}`;
+        this.speedElement.textContent = t('speed.label', {speed: gameLoop.speed});
     }
 
     renderSpawners() {
@@ -121,7 +137,7 @@ class InterfaceManager {
         });
 
         setText('spawner-status', spawnSettings.isPending
-            ? `${spawnSettings.applied} → ${spawnSettings.requested} at next wave`
+            ? t('spawner.pending', {applied: spawnSettings.applied, requested: spawnSettings.requested})
             : '');
     }
 
@@ -160,6 +176,7 @@ class InterfaceManager {
     }
 
     private showTowerStats(tower: Tower) {
+        this.lastTower = tower;
 
         const damage = typeof tower.damage === 'object' ?
             `${tower.damage.min} - ${tower.damage.max}` :
@@ -176,12 +193,12 @@ class InterfaceManager {
             <div class="title">${tower.name}</div>
             <div class="description">${tower.description}</div>
             <table class="table5050">
-                <tr><td>Cost: </td><td class="accent">${tower.cost} ¢</td></tr>
-                <tr><td>Aim radius:</td><td class="accent">${tower.aimRadius}</td></tr>
+                <tr><td>${t('tower.cost')}</td><td class="accent">${tower.cost} ¢</td></tr>
+                <tr><td>${t('tower.aimRadius')}</td><td class="accent">${tower.aimRadius}</td></tr>
                 ${typeof tower.damage === 'number' && tower.damage > 0 ? `
-                    <tr><td>Damage:</td><td class="accent">${damage}</td></tr>
-                    <tr><td>Reload:</td><td class="accent">${reloadDuration.toFixed(3)} s</td></tr>
-                    <tr><td title="Damage Per Second">DPS:</td><td class="accent">${dps}</td></tr>
+                    <tr><td>${t('tower.damage')}</td><td class="accent">${damage}</td></tr>
+                    <tr><td>${t('tower.reload')}</td><td class="accent">${reloadDuration.toFixed(3)} s</td></tr>
+                    <tr><td title="Damage Per Second">${t('tower.dps')}</td><td class="accent">${dps}</td></tr>
                 ` : ''}
             </table>
         `

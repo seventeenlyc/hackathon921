@@ -9,6 +9,7 @@ import {
 import type { LeaderboardEntry } from './LeaderboardStore';
 import { fetchSharedLeaderboard, syncReachedWave } from './LeaderboardClient';
 import type { RemoteLeaderboard } from './LeaderboardClient';
+import {onLangChange, t} from '../i18n';
 
 const TOP_N = 10;
 
@@ -27,11 +28,11 @@ export class UsernameGate {
         // 不用 "Start" 以免被误认为开始游戏。
         this.overlay.innerHTML =
             '<form class="username-card">' +
-                '<h2>Welcome!</h2>' +
-                '<p>Pick a username for the leaderboard.</p>' +
-                '<input type="text" maxlength="16" placeholder="Your name"/>' +
+                '<h2>' + t('gate.welcome') + '</h2>' +
+                '<p>' + t('gate.prompt') + '</p>' +
+                '<input type="text" maxlength="16" placeholder="' + t('gate.placeholder') + '"/>' +
                 '<p class="error"></p>' +
-                '<button type="submit">Continue</button>' +
+                '<button type="submit">' + t('gate.continue') + '</button>' +
             '</form>';
         this.input = this.overlay.querySelector('input') as HTMLInputElement;
         this.errorEl = this.overlay.querySelector('.error') as HTMLElement;
@@ -43,7 +44,7 @@ export class UsernameGate {
     private handleSubmit() {
         const name = sanitizeUsername(this.input.value);
         if (!name) {
-            this.errorEl.textContent = 'Invalid name (1-16 chars, letters/digits/_/-).';
+            this.errorEl.textContent = t('gate.invalid');
             return;
         }
         writeUsernameCookie(name);
@@ -77,7 +78,7 @@ class LeaderboardPanel {
         this.root.className = 'leaderboard-panel';
         const title = document.createElement('div');
         title.className = 'leaderboard-title';
-        title.textContent = 'Leaderboard';
+        title.textContent = t('lb.title');
         this.statusEl = document.createElement('div');
         this.statusEl.className = 'leaderboard-status';
         this.listEl = document.createElement('ol');
@@ -90,6 +91,8 @@ class LeaderboardPanel {
         this.root.appendChild(this.footerEl);
         document.getElementById('inert')!.appendChild(this.root);
         this.render();
+        // The panel is text-only, so a language switch just re-renders it.
+        onLangChange(() => this.render());
         void this.refreshRemote();
     }
 
@@ -124,7 +127,7 @@ class LeaderboardPanel {
         if (top.length === 0) {
             const li = document.createElement('li');
             li.className = 'empty';
-            li.textContent = 'No scores yet - play a run!';
+            li.textContent = t('lb.empty');
             this.listEl.appendChild(li);
         }
         const ownLower = this.username ? this.username.toLowerCase() : null;
@@ -140,7 +143,7 @@ class LeaderboardPanel {
             nameSpan.textContent = e.username;
             const waveSpan = document.createElement('span');
             waveSpan.className = 'wave';
-            waveSpan.textContent = 'Wave ' + e.wave;
+            waveSpan.textContent = t('lb.wave', {wave: e.wave});
             li.appendChild(rankSpan);
             li.appendChild(nameSpan);
             li.appendChild(waveSpan);
@@ -148,10 +151,10 @@ class LeaderboardPanel {
         });
 
         if (shared) {
-            this.statusEl.textContent = 'Shared';
+            this.statusEl.textContent = t('lb.shared');
             this.statusEl.classList.remove('offline');
         } else if (this.remoteFailed) {
-            this.statusEl.textContent = 'Offline - local only';
+            this.statusEl.textContent = t('lb.offline');
             this.statusEl.classList.add('offline');
         } else {
             this.statusEl.textContent = '';
@@ -167,7 +170,8 @@ class LeaderboardPanel {
                 const idx = entries.findIndex(e => e.username.toLowerCase() === (this.username as string).toLowerCase());
                 rank = idx >= 0 ? idx + 1 : null;
             }
-            this.footerEl.textContent = 'You: ' + this.username + (rank != null ? ' - #' + rank : ' (no run yet)');
+            this.footerEl.textContent = t('lb.you', {name: this.username})
+                + (rank != null ? t('lb.rank', {rank}) : t('lb.noRun'));
         } else {
             this.footerEl.textContent = '';
         }
