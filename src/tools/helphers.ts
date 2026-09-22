@@ -12,8 +12,8 @@ const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min
 const randIndex = (array: any[]) => Math.floor(Math.random() * array.length);
 
 const asyncSleep = (delayMs: number) => {
-    return new Promise(resolve => {
-        const timer = new Timer(resolve, delayMs);
+    return new Promise<void>(resolve => {
+        const timer = new Timer(() => resolve(), delayMs);
         controls.on('focusout', () => timer.pause())
         controls.on('focusin', () => timer.resume())
 
@@ -27,7 +27,7 @@ const asyncSleepIntervalSecond = (delaySec: number, callback: (remainingSeconds:
 }) => {
     callback(delaySec);
 
-    return new Promise(resolve => {
+    return new Promise<void>(resolve => {
         const interval = setInterval(() => {
             if (controls.tabHasFocus() && --delaySec === 0) {
                 resolve()

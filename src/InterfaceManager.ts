@@ -103,13 +103,19 @@ class InterfaceManager {
             `${(tower.damage.min / reloadDuration).toFixed(0)} - ${(tower.damage.max / reloadDuration).toFixed(0)}` :
             tower.damage / reloadDuration;
 
+        // `damage` is either a number or a {min,max} range. The old bare
+        // `tower.damage > 0` was always false for the range case (object > number),
+        // so the typeof guard keeps the rendered output identical while satisfying
+        // TS 5's stricter relational-operator check. Range-damage towers (laser)
+        // therefore still show no damage rows — a pre-existing bug this migration
+        // deliberately does not change.
         this.towersStatsElement.innerHTML = `
             <div class="title">${tower.name}</div>
             <div class="description">${tower.description}</div>
             <table class="table5050">
                 <tr><td>Cost: </td><td class="accent">${tower.cost} ¢</td></tr>
                 <tr><td>Aim radius:</td><td class="accent">${tower.aimRadius}</td></tr>
-                ${tower.damage > 0 ? `
+                ${typeof tower.damage === 'number' && tower.damage > 0 ? `
                     <tr><td>Damage:</td><td class="accent">${damage}</td></tr>
                     <tr><td>Reload:</td><td class="accent">${reloadDuration.toFixed(3)} s</td></tr>
                     <tr><td title="Damage Per Second">DPS:</td><td class="accent">${dps}</td></tr>

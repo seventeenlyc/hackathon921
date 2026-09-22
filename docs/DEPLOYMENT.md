@@ -44,7 +44,7 @@ curl -s https://prompt-defense.crowntime.cn/version.txt
 
 ```sh
 npm ci
-npm run test        # == parcel build + tests/texture-assets.test.js，构建和贴图校验一步两用
+npm run test        # == vite build + tests/texture-assets.test.js，构建和贴图校验一步两用
 npx tsc --noEmit
 ```
 
@@ -53,16 +53,12 @@ npx tsc --noEmit
 **注意 `npm run lint` 不存在** —— `AGENTS.md` 提到了它，但仓库里目前没有这个 script。
 别浪费时间找。
 
-### `npm ci` 报 `EBADENGINE` 是正常的
+### Node 版本
 
-那是**警告不是错误**，可以无视。
+`package.json` 的 `engines` 是 `>=20.19.0`（Vite 8 的下限），CI 用 Node 22，满足要求。
 
-`package.json` 里的 `engines: ">=14 <18"` 是上游 inert 留下的过时声明。它描述的是
-**Windows 上缺 VS C++ Build Tools** 时 `deasync` 装不上的情况（见 `.NODE_ENV_README.md`），
-不是跨平台约束 —— Linux 和 macOS 自带编译工具链。
-
-Node 22 下 `npm ci` / `build` / `test` / `tsc --noEmit` 全部实测通过，CI 用的就是 Node 22。
-这个字段的清理属于 issue #1（迁移到 Vite）的范围。
+迁移到 Vite 之前上游遗留的 `engines: ">=14 <18"` 声明、`overrides` 里的 `deasync` 固定，
+以及配套的 Node 16 虚拟环境说明，都已随 issue #1 一并删除 —— 本地和 CI 都不再需要它们。
 
 ## 三、写代码时的约束
 
@@ -114,22 +110,26 @@ Node 22 下 `npm ci` / `build` / `test` / `tsc --noEmit` 全部实测通过，CI
 另外每个行为变更都要有对应测试，覆盖正向行为、失败路径和状态流转。
 **涉及 A* 路径的改动（建塔、卖塔）必须测路径重算** —— 这是本项目已知最容易漏的一类缺陷。
 
-### 6. 当前是 Parcel v1，#1 会迁到 Vite
+### 6. 构建是 Vite
 
-现状：`parcel-bundler@1.12` + `pug` + `less` + `typescript@3.8`，2020 年的工具链。
-入口是 `public/index.pug`，不是 `index.html`。
+工具链是 `vite@8` + `less` + `typescript@5`，入口是仓库根目录的 `index.html`。
+`npm run dev` 起 dev server（http://localhost:5173/），`npm run build` 输出到 `dist/`，
+`npm run preview` 在本地预览构建产物。
 
-（`AGENTS.md` 里写的「Vite」与现状冲突，这是已知的文档偏差，issue #1 在跟踪。）
+样式（`src/styles/styles.less`）和贴图（`src/assets/entities/`）都从 JS import，由 Vite
+处理并加内容哈希。`src/tools/texturePaths.ts` 的 import 是静态的，**贴图改名或缺失会让构建
+直接失败**，而不是变成运行时 404。`public/` 只放原样拷贝的静态文件（图标、
+`manifest.webmanifest`、`humans.txt` 等）。
 
-对你的影响：**迁移完成后部署流程不变**。入口始终是 `npm run build` → `dist/`，
-Vite 的默认输出目录同样是 `dist`，workflow 一个字都不用改。
+迁移（issue #1）没有改变部署契约：入口仍是 `npm run build` → `dist/`，
+`deploy.yml` 一个字都没改。
 
 ## 四、CI 挂了怎么办
 
 | 现象 | 多半是 |
 |---|---|
-| `npm run test` 失败 | 构建报错，或贴图校验没过。`tests/texture-assets.test.js` 检查三件事：11 个贴图源文件存在、3 个渲染器（`Enemy.ts` / `Tower.ts` / `Rock.ts`）确实走 `textureManager.draw`、每个贴图都出现在 `dist/` 里。**贴图列表是硬编码的**，增删贴图要同步改这个测试 |
-| `npx tsc --noEmit` 失败 | 类型错误。注意是 TS 3.8，比你习惯的语法旧 |
+| `npm run test` 失败 | 构建报错，或贴图校验没过。`tests/texture-assets.test.js` 检查三件事：11 个贴图源文件存在（`src/assets/entities/`）、3 个渲染器（`Enemy.ts` / `Tower.ts` / `Rock.ts`）确实走 `textureManager.draw`、每个贴图都出现在 `dist/` 里（Vite 输出到 `dist/assets/`，测试递归查找）。**贴图列表是硬编码的**，增删贴图要同步改这个测试 |
+| `npx tsc --noEmit` 失败 | 类型错误（TypeScript 5）。`tsc` 只做类型检查，转译由 Vite/esbuild 负责 |
 | `npm ci` 失败 | 依赖变更没有连同 lockfile 一起提交。**lockfile 是真值来源** |
 | `Verify deployment` 失败但站点其实是好的 | GitHub runner 在境外，访问国内服务器可能超时。已带 5 次重试。先本地 `curl` 确认；本地正常就是网络问题，不是部署失败 |
 | 页面白屏、控制台报资源 404 | `index.html` 被缓存成旧版，而它引用的旧 hash 资源已被清理。nginx 已对 `index.html` 配 `no-cache`，仍出现的话检查中间层缓存 |

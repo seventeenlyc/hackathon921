@@ -4,8 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "parcel public/index.pug public/*.txt public/*.xml -d ./dev",
-    "build": "parcel build public/index.pug public/*.txt public/*.xml -d ./dist",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "npm run build && node tests/texture-assets.test.js && npm run test:agent",
     "test:agent": "tsc -p tsconfig.test.json && node tests/agent/game-actions.test.js"
   },
@@ -14,27 +15,18 @@
     "url": "git+https://github.com/CorentinTh/inert.git"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Corentin Thomasset",
+  "license": "GPL-3.0",
   "bugs": {
     "url": "https://github.com/CorentinTh/inert/issues"
   },
-  "browserslist": [
-    "last 1 Chrome versions"
-  ],
   "homepage": "https://github.com/CorentinTh/inert#readme",
-  "dependencies": {},
   "devDependencies": {
-    "less": "^3.11.1",
-    "parcel-bundler": "^1.12.4",
-    "pug": "^3.0.0",
-    "typescript": "^3.8.3"
-  },
-  "overrides": {
-    "deasync": "0.1.31",
-    "htmlnano": "0.2.5"
+    "less": "^4.9.1",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.0"
   },
   "engines": {
-    "node": ">=14 <18"
+    "node": ">=20.19.0"
   }
 }
