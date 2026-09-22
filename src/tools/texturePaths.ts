@@ -16,6 +16,7 @@ import laserTower from '../assets/entities/towers/laser.png';
 import slowTower from '../assets/entities/towers/slow.png';
 import sniperTower from '../assets/entities/towers/sniper.png';
 import homeBase from '../assets/entities/home/home.png';
+import enemyBase from '../assets/entities/home/enermy.png';
 import rockTerrain from '../assets/entities/terrain/rock.png';
 
 export const texturePaths = {
@@ -34,6 +35,7 @@ export const texturePaths = {
         laser: laserTower
     },
     home: homeBase,
+    enemy: enemyBase,
     terrain: {
         rock: rockTerrain
     }

@@ -10,7 +10,7 @@ export class Base extends GridRenderable {
     private colors: { primary: string; secondary: string };
     public traversable = true;
     private isHome: boolean;
-    private readonly texturePath = texturePaths.home;
+    private texturePath: string;
     private maxLife: number = 15;
     private life: number = this.maxLife;
     protected healthBar = {
@@ -24,28 +24,15 @@ export class Base extends GridRenderable {
         super(x, y, width);
         this.colors = isHome ? colors.homeBase : colors.enemyBase;
         this.isHome = isHome;
+        this.texturePath = isHome ? texturePaths.home : texturePaths.enemy;
     }
 
     draw(ctx: CanvasRenderingContext2D): void {
-        if (this.isHome) {
-            textureManager.draw(ctx, this.texturePath, this.center.x, this.center.y, this.width, this.width);
-        } else {
-            this.drawColoredBase(ctx);
-        }
+        textureManager.draw(ctx, this.texturePath, this.center.x, this.center.y, this.width, this.width);
 
         if (this.isHome && this.life < this.maxLife) {
             this.drawHealthBar(ctx);
         }
-    }
-
-    private drawColoredBase(ctx: CanvasRenderingContext2D) {
-        ctx.fillStyle = this.colors.primary
-        ctx.strokeStyle = this.colors.secondary
-
-        ctx.lineWidth = 8;
-        drawRoundedSquare(ctx, this.x + 5, this.y + 5, this.width - 10, this.width - 10, 5);
-        ctx.stroke();
-        ctx.fill();
     }
 
     handleDamage() {

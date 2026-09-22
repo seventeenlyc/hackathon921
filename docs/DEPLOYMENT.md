@@ -132,7 +132,7 @@ npm run test:server  # 后端 API 测试：tsc 编译后由 Node 内置 test run
 
 | 现象 | 多半是 |
 |---|---|
-| `npm run test` 失败 | 构建报错，或贴图校验没过。`tests/texture-assets.test.js` 检查三件事：12 个贴图源文件存在（`src/assets/entities/`）、4 个渲染器（`Enemy.ts` / `Tower.ts` / `Base.ts` / `Rock.ts`）确实走 `textureManager.draw`、每个贴图都出现在 `dist/` 里（Vite 输出到 `dist/assets/`，测试递归查找）。**贴图列表是硬编码的**，增删贴图要同步改这个测试 |
+| `npm run test` 失败 | 构建报错，或贴图校验没过。`tests/texture-assets.test.js` 检查三件事：13 个贴图源文件存在（`src/assets/entities/`）、4 个渲染器（`Enemy.ts` / `Tower.ts` / `Base.ts` / `Rock.ts`）确实走 `textureManager.draw`、每个贴图都出现在 `dist/` 里（Vite 输出到 `dist/assets/`，测试递归查找）。**贴图列表是硬编码的**，增删贴图要同步改这个测试 |
 | `npx tsc --noEmit` 失败 | 类型错误（TypeScript 5）。`tsc` 只做类型检查，转译由 Vite/esbuild 负责 |
 | `npm ci` 失败 | 依赖变更没有连同 lockfile 一起提交。**lockfile 是真值来源** |
 | `Verify deployment` 失败但站点其实是好的 | GitHub runner 在境外，访问国内服务器可能超时。已带 5 次重试。先本地 `curl` 确认；本地正常就是网络问题，不是部署失败 |

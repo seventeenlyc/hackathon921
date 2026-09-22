@@ -16,6 +16,7 @@ const textureFiles = [
   'src/assets/entities/towers/sniper.png',
   'src/assets/entities/towers/laser.png',
   'src/assets/entities/home/home.png',
+  'src/assets/entities/home/enermy.png',
   'src/assets/entities/terrain/rock.png'
 ];
 
