@@ -14,10 +14,11 @@ const AGENT_DECIDE_PATH = '/api/agent/decide';
 const GAME_STREAM_PATH = /^\/api\/games\/([^/]+)\/stream$/;
 
 /**
- * 渲染快照的推送频率。先按 10 次/秒起步（docs/PRODUCT_CONCEPT.md §5），由浏览器
- * 按自身刷新率插值。慢连接只保留最新画面：上一次 write 未排空就跳过这一帧。
+ * 渲染快照的推送频率。浏览器按自身刷新率在相邻两帧之间插值（docs/PRODUCT_CONCEPT.md
+ * §5），因此推送率决定的是插值跨度与显示延迟：20 次/秒把跨度压到 50ms，肉眼无滞后。
+ * 慢连接只保留最新画面：上一次 write 未排空就跳过这一帧。
  */
-const STREAM_INTERVAL_MS = 100;
+const STREAM_INTERVAL_MS = 50;
 
 function writeJson(res: any, status: number, body: any): void {
     res.statusCode = status;
