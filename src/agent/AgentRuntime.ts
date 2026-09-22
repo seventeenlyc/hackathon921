@@ -42,6 +42,10 @@ export interface AgentRuntimeOptions {
     onDecision?: (entry: DecisionEntry) => void;
     onError?: (message: string) => void;
     maxActions?: number;
+    /** Supplies the session token; the server requires a valid session (issue #22). */
+    getToken?: () => string | null;
+    /** Client-side guard so a hung request cannot freeze PLANNING forever. */
+    timeoutMs?: number;
 }
 
 interface AgentAction {
@@ -51,6 +55,7 @@ interface AgentAction {
 
 const DEFAULT_ENDPOINT = '/api/agent/decide';
 const DEFAULT_MAX_ACTIONS = 8;
+const DEFAULT_TIMEOUT_MS = 12000;
 
 export class AgentRuntime implements Planner {
     private readonly actions: ActionPort;
@@ -60,6 +65,8 @@ export class AgentRuntime implements Planner {
     private readonly onDecision: (entry: DecisionEntry) => void;
     private readonly onError: (message: string) => void;
     private readonly maxActions: number;
+    private readonly getToken: () => string | null;
+    private readonly timeoutMs: number;
 
     constructor(options: AgentRuntimeOptions) {
         this.actions = options.actions;
@@ -69,6 +76,8 @@ export class AgentRuntime implements Planner {
         this.onDecision = options.onDecision || (() => undefined);
         this.onError = options.onError || (() => undefined);
         this.maxActions = options.maxActions || DEFAULT_MAX_ACTIONS;
+        this.getToken = options.getToken || (() => null);
+        this.timeoutMs = options.timeoutMs || DEFAULT_TIMEOUT_MS;
     }
 
     async plan(): Promise<void> {
@@ -93,16 +102,31 @@ export class AgentRuntime implements Planner {
             return;
         }
 
+        const headers: Record<string, string> = {'content-type': 'application/json'};
+        const token = this.getToken();
+        if (token) headers.authorization = `Bearer ${token}`;
+
+        // Without this, a provider or proxy that never answers would leave the
+        // loop frozen in PLANNING (holdForPlanning awaits the planner).
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+
         let response: Response;
         try {
             response = await this.fetchImpl(this.endpoint, {
                 method: 'POST',
-                headers: {'content-type': 'application/json'},
+                headers,
                 body: JSON.stringify({strategy, state}),
+                signal: controller.signal,
             });
         } catch (error) {
-            this.onError('Could not reach the agent proxy; continuing without new orders.');
+            const aborted = error && (error as {name?: string}).name === 'AbortError';
+            this.onError(aborted
+                ? `The agent proxy did not answer within ${this.timeoutMs}ms; continuing without new orders.`
+                : 'Could not reach the agent proxy; continuing without new orders.');
             return;
+        } finally {
+            clearTimeout(timeout);
         }
 
         if (!response.ok) {

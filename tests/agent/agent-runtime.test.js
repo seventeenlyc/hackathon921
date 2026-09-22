@@ -273,6 +273,43 @@ function makeStore(text = 'hold the base') {
         assert.strictEqual(store.queued().text, 'B');
     });
 
+    await test('attaches the session token when one is available', async () => {
+        let sentToken = null;
+        const runtime = new AgentRuntime({
+            actions: new FakeActions(),
+            store: makeStore(),
+            getToken: () => 'session-token-123',
+            fetchImpl: async (url, options) => {
+                sentToken = options.headers.authorization;
+                return jsonResponse(200, {ok: true, actions: []});
+            },
+        });
+
+        await runtime.plan();
+        assert.strictEqual(sentToken, 'Bearer session-token-123');
+    });
+
+    await test('fail-closed: a hung request times out instead of freezing PLANNING', async () => {
+        const errors = [];
+        const runtime = new AgentRuntime({
+            actions: new FakeActions(),
+            store: makeStore(),
+            timeoutMs: 20,
+            fetchImpl: (url, options) => new Promise((resolve, reject) => {
+                options.signal.addEventListener('abort', () => {
+                    const error = new Error('aborted');
+                    error.name = 'AbortError';
+                    reject(error);
+                });
+            }),
+            onError: message => errors.push(message),
+        });
+
+        await runtime.plan();
+        assert.strictEqual(errors.length, 1);
+        assert.ok(errors[0].includes('did not answer within 20ms'));
+    });
+
     console.log('All AgentRuntime tests passed.');
 })().catch(error => {
     process.exitCode = 1;

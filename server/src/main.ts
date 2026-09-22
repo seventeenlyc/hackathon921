@@ -1,4 +1,4 @@
-// 排行榜 API 入口：绑定 127.0.0.1 上的高位端口，由 nginx 反代 /api/（见 deploy/README.md）。
+// 排行榜 API + LLM 代理入口：绑定 127.0.0.1 上的高位端口，由 nginx 反代 /api/（见 deploy/README.md）。
 //
 // 只用 Node 内置模块：node:http / node:sqlite / node:crypto。零运行时 npm 依赖。
 //
@@ -21,6 +21,13 @@ function readSecret(): string {
     return String(process.env.PD_SESSION_SECRET || '').trim();
 }
 
+/** LLM 代理的 provider 密钥。与会话密钥同样优先从文件读，避免写进 unit 文件。 */
+function readDeepseekKey(): string {
+    const file = process.env.DEEPSEEK_API_KEY_FILE;
+    if (file && existsSync(file)) return readFileSync(file, 'utf8').trim();
+    return String(process.env.DEEPSEEK_API_KEY || '').trim();
+}
+
 /** 解析 current-server 符号链接的真实路径，作为「当前运行的代码版本」。 */
 function resolveVersion(link: string): string {
     if (!link || !existsSync(link)) return '';
@@ -35,6 +42,9 @@ function main(): void {
     const port = Number(process.env.PD_PORT || '8781');
     const dbPath = String(process.env.PD_DB_PATH || './leaderboard.sqlite3');
     const currentLink = String(process.env.PD_CURRENT_LINK || '');
+    // LLM 代理的 provider 密钥（issue #22）。缺失时服务照常起，只是
+    // /api/agent/decide 返回 503 —— 排行榜不因缺 key 而不可用。
+    const deepseekApiKey = readDeepseekKey();
 
     const secret = readSecret();
     if (!secret) {
@@ -52,10 +62,14 @@ function main(): void {
         secret,
         now: () => Date.now(),
         newRunId: () => randomBytes(16).toString('hex'),
+        agent: { apiKey: deepseekApiKey },
     });
 
     server.listen(port, '127.0.0.1', () => {
         console.log(`排行榜 API 监听 127.0.0.1:${port}`);
+        console.log(deepseekApiKey
+            ? 'LLM 代理已配置（/api/agent/decide 可用）'
+            : 'LLM 代理未配置：缺少 DEEPSEEK_API_KEY，/api/agent/decide 将返回 503');
     });
 
     if (currentLink) {
