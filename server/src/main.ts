@@ -11,6 +11,7 @@ import { randomBytes } from 'node:crypto';
 import { openDatabase } from './db';
 import { createApiServer } from './server';
 import { LeaderboardStore } from './store';
+import { DEFAULT_PROVIDER_BASE_URL, DEFAULT_PROVIDER_MODEL } from './agent';
 
 const VERSION_CHECK_INTERVAL_MS = 3000;
 const FORCE_EXIT_MS = 5000;
@@ -26,6 +27,18 @@ function readDeepseekKey(): string {
     const file = process.env.DEEPSEEK_API_KEY_FILE;
     if (file && existsSync(file)) return readFileSync(file, 'utf8').trim();
     return String(process.env.DEEPSEEK_API_KEY || '').trim();
+}
+
+/**
+ * provider 端点与模型名。它们不是密钥，所以允许直接写进 systemd unit 的
+ * Environment=（密钥必须留在只有服务用户可读的文件里）。留空 = 用 agent.ts 的默认值。
+ */
+function readProviderBaseUrl(): string {
+    return String(process.env.DEEPSEEK_BASE_URL || '').trim();
+}
+
+function readProviderModel(): string {
+    return String(process.env.DEEPSEEK_MODEL || '').trim();
 }
 
 /** 解析 current-server 符号链接的真实路径，作为「当前运行的代码版本」。 */
@@ -45,6 +58,9 @@ function main(): void {
     // LLM 代理的 provider 密钥（issue #22）。缺失时服务照常起，只是
     // /api/agent/decide 返回 503 —— 排行榜不因缺 key 而不可用。
     const deepseekApiKey = readDeepseekKey();
+    // provider 端点与模型：留空则沿用 DeepSeek 官方端点，换 provider 不需要改代码。
+    const providerBaseUrl = readProviderBaseUrl();
+    const providerModel = readProviderModel();
 
     const secret = readSecret();
     if (!secret) {
@@ -62,13 +78,13 @@ function main(): void {
         secret,
         now: () => Date.now(),
         newRunId: () => randomBytes(16).toString('hex'),
-        agent: { apiKey: deepseekApiKey },
+        agent: { apiKey: deepseekApiKey, baseUrl: providerBaseUrl, model: providerModel },
     });
 
     server.listen(port, '127.0.0.1', () => {
         console.log(`排行榜 API 监听 127.0.0.1:${port}`);
         console.log(deepseekApiKey
-            ? 'LLM 代理已配置（/api/agent/decide 可用）'
+            ? `LLM 代理已配置（${providerBaseUrl || DEFAULT_PROVIDER_BASE_URL} / ${providerModel || DEFAULT_PROVIDER_MODEL}）`
             : 'LLM 代理未配置：缺少 DEEPSEEK_API_KEY，/api/agent/decide 将返回 503');
     });
 
