@@ -20,7 +20,7 @@ import {strategyStore} from "./agent/StrategyStore";
 import {AgentRuntime} from "./agent/AgentRuntime";
 import {formatSnapshot} from "./agent/snapshot";
 import {decisionLog} from "./DecisionLog";
-import {queueStrategy} from "./StrategyQueue";
+import {queueStrategy, startRun} from "./StrategyQueue";
 
 class Game {
     private updateInterval: number = -1;
@@ -55,7 +55,10 @@ class Game {
     start() {
         this.updateInterval = setInterval(this.updateLoop.bind(this), 1000 / fps);
         requestAnimationFrame(this.drawLoop.bind(this));
-        waveManager.start();
+        // The run itself is not started here: the game opens in IDLE so the player
+        // can write the opening prompt first. `promptDefense.start()` (or the
+        // strategy panel's Start button) begins the run, and the wave manager
+        // opens a PLANNING window before wave 1.
     }
 
     updateLoop() {
@@ -126,13 +129,15 @@ export const game = new Game();
  *
  *   promptDefense.actions.getState()
  *   promptDefense.actions.buildTower('canon', 10, 10)
- *   promptDefense.pause(); promptDefense.resume(); promptDefense.setSpeed(2)
+ *   promptDefense.start(); promptDefense.pause(); promptDefense.resume()
+ *   promptDefense.setSpeed(2)
  */
 (window as any).promptDefense = {
     actions,
     loop: gameLoop,
     strategy: strategyStore,
     agent: agentRuntime,
+    start: () => startRun(),
     pause: () => gameLoop.pause(),
     resume: () => gameLoop.resume(),
     setSpeed: (speed: GameSpeed) => gameLoop.setSpeed(speed),

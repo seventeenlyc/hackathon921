@@ -2,16 +2,18 @@
  * Decision cadence for AI-driven play (issue #17).
  *
  * The deterministic simulation only advances while `state === 'running'` and the
- * tab has focus. `PAUSED` is player-initiated and only leaves via an explicit
- * `resume()`; `PLANNING` is engine-initiated at a wave boundary and leaves when
- * the planner resolves — the player never intervenes there.
+ * tab has focus. A run starts in `IDLE`: nothing moves and no wave is generated
+ * until the player has written a prompt and explicitly starts. `PAUSED` is
+ * player-initiated and only leaves via an explicit `resume()`; `PLANNING` is
+ * engine-initiated before each wave (including wave 1) and leaves when the
+ * planner resolves — the player never intervenes there.
  *
  * See `docs/PRODUCT_CONCEPT.md` §7 for the confirmed rules. This module is
  * deliberately dependency-free so it can be unit-tested without a DOM and so the
  * LLM runtime can later be attached as the planner without touching the engine.
  */
 
-export type GameState = 'running' | 'paused' | 'planning';
+export type GameState = 'idle' | 'running' | 'paused' | 'planning';
 export type GameSpeed = 1 | 2;
 
 export type StateListener = (state: GameState) => void;
@@ -24,7 +26,7 @@ export interface Planner {
 const TICK_MS = 16;
 
 export class GameLoop {
-    private _state: GameState = 'running';
+    private _state: GameState = 'idle';
     private _speed: GameSpeed = 1;
     private _focused = true;
     private listeners: StateListener[] = [];
@@ -40,6 +42,20 @@ export class GameLoop {
     /** True only when the simulation is allowed to advance. */
     isStepping(): boolean {
         return this._state === 'running' && this._focused;
+    }
+
+    /** True until the player has started the run. */
+    isIdle(): boolean {
+        return this._state === 'idle';
+    }
+
+    /**
+     * Player-initiated start of a fresh run: the only way out of IDLE. The wave
+     * manager then opens a PLANNING window before wave 1, so the prompt the player
+     * just wrote is what the AI plays with from the very first wave.
+     */
+    start() {
+        if (this._state === 'idle') this.setState('running');
     }
 
     onChange(listener: StateListener) {

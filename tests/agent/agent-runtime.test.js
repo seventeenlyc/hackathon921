@@ -93,7 +93,7 @@ function makeStore(text = 'hold the base') {
         assert.deepStrictEqual(actions.upgradeCalls, ['2:3']);
 
         assert.strictEqual(decisions.length, 2);
-        assert.deepStrictEqual(decisions.map(d => d.wave), [6, 6], 'decisions govern the upcoming wave');
+        assert.deepStrictEqual(decisions.map(d => d.wave), [5, 5], 'decisions govern the wave the snapshot names');
         assert.strictEqual(decisions[0].ok, true);
         assert.strictEqual(decisions[0].action, 'build_tower');
     });

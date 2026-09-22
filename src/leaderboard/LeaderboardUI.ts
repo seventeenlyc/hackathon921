@@ -23,13 +23,15 @@ export class UsernameGate {
         this.onDone = onDone;
         this.overlay = document.createElement('div');
         this.overlay.className = 'username-overlay';
+        // 按钮只确认用户名；对局是 IDLE，玩家随后写 Prompt 再点「Start run」。
+        // 不用 "Start" 以免被误认为开始游戏。
         this.overlay.innerHTML =
             '<form class="username-card">' +
                 '<h2>Welcome!</h2>' +
                 '<p>Pick a username for the leaderboard.</p>' +
                 '<input type="text" maxlength="16" placeholder="Your name"/>' +
                 '<p class="error"></p>' +
-                '<button type="submit">Start</button>' +
+                '<button type="submit">Continue</button>' +
             '</form>';
         this.input = this.overlay.querySelector('input') as HTMLInputElement;
         this.errorEl = this.overlay.querySelector('.error') as HTMLElement;

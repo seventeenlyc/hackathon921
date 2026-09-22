@@ -12,10 +12,22 @@ import {waveManager} from './WavesManager';
 
 /** Wave a submission made right now would become active at. */
 export function effectiveWaveForNow(): number {
-    return effectiveWave(waveManager.waveCounter, gameLoop.state === 'planning');
+    return effectiveWave(waveManager.waveCounter, gameLoop.isIdle());
 }
 
 /** Queue `text` for the boundary it can still affect. */
 export function queueStrategy(text: string): StrategyVersion {
     return strategyStore.submit(text, effectiveWaveForNow());
+}
+
+/**
+ * Player-initiated start of the run. The game stays frozen in IDLE until this is
+ * called, which is what gives the player time to write the opening prompt; the
+ * wave manager then opens a PLANNING window before wave 1, so the AI plays from
+ * the very first wave rather than only from wave 2 onwards.
+ */
+export function startRun(): void {
+    if (!gameLoop.isIdle()) return;
+    gameLoop.start();
+    void waveManager.start();
 }
