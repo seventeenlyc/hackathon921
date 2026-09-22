@@ -11,7 +11,7 @@ import {SlowTower} from "./entities/towers/SlowTower";
 import {controls} from "./Controls";
 import {queryParamsManager} from "./QueryParamsManager";
 import {textureManager} from "./tools/TextureManager";
-import {gameLoop, GameState} from "./agent/GameLoop";
+import {gameLoop, GameState, nextSpeed} from "./agent/GameLoop";
 
 class InterfaceManager {
     private versionElement = document.getElementById('version')!;
@@ -38,7 +38,7 @@ class InterfaceManager {
         document.getElementById('pause')!.onclick = () => gameLoop.pause();
         document.getElementById('resume')!.onclick = () => gameLoop.resume();
         this.speedElement.onclick = () => {
-            gameLoop.setSpeed(gameLoop.speed === 1 ? 2 : 1);
+            gameLoop.setSpeed(nextSpeed(gameLoop.speed));
             this.updateSpeedLabel();
         };
 

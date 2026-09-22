@@ -217,7 +217,7 @@ MVP 必须建立：
 - 昵称输入与临时身份（无账号体系）；
 - Quick Start 策略与玩家可编辑的策略 Prompt；
 - 一局进行中的 PAUSE / 修改 Prompt / RESUME；
-- 正常速度 / 加速运行切换；
+- 正常速度 / x2 / x4 / x8 循环切换；
 - 可见的 AI 行动与战场结果；
 - 以“到达的波次”为主要得分；
 - Game Over 与 Wave Reached 记录；
