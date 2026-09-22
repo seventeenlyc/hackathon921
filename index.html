@@ -146,6 +146,20 @@
       <div id="snackbar"></div>
       <div id="game-over">
         <div class="description">Game Over</div>
+        <div class="result">
+          <div class="result-primary">
+            <span class="result-primary-label">Wave reached</span>
+            <span class="result-primary-value" id="result-wave">0</span>
+          </div>
+          <div class="result-grid">
+            <div class="result-cell"><span class="result-label">Rank</span><strong id="result-rank">—</strong></div>
+            <div class="result-cell"><span class="result-label">Towers deployed</span><strong id="result-towers">0</strong></div>
+            <div class="result-cell"><span class="result-label">AI decisions</span><strong id="result-decisions">0</strong></div>
+            <div class="result-cell"><span class="result-label">Cash left</span><strong id="result-cash">0</strong></div>
+            <div class="result-cell"><span class="result-label">Duration</span><strong id="result-duration">0:00</strong></div>
+          </div>
+          <div class="result-breakdown" id="result-breakdown"></div>
+        </div>
         <button onclick="location.reload()">Restart</button>
       </div>
     </div>

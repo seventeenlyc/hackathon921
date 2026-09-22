@@ -4,9 +4,10 @@ const {GameLoop, nextSpeed} = require('../../.test-build/agent/GameLoop.js');
 /**
  * DOM-free tests for the decision cadence (issue #17).
  *
- * GameLoop is the seam where IDLE / PAUSED / PLANNING / speed / focus decide
- * whether the deterministic simulation and the wave spawner are allowed to
- * advance. Keeping it dependency-free is what makes it verifiable here.
+ * GameLoop is the seam where IDLE / PAUSED / PLANNING / speed decide whether the
+ * deterministic simulation and the wave spawner are allowed to advance. Window
+ * focus deliberately does not: a run continues while the player looks elsewhere.
+ * Keeping it dependency-free is what makes it verifiable here.
  */
 
 function delay(ms) {
@@ -76,13 +77,16 @@ async function test(name, fn) {
         assert.strictEqual(loop.state, 'paused');
     });
 
-    await test('losing focus freezes stepping without entering PAUSED', () => {
+    await test('a run is not stopped by losing window focus', () => {
         const loop = new GameLoop();
         loop.start();
-        loop.setFocused(false);
-        assert.strictEqual(loop.state, 'running');
+        assert.strictEqual(loop.isStepping(), true);
+
+        // Only PAUSED and the IDLE/PLANNING states stop the simulation; the run
+        // keeps going (and can still lose) while the player looks elsewhere.
+        loop.pause();
         assert.strictEqual(loop.isStepping(), false);
-        loop.setFocused(true);
+        loop.resume();
         assert.strictEqual(loop.isStepping(), true);
     });
 

@@ -8,11 +8,32 @@ import {towerPlacer} from "./TowerPlacer";
 import {Snackbar} from "./tools/Snackbar";
 import {LaserTower} from "./entities/towers/LaserTower";
 import {SlowTower} from "./entities/towers/SlowTower";
-import {controls} from "./Controls";
 import {queryParamsManager} from "./QueryParamsManager";
 import {textureManager} from "./tools/TextureManager";
 import {gameLoop, GameState, nextSpeed} from "./agent/GameLoop";
 import {otherMode, playMode, switchPlayMode} from "./PlayMode";
+
+/** Summary shown on the settlement screen after the base falls. */
+export interface RunStats {
+    wave: number;
+    towers: { total: number; byType: Array<{ type: string; count: number }> };
+    cash: number;
+    decisions: number;
+    durationMs: number;
+    rank: number | null;
+}
+
+function setText(id: string, text: string) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = text;
+}
+
+function formatDuration(ms: number): string {
+    const totalSeconds = Math.max(0, Math.round(ms / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
 
 class InterfaceManager {
     private versionElement = document.getElementById('version')!;
@@ -27,12 +48,6 @@ class InterfaceManager {
 
     constructor() {
         this.versionElement.textContent = 'v' + version;
-        controls.on('focusout', this.showFocusLost.bind(this));
-        controls.on('focusin', this.hideFocusLost.bind(this));
-
-        if(!controls.tabHasFocus()) {
-            this.showFocusLost()
-        }
 
         document.getElementById('spawner' + queryParamsManager.getDifficulty())!.classList.add('active')
 
@@ -62,16 +77,6 @@ class InterfaceManager {
         button.textContent = `Switch to ${target} play`;
         button.title = `Restart the game in ${target} mode`;
         button.onclick = () => switchPlayMode(target);
-    }
-
-    showFocusLost() {
-        this.snackbar.hide();
-        this.snackbar.setText('Focus as been lost, click on the window to continue.');
-        this.snackbar.show()
-    }
-
-    hideFocusLost() {
-        this.snackbar.hide();
     }
 
     setWave(wave: number) {
@@ -149,8 +154,28 @@ class InterfaceManager {
         `
     }
 
-    showGameOver() {
+    /** Settlement screen: the run's numbers plus the rank, once known. */
+    showGameOver(stats: RunStats) {
+        setText('result-wave', String(stats.wave));
+        setText('result-towers', String(stats.towers.total));
+        setText('result-decisions', String(stats.decisions));
+        setText('result-cash', String(stats.cash));
+        setText('result-duration', formatDuration(stats.durationMs));
+        setText('result-rank', stats.rank == null ? '—' : '#' + stats.rank);
+
+        const breakdown = document.getElementById('result-breakdown');
+        if (breakdown) {
+            breakdown.textContent = stats.towers.byType
+                .map(entry => `${entry.type} × ${entry.count}`)
+                .join('   ');
+        }
+
         this.gameOverElement.classList.add('visible')
+    }
+
+    /** The leaderboard is the authority on rank, so it is filled in asynchronously. */
+    setResultRank(rank: number | null) {
+        setText('result-rank', rank == null ? '—' : '#' + rank);
     }
 }
 
