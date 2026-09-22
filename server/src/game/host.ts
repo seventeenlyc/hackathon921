@@ -15,6 +15,8 @@ export interface GameHostOptions {
     /** Driver frame interval in ms; defaults to 1000/30. */
     tickMs?: number;
     defaultDifficulty?: number;
+    /** Called right after a game is registered, so the host can open its run row. */
+    onCreated?: (game: HostedGame) => void;
     onWaveReached?: (game: HostedGame, wave: number) => void;
     onGameOver?: (game: HostedGame) => void;
     onDecision?: (game: HostedGame, entry: DecisionRecord) => void;
@@ -63,6 +65,7 @@ export class GameHost {
         });
 
         this.games.set(id, game);
+        if (this.options.onCreated) this.options.onCreated(game);
         return game;
     }
 

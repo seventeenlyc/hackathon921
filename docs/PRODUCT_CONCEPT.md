@@ -327,7 +327,7 @@ DeepSeek 走国内 CDN 线路，实测 TLS 握手 25–80ms、请求总计约 10
 - 服务端 `GameHost` / `HostedGame`（`server/src/game/`）把引擎、动作端口、Prompt 版本与 AI planner 组装成**一局可脱离浏览器运行的对局**：宿主用真实时间定时器按约 30Hz 调用 `engine.tick()`（倍速即每帧多调几次），AI 在 PLANNING 窗口内调用 provider 并经 `GameActions` 执行动作，失败 fail closed。
 - **权威波次事件。** 波次到达由引擎事件触发并可直接写入排行榜 store（`recordWave`），不再依赖客户端上报；旧的客户端上报入口仍在，正式下线随阶段 C/D 处理。
 - **编译范围与产物布局调整**（§14 预告的「复用引擎时同步调整编译范围与产物路径」）。`tsconfig.server.json` 的 `rootDir` 改为仓库根，`server-dist` 同时产出 `server/src/**` 与共享的 `src/engine/**`（含纯动作层）；`current-server` 指向 `releases/<sha>/server/src`，`deploy.yml` 与 `deploy/README.md` 同步更新。
-- 阶段 B 只交付托管模块与测试，尚未新增 HTTP/SSE 入口；前端接入（阶段 C）另行记录。
+- 阶段 C（进行中）：已新增服务端托管对局的 HTTP 接口（`POST /api/games`、`start`/`pause`/`resume`/`speed`/`strategy`/`lanes`/`actions`、`GET /api/games/:id`）。对局归属以会话 token 为准，昵称不作凭证；**AI 模式禁止浏览器直接提交建塔指令**，只有人类模式允许（§2）。SSE 状态推送与前端切换到服务端快照仍待完成。
 
 # 未决问题 / 遗留决策
 

@@ -11,6 +11,7 @@ import { randomBytes } from 'node:crypto';
 import { openDatabase } from './db';
 import { createApiServer } from './server';
 import { LeaderboardStore } from './store';
+import { GameHost } from './game/host';
 import { DEFAULT_PROVIDER_BASE_URL, DEFAULT_PROVIDER_MODEL } from './agent';
 
 const VERSION_CHECK_INTERVAL_MS = 3000;
@@ -72,6 +73,17 @@ function main(): void {
     const store = new LeaderboardStore(openDatabase(dbPath));
     store.migrate();
 
+    // 托管对局（阶段 B/C）：服务端持有完整对局并以引擎事件作为波次真值。
+    // 打开一局就登记一条 run，波次到达直接写 store —— 成绩不再依赖客户端上报。
+    const games = new GameHost({
+        newGameId: () => randomBytes(16).toString('hex'),
+        agent: { apiKey: deepseekApiKey, baseUrl: providerBaseUrl, model: providerModel },
+        onCreated: game => store.createRun(game.id, game.username, Date.now()),
+        onWaveReached: (game, wave) => {
+            store.recordWave(game.id, game.username, wave, Date.now());
+        },
+    });
+
     const startedVersion = resolveVersion(currentLink);
     const server = createApiServer({
         store,
@@ -79,6 +91,7 @@ function main(): void {
         now: () => Date.now(),
         newRunId: () => randomBytes(16).toString('hex'),
         agent: { apiKey: deepseekApiKey, baseUrl: providerBaseUrl, model: providerModel },
+        games,
     });
 
     server.listen(port, '127.0.0.1', () => {
@@ -95,6 +108,7 @@ function main(): void {
                 console.log(
                     `检测到版本变化（${startedVersion} -> ${current}），退出以让 systemd 拉起新代码`
                 );
+                games.stopAllDrivers();
                 server.close(() => process.exit(0));
                 // 兜底：仍有长连接没断开时强制退出，避免一直跑旧代码。
                 setTimeout(() => process.exit(0), FORCE_EXIT_MS);
