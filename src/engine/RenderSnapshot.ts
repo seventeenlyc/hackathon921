@@ -46,6 +46,8 @@ export interface RenderTower {
     level: number;
     /** Facing in radians; 0 when the tower has no barrel. */
     angle: number;
+    /** Range circle, drawn on hover. */
+    aimRadius: number;
     targetInRange: boolean;
 }
 
@@ -56,6 +58,8 @@ export interface RenderMunition {
     y: number;
     angle: number;
     charge: number;
+    /** Emitter tower type, so the renderer can pick the right shot colour. */
+    emitterType: TowerType;
     emitterX: number;
     emitterY: number;
     targetX: number;
@@ -109,7 +113,10 @@ function enemyView(enemy: Enemy): RenderEnemy {
     };
 
     if (enemy instanceof HealerEnemy) {
-        view.healTargets = enemy.enemiesInHealRadius.map(target => ({x: target.x, y: target.y}));
+        // Only damaged targets get a link line (matches the old healer draw).
+        view.healTargets = enemy.enemiesInHealRadius
+            .filter(target => target.damageTaken > 0)
+            .map(target => ({x: target.x, y: target.y}));
     }
 
     return view;
@@ -137,6 +144,7 @@ function munitionView(munition: Munition): RenderMunition {
         y: munition.y,
         angle: visual.angle,
         charge: visual.charge,
+        emitterType: munition.emitter.towerType,
         emitterX: munition.emitterCenter.x,
         emitterY: munition.emitterCenter.y,
         targetX: munition.target.x,
@@ -163,6 +171,7 @@ export function buildRenderSnapshot(engine: GameEngine): RenderSnapshot {
                     y: cell.center.y,
                     level: cell.level,
                     angle: towerAngle(cell),
+                    aimRadius: cell.aimRadius,
                     targetInRange: cell.targetInRange || Boolean(cell.target),
                 });
             } else if (cell instanceof Rock) {

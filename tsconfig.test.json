@@ -25,6 +25,7 @@
     "src/agent/snapshot.ts",
     "src/agent/types.ts",
     "src/entities/towers/towerTypes.ts",
-    "src/engine/**/*.ts"
+    "src/engine/**/*.ts",
+    "src/net/**/*.ts"
   ]
 }

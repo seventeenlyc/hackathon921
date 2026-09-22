@@ -80,6 +80,8 @@ function main(): void {
         agent: { apiKey: deepseekApiKey, baseUrl: providerBaseUrl, model: providerModel },
         onCreated: game => store.createRun(game.id, game.username, Date.now()),
         onWaveReached: (game, wave) => {
+            // 人类模式对局不入榜（docs/PRODUCT_CONCEPT.md §9）：只有 AI 策略局可比。
+            if (game.mode !== 'ai') return;
             store.recordWave(game.id, game.username, wave, Date.now());
         },
     });

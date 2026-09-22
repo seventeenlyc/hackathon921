@@ -327,7 +327,7 @@ DeepSeek 走国内 CDN 线路，实测 TLS 握手 25–80ms、请求总计约 10
 - 服务端 `GameHost` / `HostedGame`（`server/src/game/`）把引擎、动作端口、Prompt 版本与 AI planner 组装成**一局可脱离浏览器运行的对局**：宿主用真实时间定时器按约 30Hz 调用 `engine.tick()`（倍速即每帧多调几次），AI 在 PLANNING 窗口内调用 provider 并经 `GameActions` 执行动作，失败 fail closed。
 - **权威波次事件。** 波次到达由引擎事件触发并可直接写入排行榜 store（`recordWave`），不再依赖客户端上报；旧的客户端上报入口仍在，正式下线随阶段 C/D 处理。
 - **编译范围与产物布局调整**（§14 预告的「复用引擎时同步调整编译范围与产物路径」）。`tsconfig.server.json` 的 `rootDir` 改为仓库根，`server-dist` 同时产出 `server/src/**` 与共享的 `src/engine/**`（含纯动作层）；`current-server` 指向 `releases/<sha>/server/src`，`deploy.yml` 与 `deploy/README.md` 同步更新。
-- 阶段 C（进行中）：已新增服务端托管对局的 HTTP 接口（`POST /api/games`、`start`/`pause`/`resume`/`speed`/`strategy`/`lanes`/`actions`、`GET /api/games/:id`）与 **SSE 状态流**（`GET /api/games/:id/stream`，先按 10 次/秒推送渲染快照；慢连接只保留最新帧，不排队）。对局归属以会话 token 为准，昵称不作凭证；**AI 模式禁止浏览器直接提交建塔指令**，只有人类模式允许（§2）。引擎新增**渲染快照**（`RenderSnapshot`：实体 id、位置、朝向、生命、弹丸、基地与模拟时间），供浏览器插值与绘制。**前端切换到服务端快照、浏览器停止本地模拟仍待完成。**
+- 阶段 C（进行中）：已新增服务端托管对局的 HTTP 接口（`POST /api/games`、`start`/`pause`/`resume`/`speed`/`strategy`/`lanes`/`actions`、`GET /api/games/:id`）与 **SSE 状态流**（`GET /api/games/:id/stream`，先按 10 次/秒推送渲染快照；慢连接只保留最新帧，不排队）。对局归属以会话 token 为准，昵称不作凭证；**AI 模式禁止浏览器直接提交建塔指令**，只有人类模式允许（§2）。引擎新增**渲染快照**（`RenderSnapshot`：实体 id、位置、朝向、生命、弹丸、基地与模拟时间），供浏览器插值与绘制。浏览器侧的**网络客户端**（`src/net/GameClient.ts`）与**绘制层**（`src/view/render.ts`）已就位并有单测，但**尚未接线到现有界面**。另修正阶段 B 的计分回归：托管对局曾对每局写波次，会把人类模式计入排行榜；现仅 AI 局计分（§9）。**前端切换到服务端快照、浏览器停止本地模拟仍待完成。**
 
 # 未决问题 / 遗留决策
 
