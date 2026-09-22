@@ -96,5 +96,4 @@ test('store is safe without document / localStorage', () => {
     assert.doesNotThrow(() => S.writeStoredLeaderboard([]));
 });
 
-// The browser no longer submits scores (the server scores hosted games), so the
-// old live-submission harness was removed with the local simulation.
+require('./leaderboard-live.test.js');
