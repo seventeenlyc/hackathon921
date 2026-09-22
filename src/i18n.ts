@@ -37,6 +37,7 @@ const STRINGS: { [key: string]: Entry } = {
     'strategy.notStarted': {zh: '未开始 — AI 将从第 1 波起按你的策略行动。', en: 'Not started — the AI plays from wave 1.'},
     'strategy.queued': {zh: '已排队 · 第 {wave} 波生效', en: 'Queued · effective wave {wave}'},
     'strategy.active': {zh: '生效中 · 第 {wave} 波起', en: 'Active from wave {wave}'},
+    'strategy.tooLong': {zh: '策略 {length} 个字符，上限是 {max}。', en: 'Strategy is {length} characters; the limit is {max}.'},
 
     'decisions.label': {zh: 'AI 决策', en: 'AI decisions'},
     'decisions.empty': {zh: '暂无决策。', en: 'No decisions yet.'},
