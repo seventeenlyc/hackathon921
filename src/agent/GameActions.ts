@@ -1,7 +1,6 @@
 import {
     ActionError,
     ActionResult,
-    EnemyCounts,
     GameSnapshot,
     TowerInfo,
     TowerOption,
@@ -44,13 +43,11 @@ export interface Battlefield {
 
     upgrade(id: string): boolean;
 
-    // --- read-only context for the snapshot ---
-    wave(): number;
-    baseLife(): number;
-    baseMaxLife(): number;
-    base(): { i: number; j: number };
-    spawns(): Array<{ i: number; j: number }>;
-    enemies(): EnemyCounts;
+    /**
+     * The compressed observation handed to the model. Built by the adapter from
+     * the live engine (see snapshot.ts); GameActions only forwards it.
+     */
+    snapshot(): GameSnapshot;
 }
 
 function towerId(i: number, j: number): string {
@@ -168,18 +165,7 @@ export class GameActions {
     }
 
     getState(): GameSnapshot {
-        return {
-            wave: this.battlefield.wave(),
-            cash: this.battlefield.cash(),
-            baseLife: this.battlefield.baseLife(),
-            baseMaxLife: this.battlefield.baseMaxLife(),
-            grid: { width: this.battlefield.gridWidth, height: this.battlefield.gridHeight },
-            base: this.battlefield.base(),
-            spawns: this.battlefield.spawns(),
-            enemies: this.battlefield.enemies(),
-            towers: this.battlefield.towers(),
-            towerOptions: this.battlefield.towerOptions(),
-        };
+        return this.battlefield.snapshot();
     }
 
     private optionFor(type: TowerType): TowerOption | undefined {

@@ -1,4 +1,5 @@
 import {map, Map} from '../Map';
+import {fps} from '../config.json';
 import {cashManager} from '../CashManager';
 import {enemyManager} from '../EnemyManager';
 import {waveManager} from '../WavesManager';
@@ -10,8 +11,11 @@ import {FastEnemy} from '../entities/enemies/FastEnemy';
 import {ArmoredEnemy} from '../entities/enemies/ArmoredEnemy';
 import {HealerEnemy} from '../entities/enemies/HealerEnemy';
 import {BossEnemy} from '../entities/enemies/BossEnemy';
-import {ActionError, EnemyCounts, TowerInfo, TowerOption} from './types';
+import {Enemy} from '../entities/enemies/Enemy';
+import {Point} from '../interfaces/Point';
+import {ActionError, EnemyType, GameSnapshot, TowerInfo, TowerOption} from './types';
 import {Battlefield} from './GameActions';
+import {buildSnapshot, EnemySample} from './snapshot';
 
 function numericDamage(tower: Tower): number {
     const damage = tower.damage;
@@ -22,6 +26,16 @@ function numericDamage(tower: Tower): number {
 function dpsOf(tower: Tower): number {
     if (tower.reloadDurationMs <= 0) return 0;
     return Number((numericDamage(tower) / (tower.reloadDurationMs / 1000)).toFixed(1));
+}
+
+function pathLengthPixels(points: Point[]): number {
+    let total = 0;
+    for (let index = 1; index < points.length; ++index) {
+        const dx = points[index].x - points[index - 1].x;
+        const dy = points[index].y - points[index - 1].y;
+        total += Math.sqrt(dx * dx + dy * dy);
+    }
+    return total;
 }
 
 /**
@@ -42,26 +56,6 @@ export class InertBattlefield implements Battlefield {
 
     canAfford(amount: number): boolean {
         return cashManager.canWithdraw(amount);
-    }
-
-    wave(): number {
-        return waveManager.waveCounter;
-    }
-
-    baseLife(): number {
-        return map.homeBase.getLife();
-    }
-
-    baseMaxLife(): number {
-        return map.homeBase.getMaxLife();
-    }
-
-    base(): { i: number; j: number } {
-        return {i: map.homeBase.i, j: map.homeBase.j};
-    }
-
-    spawns(): Array<{ i: number; j: number }> {
-        return map.enemyBases.map(base => ({i: base.i, j: base.j}));
     }
 
     towerAt(i: number, j: number): TowerInfo | undefined {
@@ -120,17 +114,37 @@ export class InertBattlefield implements Battlefield {
         return tower.applyUpgrade();
     }
 
-    enemies(): EnemyCounts {
-        const counts: EnemyCounts = {simple: 0, fast: 0, armored: 0, healer: 0, boss: 0, total: 0};
-        for (const enemy of enemyManager.all()) {
-            if (enemy instanceof BossEnemy) counts.boss += 1;
-            else if (enemy instanceof HealerEnemy) counts.healer += 1;
-            else if (enemy instanceof ArmoredEnemy) counts.armored += 1;
-            else if (enemy instanceof FastEnemy) counts.fast += 1;
-            else if (enemy instanceof SimpleEnemy) counts.simple += 1;
-            counts.total += 1;
-        }
-        return counts;
+    /**
+     * The compressed observation for the model (issue #4). The semantics live in
+     * snapshot.ts; this only gathers live values and the two cheap/authoritative
+     * cell predicates.
+     */
+    snapshot(): GameSnapshot {
+        const enemies: EnemySample[] = enemyManager.all().map(enemy => ({
+            type: this.enemyType(enemy),
+            life: enemy.life,
+            damageTaken: enemy.damageTaken,
+            i: Math.floor(enemy.x / Map.TILE_SIZE),
+            j: Math.floor(enemy.y / Map.TILE_SIZE),
+            etaSeconds: this.etaSeconds(enemy),
+        }));
+
+        return buildSnapshot({
+            wave: waveManager.waveCounter,
+            cash: cashManager.getBalance(),
+            baseLife: map.homeBase.getLife(),
+            baseMaxLife: map.homeBase.getMaxLife(),
+            gridWidth: Map.GRID_W,
+            gridHeight: Map.GRID_H,
+            base: {i: map.homeBase.i, j: map.homeBase.j},
+            spawns: map.enemyBases.map(base => ({i: base.i, j: base.j})),
+            enemies,
+            towers: this.towers(),
+            towerOptions: this.towerOptions(),
+            route: this.mainRoute(),
+            isFree: (i, j) => Boolean(map.grid[i]) && map.grid[i][j] === 0,
+            isBuildable: (i, j) => map.canBePlaced(i, j),
+        });
     }
 
     private infoFor(tower: Tower): TowerInfo {
@@ -145,6 +159,45 @@ export class InertBattlefield implements Battlefield {
             damage: numericDamage(tower),
             reloadMs: tower.reloadDurationMs,
             dps: dpsOf(tower),
+            targetInRange: tower.targetInRange || Boolean(tower.target),
         };
+    }
+
+    private enemyType(enemy: Enemy): EnemyType {
+        if (enemy instanceof BossEnemy) return 'boss';
+        if (enemy instanceof HealerEnemy) return 'healer';
+        if (enemy instanceof ArmoredEnemy) return 'armored';
+        if (enemy instanceof FastEnemy) return 'fast';
+        if (enemy instanceof SimpleEnemy) return 'simple';
+        return 'simple';
+    }
+
+    /**
+     * Seconds until the enemy reaches the base. `getPath()` already starts at the
+     * enemy's current cell, so the path length is the remaining distance; speed is
+     * pixels per simulation step, hence the fps factor.
+     */
+    private etaSeconds(enemy: Enemy): number {
+        const path = enemy.getPath();
+        if (!path || path.length === 0) return 9999;
+        const pixelsPerSecond = Math.max(enemy.speed * fps, 1);
+        return pathLengthPixels(path) / pixelsPerSecond;
+    }
+
+    /** The longest spawn->base route; used for waypoints and candidate scoring. */
+    private mainRoute(): Array<{ i: number; j: number }> | null {
+        let best: Array<{ i: number; j: number }> | null = null;
+
+        for (const base of map.enemyBases) {
+            const path = map.getPathFromGridCell(base.i, base.j);
+            if (!path) continue;
+            const cells = path.map(point => ({
+                i: Math.floor(point.x / Map.TILE_SIZE),
+                j: Math.floor(point.y / Map.TILE_SIZE),
+            }));
+            if (!best || cells.length > best.length) best = cells;
+        }
+
+        return best;
     }
 }

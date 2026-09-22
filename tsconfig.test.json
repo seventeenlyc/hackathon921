@@ -17,6 +17,7 @@
     "src/agent/GameActions.ts",
     "src/agent/GameLoop.ts",
     "src/agent/StrategyStore.ts",
+    "src/agent/snapshot.ts",
     "src/agent/types.ts",
     "src/entities/towers/towerTypes.ts"
   ]

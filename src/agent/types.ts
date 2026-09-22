@@ -63,15 +63,55 @@ export interface TowerInfo {
     damage: number;
     reloadMs: number;
     dps: number;
+    /** Whether this tower currently has a target inside its aim radius. */
+    targetInRange: boolean;
 }
 
-export interface EnemyCounts {
-    simple: number;
-    fast: number;
-    armored: number;
-    healer: number;
-    boss: number;
+export const ENEMY_TYPES = ['simple', 'fast', 'armored', 'healer', 'boss'] as const;
+
+export type EnemyType = typeof ENEMY_TYPES[number];
+
+/** Aggregated enemy info by type; the model gets composition, not coordinates. */
+export interface EnemyGroup {
+    type: EnemyType;
+    count: number;
+    /** Average max life (HP) of the living enemies in this group. */
+    avgLife: number;
+    /** Average remaining life; lower means the group is nearly dead. */
+    avgRemainingLife: number;
+}
+
+/** The single most urgent enemy: the one closest to ending the run. */
+export interface ThreatInfo {
+    type: EnemyType;
+    i: number;
+    j: number;
+    remainingLife: number;
+    /** Estimated seconds until this enemy reaches the base. */
+    etaSeconds: number;
+}
+
+export interface EnemyComposition {
     total: number;
+    groups: EnemyGroup[];
+    nearestThreat: ThreatInfo | null;
+}
+
+/** A cell worth building on, scored by how much of the enemy route it covers. */
+export interface BuildCandidate {
+    i: number;
+    j: number;
+    /** Route cells within the reference aim radius; higher means longer coverage. */
+    coverage: number;
+    /** Route distance from this cell to the base, in tiles. Lower is nearer the base. */
+    distanceToBase: number;
+}
+
+/** The enemy route, compressed to its turns instead of every traversed cell. */
+export interface PathInfo {
+    waypoints: Array<{ i: number; j: number }>;
+    /** Total route length in tiles. */
+    length: number;
 }
 
 /**
@@ -86,7 +126,9 @@ export interface GameSnapshot {
     grid: { width: number; height: number };
     base: { i: number; j: number };
     spawns: Array<{ i: number; j: number }>;
-    enemies: EnemyCounts;
+    enemies: EnemyComposition;
     towers: TowerInfo[];
     towerOptions: TowerOption[];
+    path: PathInfo | null;
+    buildCandidates: BuildCandidate[];
 }
