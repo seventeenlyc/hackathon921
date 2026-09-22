@@ -14,7 +14,16 @@
  */
 
 export type GameState = 'idle' | 'running' | 'paused' | 'planning';
-export type GameSpeed = 1 | 2;
+export type GameSpeed = 1 | 2 | 4 | 8;
+
+/** Speed steps the UI button cycles through, in order. */
+export const GAME_SPEEDS: GameSpeed[] = [1, 2, 4, 8];
+
+/** Next speed in the cycle; wraps back to normal speed. */
+export function nextSpeed(speed: GameSpeed): GameSpeed {
+    const index = GAME_SPEEDS.indexOf(speed);
+    return GAME_SPEEDS[(index + 1) % GAME_SPEEDS.length];
+}
 
 export type StateListener = (state: GameState) => void;
 

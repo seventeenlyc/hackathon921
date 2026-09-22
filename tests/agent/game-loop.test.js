@@ -1,5 +1,5 @@
 const assert = require('assert');
-const {GameLoop} = require('../../.test-build/agent/GameLoop.js');
+const {GameLoop, nextSpeed} = require('../../.test-build/agent/GameLoop.js');
 
 /**
  * DOM-free tests for the decision cadence (issue #17).
@@ -176,6 +176,13 @@ async function test(name, fn) {
 
         await sleeping;
         assert.strictEqual(resolved, true);
+    });
+
+    await test('speed cycles normal -> x2 -> x4 -> x8 -> normal', () => {
+        assert.strictEqual(nextSpeed(1), 2);
+        assert.strictEqual(nextSpeed(2), 4);
+        assert.strictEqual(nextSpeed(4), 8);
+        assert.strictEqual(nextSpeed(8), 1);
     });
 
     await test('fast mode makes sleep elapse roughly twice as fast', async () => {
