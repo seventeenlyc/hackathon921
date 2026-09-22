@@ -38,6 +38,7 @@ function formatDuration(ms: number): string {
 class InterfaceManager {
     private versionElement = document.getElementById('version')!;
     private waveElement = document.getElementById('wave')!;
+    private waveDelayElement = document.getElementById('delay')!;
     private cashElement = document.getElementById('cash')!;
     private towersWrapperElement = document.getElementById('towers-wrapper')!;
     private towersStatsElement = document.getElementById('towers-stats')!;
@@ -81,6 +82,15 @@ class InterfaceManager {
 
     setWave(wave: number) {
         this.waveElement.textContent = String(wave);
+    }
+
+    /** Human mode's `delayBetweenWaves` countdown, shown next to the wave number. */
+    setWaveDelay(seconds: number) {
+        this.waveDelayElement.textContent = `(${seconds}s)`;
+    }
+
+    clearWaveDelay() {
+        this.waveDelayElement.textContent = '';
     }
 
     setState(state: GameState) {
