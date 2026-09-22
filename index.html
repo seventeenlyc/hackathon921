@@ -36,6 +36,11 @@
             <div class="status-metric"><span>Cash</span><strong><span id="cash">12</span> ¢</strong></div>
           </div>
           <div id="leaderboard-slot" class="leaderboard-slot"></div>
+          <section class="tower-panel" aria-labelledby="towers-heading">
+            <h2 id="towers-heading" class="tower-panel-title">Deployable towers</h2>
+            <div id="towers-wrapper" class="tower-palette" aria-label="Deployable towers"></div>
+            <div id="towers-stats" class="tower-stats" aria-live="polite">Select a tower to see its deployment stats.</div>
+          </section>
         </section>
 
         <section class="control-card chatbox-panel" aria-labelledby="chatbox-heading">
@@ -71,11 +76,6 @@
             <button id="resume" type="button">Resume</button>
             <button id="speed" type="button">Speed x1</button>
           </div>
-          <details class="tower-panel">
-            <summary>Deployable towers</summary>
-            <div id="towers-wrapper" class="tower-palette" aria-label="Deployable towers"></div>
-            <div id="towers-stats" class="tower-stats" aria-live="polite">Select a tower to see its deployment stats.</div>
-          </details>
           <details class="settings-panel">
             <summary>Settings</summary>
             <p class="settings-note">Changing the spawner count starts a new run.</p>

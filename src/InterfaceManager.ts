@@ -84,9 +84,9 @@ class InterfaceManager {
 
         // The class scopes which half of the UI is visible (see styles.less).
         document.getElementById('inert')!.classList.add('mode-' + playMode);
-        // The tower palette exists only where the human is the player; in AI mode
-        // it is hidden and never populated (docs/PRODUCT_CONCEPT.md §5).
-        if (playMode === 'human') this.setTowers();
+        // Both modes can inspect the same tower catalogue. Only human mode turns
+        // a card click into placement; AI mode keeps the cards informational.
+        this.setTowers();
         this.setupModeButton();
     }
 
@@ -156,7 +156,9 @@ class InterfaceManager {
             card.type = 'button';
             card.className = 'tower-card';
             card.setAttribute('aria-label', `${tower.name}, costs ${tower.cost} cash`);
-            card.title = `${tower.name} · ${tower.cost} cash`;
+            card.title = playMode === 'human'
+                ? `${tower.name} · ${tower.cost} cash · click to place`
+                : `${tower.name} · ${tower.cost} cash · click to view details`;
 
             const canvas = document.createElement('canvas');
             canvas.width = canvasSize;
@@ -182,7 +184,7 @@ class InterfaceManager {
                 selectedCard?.classList.remove('selected');
                 selectedCard = card;
                 card.classList.add('selected');
-                towerPlacer.place(TowerClass);
+                if (playMode === 'human') towerPlacer.place(TowerClass);
                 this.showTowerStats(tower);
             };
             card.onclick = selectTower;
@@ -223,6 +225,10 @@ class InterfaceManager {
                 ` : ''}
             </table>
         `
+        // AI mode keeps the catalogue compact on small screens; bring the
+        // selected tower's description into view instead of hiding it below
+        // the scroll boundary.
+        this.towersStatsElement.scrollIntoView({block: 'nearest'});
     }
 
     /** Settlement screen: the run's numbers plus the rank, once known. */

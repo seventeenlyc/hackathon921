@@ -55,8 +55,8 @@ assert.match(gameSource, /if \(playMode === 'human'\) towerPlacer\.update\(\)/,
     'the game loop must update the tower preview only in human mode');
 assert.match(gameSource, /if \(playMode === 'human'\) towerPlacer\.draw\(ctx\)/,
     'the game loop must draw the tower preview only in human mode');
-assert.match(interfaceSource, /if \(playMode === 'human'\) this\.setTowers\(\)/,
-    'the interface must initialize the tower palette only in human mode');
+assert.match(interfaceSource, /this\.setTowers\(\)/,
+    'the interface must initialize the tower palette in both play modes');
 assert.match(stylesSource, /(?:\.controls\.is-hidden|&\.is-hidden)[\s\S]*visibility:\s*hidden/,
     'hidden controls must be removed from hit testing and visibility');
 assert.match(stylesSource, /(?:\.controls\.is-hidden|&\.is-hidden)[\s\S]*pointer-events:\s*none/,

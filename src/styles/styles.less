@@ -436,34 +436,16 @@ body {
     }
 
     .tower-panel {
-      margin-top: 8px;
+      margin-top: 17px;
       border-top: 1px solid rgba(146, 169, 160, 0.14);
-      padding-top: 8px;
+      padding-top: 12px;
 
-      summary {
+      .tower-panel-title {
         color: var(--dim);
-        cursor: pointer;
         font-size: 10px;
         font-weight: 700;
         letter-spacing: 0.14em;
-        list-style: none;
         text-transform: uppercase;
-
-        &::-webkit-details-marker {
-          display: none;
-        }
-
-        &:before {
-          margin-right: 7px;
-          color: var(--accent);
-          content: '+';
-          font-size: 15px;
-          vertical-align: -1px;
-        }
-      }
-
-      &[open] summary:before {
-        content: '−';
       }
 
       .tower-palette {
@@ -474,7 +456,8 @@ body {
 
         .tower-card {
           display: flex;
-          width: 67px;
+          width: calc((100% - 28px) / 5);
+          min-width: 48px;
           min-height: 78px;
           flex-direction: column;
           align-items: center;
@@ -492,8 +475,8 @@ body {
           transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
 
           canvas {
-            width: 42px;
-            height: 42px;
+            width: 38px;
+            height: 38px;
           }
 
           &:hover,
@@ -518,7 +501,6 @@ body {
             font-size: 9px;
           }
         }
-
       }
 
       .tower-stats {
@@ -668,28 +650,10 @@ body {
     .leaderboard-title {
       padding: 5px 0;
       color: var(--accent);
-      cursor: pointer;
       font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.15em;
-      list-style: none;
       text-transform: uppercase;
-
-      &::-webkit-details-marker {
-        display: none;
-      }
-
-      &:before {
-        margin-right: 7px;
-        color: var(--accent);
-        content: '+';
-        font-size: 14px;
-        vertical-align: -1px;
-      }
-    }
-
-    &[open] .leaderboard-title:before {
-      content: '−';
     }
 
     .leaderboard-status {
@@ -1060,10 +1024,8 @@ body {
   }
 }
 
-/* One side controls a run, so the other side's UI is hidden outright: the tower
-   palette belongs to human play, while the prompt box and decision log belong to
-   AI play. */
-#inert.mode-ai .tower-panel,
+/* One side controls a run, so the other side's controls are hidden outright:
+   tower cards are informational in AI mode and actionable in human mode. */
 #inert.mode-human .strategy,
 #inert.mode-human .decisions,
 #inert.mode-human .leaderboard-panel {
@@ -1072,4 +1034,36 @@ body {
 
 #inert.mode-human .chatbox-panel {
   display: none;
+}
+
+/* AI keeps the catalogue on the first screen without letting its extra height
+   push the status panel underneath the strategy console. Human mode keeps the
+   same panel in the status card because the chatbox is absent there. */
+#inert.mode-ai .tower-panel {
+  position: fixed;
+  top: clamp(16px, 2.2vw, 32px);
+  left: clamp(16px, 2.2vw, 32px);
+  z-index: 3;
+  width: min(330px, calc(100vw - 32px));
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+@media (max-width: 760px) {
+  #inert.mode-ai .tower-panel {
+    top: 258px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-height: 24vh;
+    overflow-y: auto;
+  }
+
+  #inert.mode-ai .chatbox-panel {
+    max-height: 30vh;
+  }
 }

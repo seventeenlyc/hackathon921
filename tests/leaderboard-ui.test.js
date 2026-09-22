@@ -12,6 +12,8 @@ assert.match(uiSource, /getElementById\('inert'\)!\.appendChild\(this\.overlay\)
     'Username overlay must be mounted under #inert so scoped Less styles apply');
 assert.match(uiSource, /getElementById\('leaderboard-slot'\)/,
     'Leaderboard panel must prefer the dedicated status-panel slot');
+assert.doesNotMatch(uiSource, /HTMLDetailsElement|createElement\('details'\)/,
+    'Leaderboard must be visible without opening a secondary disclosure');
 assert.match(uiSource, /getElementById\('inert'\)!\.appendChild\(this\.root\)/,
     'Leaderboard panel must retain an #inert fallback for isolated contexts');
 assert.match(styles, /#inert[\s\S]*\.username-overlay/,
@@ -26,7 +28,7 @@ assert.match(index, /class="control-card chatbox-panel/, 'the page must expose t
 assert.match(index, /id="controls-collapse"/, 'the page must expose an accessible collapse control');
 assert.match(index, /tabindex="0"/, 'the battlefield must be keyboard focusable');
 assert.match(index, /id="towers-wrapper"/, 'the page must expose the human deployable tower mount');
-assert.match(styles, /#inert\.mode-ai \.tower-panel/, 'the human tower mount must stay hidden in AI mode');
+assert.match(styles, /#inert\.mode-human \.chatbox-panel/, 'the AI strategy panel must stay hidden in human mode');
 assert.match(strategySource, /getControlLayer\(\)\.hide\(\)/,
     'valid strategy submission must hide the control layer after queueing');
 assert.match(strategySource, /showHint\(\)/,

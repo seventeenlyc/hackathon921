@@ -62,7 +62,7 @@ export class UsernameGate {
 // （docs/PRODUCT_CONCEPT.md §9）。API 不可用时回退到本地 localStorage，并在状态行
 // 明确标注「Offline - local only」，避免把本机成绩误当成全局排名。
 class LeaderboardPanel {
-    private root: HTMLDetailsElement;
+    private root: HTMLElement;
     private listEl: HTMLElement;
     private footerEl: HTMLElement;
     private statusEl: HTMLElement;
@@ -73,9 +73,11 @@ class LeaderboardPanel {
 
     constructor() {
         this.username = readUsernameCookie();
-        this.root = document.createElement('details');
+        this.root = document.createElement('section');
         this.root.className = 'leaderboard-panel';
-        const title = document.createElement('summary');
+        this.root.setAttribute('aria-labelledby', 'leaderboard-title');
+        const title = document.createElement('h2');
+        title.id = 'leaderboard-title';
         title.className = 'leaderboard-title';
         title.textContent = 'Leaderboard';
         this.statusEl = document.createElement('div');
