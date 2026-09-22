@@ -4,10 +4,12 @@ import {Enemy} from "../enemies/Enemy";
 import {munitionManager} from "../../MunitionManager";
 import {BasicBulletMunition} from "../munitions/BasicBulletMunition";
 import {texturePaths} from "../../tools/texturePaths";
+import {TowerType} from "./towerTypes";
 
 
 export class CanonTower extends Tower {
     public texturePath = texturePaths.towers.canon;
+    public towerType: TowerType = 'canon';
     public name = 'Canon';
     public description = 'Basic early game tower. Low cost, low damages.'
     public reloadDurationMs: number = 400;

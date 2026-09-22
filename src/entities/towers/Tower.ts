@@ -5,10 +5,12 @@ import {euclideanDistanceSquared} from "../../tools/helphers";
 import {enemyManager} from "../../EnemyManager";
 import {PI2} from "../../tools/constants";
 import {textureManager} from "../../tools/TextureManager";
+import {TowerType} from "./towerTypes";
 
 const frameDuration = 1000 / fps;
 
 export abstract class Tower extends GridRenderable {
+    abstract towerType: TowerType;
     abstract reloadDurationMs: number;
     abstract damage: number | { max: number, min: number };
     abstract cost: number;
@@ -25,6 +27,38 @@ export abstract class Tower extends GridRenderable {
     public targetInRange = false;
     abstract name: string;
     abstract description: string;
+
+    public level: number = 1;
+    public maxLevel: number = 5;
+
+    /** Remaining upgrade price, or null at max level. Used to build the AI-facing snapshot. */
+    get upgradeCost(): number | null {
+        if (this.level >= this.maxLevel) return null;
+        return Math.round(this.cost * 0.6 * this.level);
+    }
+
+    /**
+     * Level up in place. The AI never touches these fields directly — it goes
+     * through GameActions — but the scaling rule lives with the entity so every
+     * tower type upgrades consistently.
+     */
+    applyUpgrade(): boolean {
+        if (this.level >= this.maxLevel) return false;
+
+        this.level += 1;
+
+        const damage = this.damage;
+        this.damage = typeof damage === 'number'
+            ? damage * 1.5
+            : {min: damage.min * 1.5, max: damage.max * 1.5};
+
+        // Slower has reloadDurationMs 0 (it applies effects every tick); leave it alone.
+        if (this.reloadDurationMs > 0) {
+            this.reloadDurationMs = Math.max(this.reloadDurationMs * 0.9, 50);
+        }
+
+        return true;
+    }
 
     update() {
         super.update();

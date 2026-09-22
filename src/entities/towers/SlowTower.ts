@@ -3,10 +3,12 @@ import {Enemy} from "../enemies/Enemy";
 import {enemyManager} from "../../EnemyManager";
 import {SlowEffect} from "../effects/SlowEffect";
 import {texturePaths} from "../../tools/texturePaths";
+import {TowerType} from "./towerTypes";
 
 
 export class SlowTower extends Tower {
     public texturePath = texturePaths.towers.slow;
+    public towerType: TowerType = 'slow';
     public name = 'Slower';
     public description = 'Tower that slows enemies.'
     public reloadDurationMs: number = 0;
