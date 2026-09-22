@@ -24,8 +24,9 @@ async function test(name, fn) {
 }
 
 (async () => {
-    await test('reaching each wave notifies the game, including wave one', async () => {
+    await test('plans before every wave, so the AI acts from wave one', async () => {
         const reached = [];
+        const order = [];
         let displayedWave = 1;
         let waveManager;
         let delays = 0;
@@ -37,6 +38,7 @@ async function test(name, fn) {
             './agent/GameLoop': { gameLoop: {
                 sleep: async () => {},
                 holdForPlanning: async () => {
+                    order.push('plan');
                     if (++delays > 3) waveManager.looping = false;
                 },
             } },
@@ -54,16 +56,21 @@ async function test(name, fn) {
         }).waveManager;
         waveManager.onWaveReached = wave => {
             reached.push(wave);
+            order.push('wave' + wave);
             if (wave === 3) waveManager.looping = false;
         };
         await waveManager.start();
         assert.deepStrictEqual(reached, [1, 2, 3]);
+        // Each wave is planned before it is spawned — including wave 1.
+        assert.deepStrictEqual(order, ['plan', 'wave1', 'plan', 'wave2', 'plan', 'wave3']);
         assert.strictEqual(displayedWave, 3);
     });
 
     await test('a stopped run does not report the next wave after its delay', async () => {
         const reached = [];
+        let displayedWave = 1;
         let waveManager;
+        let plans = 0;
         waveManager = loadSource('WavesManager.ts', {
             './EnemyManager': { enemyManager: { add() {} } },
             './entities/enemies/BossEnemy': { BossEnemy: class {} },
@@ -71,9 +78,14 @@ async function test(name, fn) {
             './tools/helphers': { rand: () => 0 },
             './agent/GameLoop': { gameLoop: {
                 sleep: async () => {},
-                holdForPlanning: async () => { waveManager.looping = false; },
+                // Stop the run during the planning window that precedes wave 2.
+                holdForPlanning: async () => { if (++plans > 1) waveManager.looping = false; },
             } },
-            './InterfaceManager': { interfaceManager: { setWave() {}, setWaveDelay() {}, clearWaveDelay() {} } },
+            './InterfaceManager': { interfaceManager: {
+                setWave(wave) { displayedWave = wave; },
+                setWaveDelay() {},
+                clearWaveDelay() {},
+            } },
             './entities/enemies/Enemy': {},
             './entities/terrain/Base': {},
             './entities/enemies/SimpleEnemy': { SimpleEnemy: class {} },
@@ -84,7 +96,10 @@ async function test(name, fn) {
         waveManager.onWaveReached = wave => reached.push(wave);
         await waveManager.start();
         assert.deepStrictEqual(reached, [1]);
-        assert.strictEqual(waveManager.waveCounter, 1);
+        // Wave 1 was spawned before the stop, so the counter already points at 2;
+        // the point is that wave 2 itself is never reported as reached.
+        assert.strictEqual(waveManager.waveCounter, 2);
+        assert.strictEqual(displayedWave, 2);
     });
 
     await test('the current player score is submitted at each reached wave and after username entry', () => {
@@ -111,7 +126,7 @@ async function test(name, fn) {
             './agent/AgentRuntime': { AgentRuntime: class {} },
             './agent/snapshot': { formatSnapshot: () => '' },
             './agent/StrategyStore': { strategyStore: { lock() {} } },
-            './StrategyQueue': { queueStrategy: () => ({}) },
+            './StrategyQueue': { queueStrategy: () => ({}), startRun: () => {} },
             './DecisionLog': { decisionLog: { add() {}, error() {} } },
         }, {
             window: {},
@@ -127,6 +142,9 @@ async function test(name, fn) {
         waveManager.onWaveReached(3);
         username = 'Bob';
         game.recordReachedWave();
-        assert.deepStrictEqual(submissions, [['Alice', 1], ['Alice', 2], ['Bob', 3]]);
+        // No automatic wave 1 anymore: the run opens in IDLE, so the first entry is
+        // wave 2. Wave 3 is skipped while no username is set, then Bob's manual
+        // recordReachedWave() picks the current counter back up.
+        assert.deepStrictEqual(submissions, [['Alice', 2], ['Bob', 3]]);
     });
 })();

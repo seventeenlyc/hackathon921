@@ -95,13 +95,15 @@ async function test(name, fn) {
         assert.strictEqual(notifications, 2);
     });
 
-    await test('a submission while RUNNING lands on the next wave', () => {
-        assert.strictEqual(effectiveWave(5, false), 6);
+    await test('the opening prompt submitted while IDLE is active from wave 1', () => {
+        assert.strictEqual(effectiveWave(1, true), 1);
     });
 
-    await test('a submission while PLANNING defers one more wave', () => {
-        // The upcoming wave was already locked when PLANNING began.
-        assert.strictEqual(effectiveWave(5, true), 7);
+    await test('a submission after starting lands on the next wave boundary', () => {
+        // PLANNING now precedes each wave, so the counter names the wave being
+        // planned/running and the next boundary is always currentWave + 1 — for a
+        // RUNNING edit and a PLANNING edit alike (the wave in flight is locked).
+        assert.strictEqual(effectiveWave(5, false), 6);
     });
 
     console.log('All StrategyStore tests passed.');

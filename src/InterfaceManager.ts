@@ -64,7 +64,8 @@ class InterfaceManager {
     }
 
     setState(state: GameState) {
-        this.stateElement.textContent = state.toUpperCase();
+        // `idle` is the not-started state shown before the player presses Start.
+        this.stateElement.textContent = state === 'idle' ? 'NOT STARTED' : state.toUpperCase();
     }
 
     updateSpeedLabel() {

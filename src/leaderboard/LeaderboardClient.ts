@@ -127,6 +127,18 @@ export async function syncReachedWave(username: string, wave: number): Promise<n
     return typeof result.bestWave === 'number' ? result.bestWave : wave;
 }
 
+/**
+ * 仅建立（或复用）当前昵称的会话 token，不记录任何成绩。
+ *
+ * 用于首屏输入用户名后立即拿到 AI 代理所需的准入 token；一局尚未开始时不得写分，
+ * 第一次「到达波次」由对局真正开始时触发。
+ */
+export async function ensureSessionToken(username: string): Promise<string | null> {
+    const clean = sanitizeUsername(username);
+    if (!clean) return null;
+    return ensureSession(clean);
+}
+
 /** 拉取共享排行榜；离线或出错返回 null，调用方回退到本地展示。 */
 export async function fetchSharedLeaderboard(
     username: string | null,
