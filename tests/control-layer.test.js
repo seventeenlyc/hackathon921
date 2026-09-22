@@ -42,8 +42,11 @@ const interfaceSource = fs.readFileSync(path.join(projectRoot, 'src', 'Interface
 
 assert.doesNotMatch(controlsSource, /window\.addEventListener\(['"]click['"]/,
     'global clicks must not be forwarded to the game input bus');
-assert.match(controlsSource, /(?:this\.element|canvas\.getElement\(\))\.addEventListener\(['"]mousedown['"]/, 
-    'map drags must begin on the Canvas');
+assert.match(
+    controlsSource,
+    /(?:this\.element|canvas\.getElement\(\))\.addEventListener\(['"]mousedown['"]?/,
+    'map drags must begin on the Canvas'
+);
 assert.match(controlsSource, /mapPointerDown/,
     'Controls must track an active map drag for release outside the Canvas');
 assert.doesNotMatch(gameSource, /TowerPlacer|towerPlacer/,
