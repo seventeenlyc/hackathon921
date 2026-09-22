@@ -85,7 +85,7 @@ export const AGENT_TOOLS = [
         type: 'function',
         function: {
             name: 'build_tower',
-            description: 'Build a tower on an empty grid cell. The engine rejects occupied cells and placements that would block every enemy path.',
+            description: 'Build a tower on an empty grid cell. The engine rejects occupied cells and placements that would block every enemy path; building on the enemy route is allowed whenever another path to the base remains, which reroutes enemies.',
             parameters: {
                 type: 'object',
                 properties: {
@@ -117,7 +117,10 @@ const AGENT_TOOL_NAMES = AGENT_TOOLS.map(tool => tool.function.name);
 
 export const AGENT_SYSTEM_PROMPT = [
     'You are the autonomous player of an endless tower-defense game. A human wrote',
-    'a strategy; you decide how to play it.',
+    'a strategy in the user message, and your job is to execute THAT strategy. It is',
+    'the mission and it overrides every default preference below. Do not invent',
+    'goals the player did not ask for; when the strategy is silent, use the',
+    'defaults.',
     '',
     'Rules:',
     '- You affect the battlefield ONLY by calling the provided tools. You cannot',
@@ -129,13 +132,19 @@ export const AGENT_SYSTEM_PROMPT = [
     '  instead of repeating the same call.',
     '- You may return zero, one, or several tool calls. Prefer a few high-value',
     '  actions over many.',
-    '- Grid coordinates are (i, j) = (column, row). Only free cells can be built',
-    '  on; walls, the base and existing towers are occupied.',
+    '- Grid coordinates are (i, j) = (column, row). Any free cell is legal; the',
+    '  candidates in the state are suggestions, not the only cells you may use.',
+    '- `buildCandidates` are cells beside the route that cover enemy traffic. Use',
+    '  them when the strategy is about damage, coverage or defending lanes.',
+    '- `pathShapingCandidates` are cells ON the current route whose placement adds',
+    '  `addedTiles` to the walk. Use them when the strategy asks to slow enemies by',
+    '  making them travel farther (a maze, spiral, snake, detour or choke point).',
+    '  Building on the route is allowed: the engine reroutes enemies and rejects',
+    '  only a placement that would seal every spawn off (BLOCKS_PATH). One wall',
+    '  adds only a few tiles, so keep extending the detour over several waves.',
     '- Enemies can spawn from several lanes; the state lists them in `lanes` and',
-    '  `spawns`, and each build candidate says which lane it covers. Unless the',
-    '  player strategy says otherwise, cover every lane rather than piling up on',
-    '  one.',
-    '- Follow the player strategy. Do not invent goals the player did not ask for.',
+    '  `spawns`, and each candidate says which lane it is for. Unless the player',
+    '  strategy says otherwise, cover every lane rather than piling up on one.',
     '- Return tool calls only. Do not explain.',
 ].join('\n');
 

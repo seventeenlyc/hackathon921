@@ -119,8 +119,8 @@ export class InertBattlefield implements Battlefield {
 
     /**
      * The compressed observation for the model (issue #4). The semantics live in
-     * snapshot.ts; this only gathers live values and the two cheap/authoritative
-     * cell predicates.
+     * snapshot.ts; this only gathers live values and the engine predicates the
+     * snapshot is allowed to consult (free / buildable / path length).
      */
     snapshot(): GameSnapshot {
         const enemies: EnemySample[] = enemyManager.all().map(enemy => ({
@@ -147,7 +147,34 @@ export class InertBattlefield implements Battlefield {
             routes: this.allRoutes(),
             isFree: (i, j) => Boolean(map.grid[i]) && map.grid[i][j] === 0,
             isBuildable: (i, j) => map.canBePlaced(i, j),
+            routeLengthAfterBuilding: (lane, i, j) => this.routeLengthAfterBuilding(lane, i, j),
         });
+    }
+
+    /**
+     * Hypothetical probe for a path-shaping (maze / detour) placement: how many
+     * tiles would lane `lane`'s route be if a tower stood at (i, j)? Read-only:
+     * the cell is restored and the path cache is dropped before returning, so a
+     * probe can never leave a phantom detour in the live simulation.
+     *
+     * Returns null when the placement would seal any spawn off. It does NOT run
+     * the full `map.canBePlaced()` (which A*s every live enemy): the extra
+     * per-enemy check only matters when a placement traps an enemy in a pocket,
+     * a rare rejection GameActions surfaces to the model anyway.
+     */
+    private routeLengthAfterBuilding(lane: number, i: number, j: number): number | null {
+        const base = map.enemyBases[lane];
+        if (!base || !map.grid[i] || map.grid[i][j] !== 0) return null;
+
+        map.grid[i][j] = 1;
+        const everySpawnReaches = map.enemyBases.every(spawn => map.pathFind(spawn.i, spawn.j));
+        const lanePath = everySpawnReaches ? map.pathFind(base.i, base.j) : null;
+        map.grid[i][j] = 0;
+        // Any cached enemy route may assume this wall exists; drop it so the
+        // real run always recomputes from the true grid.
+        map.invalidatePathsCache();
+
+        return lanePath ? lanePath.length - 1 : null;
     }
 
     private infoFor(tower: Tower): TowerInfo {

@@ -5,6 +5,7 @@ import {
     GameSnapshot,
     LaneInfo,
     PathInfo,
+    PathShapingCandidate,
     ThreatInfo,
     TowerInfo,
     TowerOption,
@@ -58,12 +59,32 @@ export interface SnapshotInput {
     isFree: (i: number, j: number) => boolean;
     /** Authoritative check (runs A*): may a tower legally stand here? */
     isBuildable: (i: number, j: number) => boolean;
+    /**
+     * Hypothetical route length (in tiles) for one lane if a tower stood at
+     * (i, j), or null when that placement is illegal / seals a lane off. It is
+     * the authoritative legality check for path-shaping candidates, so it must
+     * return null rather than a length for anything the engine would reject.
+     * Optional: when absent, no path-shaping candidates are offered. Keeping it
+     * injected lets `buildSnapshot` stay pure and testable without the engine.
+     */
+    routeLengthAfterBuilding?: (lane: number, i: number, j: number) => number | null;
 }
 
-/** Snapshot size ceiling, in serialized JSON characters. Enforced by tests. */
-export const MAX_SNAPSHOT_CHARS = 6000;
+/**
+ * Snapshot size ceiling, in serialized JSON characters. Enforced by tests.
+ * Raised 6000 -> 6500 (2026-09-22) to fit `pathShapingCandidates`: the busiest
+ * realistic scene (4 lanes, 30 towers, 300 enemies) already sat within 30 chars
+ * of the old cap. Still ~40x below the provider body limit and a small slice of
+ * DeepSeek's context, so the ceiling still does its job of catching runaway
+ * snapshots.
+ */
+export const MAX_SNAPSHOT_CHARS = 6500;
 export const MAX_TOWERS_IN_SNAPSHOT = 30;
 export const MAX_BUILD_CANDIDATES = 8;
+/** Route cells offered as detour walls; enough to start a maze, capped for size. */
+export const MAX_PATH_SHAPING_CANDIDATES = 4;
+/** Cap on A* calls spent probing which route cells lengthen the path. */
+const MAX_PATH_SHAPING_PROBES = 10;
 /** Reference tower reach used only to rank candidates; the engine stays authoritative. */
 export const REFERENCE_AIM_RADIUS_TILES = 2;
 /** Cap on A* calls per snapshot: probing legality is the expensive part. */
@@ -246,6 +267,66 @@ function buildCandidates(routes: LaneRoute[], input: SnapshotInput): BuildCandid
     return accepted;
 }
 
+/**
+ * Route cells whose placement would make enemies walk farther.
+ *
+ * `buildCandidates` deliberately excludes these: it ranks damage coverage, so
+ * every cell it offers sits *beside* the route. A maze / spiral / snake strategy
+ * needs the opposite information — where to wall the route so enemies detour —
+ * and without it the model has nothing to act on but the coverage list. Probed
+ * round-robin across lanes inside a shared budget, then ranked by tiles added.
+ */
+function pathShapingCandidates(routes: LaneRoute[], input: SnapshotInput): PathShapingCandidate[] {
+    const measure = input.routeLengthAfterBuilding;
+    if (!measure || routes.length === 0) return [];
+
+    const accepted: Array<PathShapingCandidate & { index: number }> = [];
+    const seen = new Set<string>();
+    let probes = 0;
+    let rank = 0;
+    let advanced = true;
+
+    while (advanced && accepted.length < MAX_PATH_SHAPING_CANDIDATES && probes < MAX_PATH_SHAPING_PROBES) {
+        advanced = false;
+
+        for (let lane = 0; lane < routes.length; ++lane) {
+            if (accepted.length >= MAX_PATH_SHAPING_CANDIDATES || probes >= MAX_PATH_SHAPING_PROBES) break;
+
+            const cells = routes[lane].cells;
+            if (rank >= cells.length) continue;
+            advanced = true;
+
+            const cell = cells[rank];
+            const key = `${cell.i}:${cell.j}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+
+            if (!input.isFree(cell.i, cell.j)) continue;
+
+            probes += 1;
+            const length = measure(lane, cell.i, cell.j);
+            if (length === null) continue;
+
+            const addedTiles = length - (cells.length - 1);
+            if (addedTiles > 0) {
+                accepted.push({i: cell.i, j: cell.j, lane, addedTiles, index: rank});
+            }
+        }
+
+        rank += 1;
+    }
+
+    accepted.sort((a, b) => b.addedTiles - a.addedTiles || a.index - b.index || a.lane - b.lane);
+    return accepted
+        .slice(0, MAX_PATH_SHAPING_CANDIDATES)
+        .map(candidate => ({
+            i: candidate.i,
+            j: candidate.j,
+            lane: candidate.lane,
+            addedTiles: candidate.addedTiles,
+        }));
+}
+
 export function buildSnapshot(input: SnapshotInput): GameSnapshot {
     const groups = groupEnemies(input.enemies);
 
@@ -279,6 +360,7 @@ export function buildSnapshot(input: SnapshotInput): GameSnapshot {
         towers,
         towerOptions: input.towerOptions,
         buildCandidates: buildCandidates(routes, input),
+        pathShapingCandidates: pathShapingCandidates(routes, input),
     };
 }
 
@@ -301,6 +383,10 @@ export function formatSnapshot(snapshot: GameSnapshot): string {
         .map(candidate => `L${candidate.lane}(${candidate.i},${candidate.j}) cov${candidate.coverage} dBase${candidate.distanceToBase}`)
         .join('; ');
 
+    const walls = snapshot.pathShapingCandidates
+        .map(candidate => `L${candidate.lane}(${candidate.i},${candidate.j}) +${candidate.addedTiles}t`)
+        .join('; ');
+
     return [
         `Wave ${snapshot.wave} · cash ${snapshot.cash} · base ${snapshot.baseLife}/${snapshot.baseMaxLife}`,
         `Enemies (${snapshot.enemies.total}): ${groups || 'none'}`,
@@ -308,5 +394,6 @@ export function formatSnapshot(snapshot: GameSnapshot): string {
         `Towers (${snapshot.towers.length}): ${towers || 'none'}`,
         `Lanes (${snapshot.lanes.length}): ${lanes || 'unknown'}`,
         `Build candidates: ${candidates || 'none'}`,
+        `Path-shaping cells: ${walls || 'none'}`,
     ].join('\n');
 }
