@@ -143,6 +143,8 @@ export class HostedGame {
     readonly actions: GameActions;
     readonly strategy = new StrategyStore();
     readonly createdAt: number;
+    /** How many AI decisions have been made this run (for the result screen). */
+    decisionsMade = 0;
 
     private readonly onWaveReachedCb?: (game: HostedGame, wave: number) => void;
     private readonly onGameOverCb?: (game: HostedGame) => void;
@@ -189,6 +191,7 @@ export class HostedGame {
                 this.strategy,
                 options.agent,
                 entry => {
+                    this.decisionsMade += 1;
                     if (this.onDecisionCb) this.onDecisionCb(this, entry);
                 },
                 message => {

@@ -38,6 +38,8 @@ export interface GameSummary {
     cash: number;
     baseLife: number;
     tick: number;
+    /** AI decisions so far; 0 in human mode. */
+    decisions: number;
 }
 
 export interface StreamHandlers {

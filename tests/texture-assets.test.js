@@ -20,12 +20,9 @@ const textureFiles = [
   'src/assets/entities/terrain/rock.png'
 ];
 
-const renderers = [
-  'src/entities/enemies/Enemy.ts',
-  'src/entities/towers/Tower.ts',
-  'src/entities/terrain/Base.ts',
-  'src/entities/terrain/Rock.ts'
-];
+// Since phase C the browser draws from render snapshots through one layer, so
+// the invariant is "the draw layer uses the shared texture renderer".
+const renderers = ['src/view/render.ts'];
 
 for (const relativePath of textureFiles) {
   assert.ok(
@@ -65,4 +62,4 @@ for (const relativePath of textureFiles) {
   );
 }
 
-console.log(`Validated ${textureFiles.length} external textures and ${renderers.length} texture renderers.`);
+console.log(`Validated ${textureFiles.length} external textures and ${renderers.length} texture renderer.`);

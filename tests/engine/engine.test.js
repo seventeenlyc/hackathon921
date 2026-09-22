@@ -277,6 +277,43 @@ function test(name, fn) {
         assert.strictEqual(engine.map.enemyBases.length, 3);
     });
 
+    await test('the planner runs before every wave, including wave 1', async () => {
+        const engine = new GameEngine({seed: 77, difficulty: 1});
+        const planned = [];
+        engine.setPlanner({plan: async () => { planned.push(engine.wave); }});
+        engine.start();
+        await run(engine, 300);
+
+        assert.ok(planned.length >= 2, 'the planner must run once per wave');
+        assert.strictEqual(planned[0], 1, 'wave 1 must be planned before it spawns');
+        assert.strictEqual(planned[1], 2);
+    });
+
+    await test('human mode reports a descending inter-wave countdown', async () => {
+        const engine = new GameEngine({seed: 78, difficulty: 1, interWaveDelayMs: 7000});
+        const seconds = [];
+        engine.onCountdown(value => seconds.push(value));
+        engine.start();
+        await run(engine, 800);
+
+        assert.ok(seconds.length > 0, 'the countdown must be reported');
+        assert.strictEqual(seconds[0], 7);
+        assert.ok(seconds[seconds.length - 1] < 7, 'the countdown must descend');
+    });
+
+    await test('a finished run reports no further waves', async () => {
+        const engine = new GameEngine({seed: 79, difficulty: 1});
+        const reached = [];
+        engine.onWaveReached(wave => reached.push(wave));
+        for (let i = 0; i < 15; ++i) engine.map.homeBase.handleDamage();
+        assert.strictEqual(engine.isOver, true);
+
+        const before = reached.length;
+        engine.tick();
+        engine.tick();
+        assert.strictEqual(reached.length, before);
+    });
+
     console.log('All GameEngine tests passed.');
 })().catch(error => {
     console.error(error);

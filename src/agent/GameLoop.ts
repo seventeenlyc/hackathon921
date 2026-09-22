@@ -13,7 +13,8 @@
  * LLM runtime can later be attached as the planner without touching the engine.
  */
 
-export type GameState = 'idle' | 'running' | 'paused' | 'planning';
+/** `over` is set by a host that owns the state (phase C: the server). */
+export type GameState = 'idle' | 'running' | 'paused' | 'planning' | 'over';
 export type GameSpeed = 1 | 2 | 4 | 8;
 
 /** Speed steps the UI button cycles through, in order. */

@@ -59,6 +59,7 @@ const STRINGS: { [key: string]: Entry } = {
     'state.running': {zh: '运行中', en: 'Running'},
     'state.paused': {zh: '已暂停', en: 'Paused'},
     'state.planning': {zh: '思考中', en: 'Thinking'},
+    'state.over': {zh: '已结束', en: 'Finished'},
 
     'speed.label': {zh: '速度 x{speed}', en: 'Speed x{speed}'},
     'spawner.pending': {zh: '{applied} → {requested}（下一波生效）', en: '{applied} → {requested} at next wave'},

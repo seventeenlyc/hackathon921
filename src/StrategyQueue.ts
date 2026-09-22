@@ -1,33 +1,29 @@
+import {gameControl} from './net/gameControl';
 import {gameLoop} from './agent/GameLoop';
 import {effectiveWave, strategyStore, StrategyVersion} from './agent/StrategyStore';
-import {waveManager} from './WavesManager';
 
 /**
- * Glue between the live game and the versioned strategy store.
+ * Glue between the UI and the hosted game's prompt API.
  *
- * It exists so the wave arithmetic has exactly one home: the input panel and the
- * programmatic control surface both queue through here instead of each deciding
- * when a submission takes effect.
+ * The server owns prompt versioning now; the local `StrategyStore` is kept as a
+ * mirror so the panel's "queued / effective wave" line stays truthful.
  */
 
 /** Wave a submission made right now would become active at. */
 export function effectiveWaveForNow(): number {
-    return effectiveWave(waveManager.waveCounter, gameLoop.isIdle());
+    return effectiveWave(gameControl.session.wave, gameLoop.isIdle());
 }
 
-/** Queue `text` for the boundary it can still affect. */
+/** Queue `text` locally for the status line and submit it to the server. */
 export function queueStrategy(text: string): StrategyVersion {
-    return strategyStore.submit(text, effectiveWaveForNow());
+    const version = strategyStore.submit(text, effectiveWaveForNow());
+    void gameControl.session.submitStrategy(text).catch(() => undefined);
+    return version;
 }
 
 /**
- * Player-initiated start of the run. The game stays frozen in IDLE until this is
- * called, which is what gives the player time to write the opening prompt; the
- * wave manager then opens a PLANNING window before wave 1, so the AI plays from
- * the very first wave rather than only from wave 2 onwards.
- *
- * Without a prompt there is nothing for the AI to play, so the run refuses to
- * start (docs/PRODUCT_CONCEPT.md §5).
+ * Player-initiated start. A run cannot start without a prompt, and the hosted
+ * game must exist first (main.ts opens it once a token is available).
  */
 export function startRun(): void {
     if (!gameLoop.isIdle()) return;
@@ -35,7 +31,8 @@ export function startRun(): void {
     const pending = strategyStore.queued();
     const text = (pending ? pending.text : strategyStore.active().text).trim();
     if (!text) return;
+    if (!gameControl.session.id) return;
 
-    gameLoop.start();
-    void waveManager.start();
+    strategyStore.lock();
+    void gameControl.session.start().catch(() => undefined);
 }

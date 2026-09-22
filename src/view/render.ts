@@ -268,3 +268,18 @@ export function towerIdAt(snapshot: RenderSnapshot, point: { x: number; y: numbe
 export function enemyKindTexture(kind: EnemyKind): string {
     return texturePaths.enemies[kind];
 }
+
+export function towerTexture(type: TowerType): string {
+    return texturePaths.towers[type];
+}
+
+/** Palette-card icon: the tower texture centred in a small canvas. */
+export function drawTowerIcon(
+    ctx: CanvasRenderingContext2D,
+    type: TowerType,
+    centerX: number,
+    centerY: number,
+    size: number
+): void {
+    textureManager.draw(ctx, texturePaths.towers[type], centerX, centerY, size, size);
+}

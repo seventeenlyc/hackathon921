@@ -129,6 +129,7 @@ export class GameHost {
             cash: game.engine.cash.getBalance(),
             baseLife: game.engine.map.homeBase.getLife(),
             tick: game.engine.currentTick,
+            decisions: game.decisionsMade,
             createdAt: game.createdAt,
         };
     }
