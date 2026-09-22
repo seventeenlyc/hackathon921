@@ -10,7 +10,7 @@ import './InterfaceManager';
 import {interfaceManager} from "./InterfaceManager";
 import {waveManager} from "./WavesManager";
 import {submitRunScore} from "./leaderboard/LeaderboardUI";
-import {readUsernameCookie} from "./leaderboard/LeaderboardStore";
+import {getSessionUsername} from "./leaderboard/SessionIdentity";
 import {getSessionToken, fetchSharedLeaderboard} from "./leaderboard/LeaderboardClient";
 import {cashManager} from "./CashManager";
 import {Tower} from "./entities/towers/Tower";
@@ -57,12 +57,12 @@ class Game {
     }
 
     recordReachedWave(wave: number = waveManager.waveCounter) {
-        const username = readUsernameCookie();
+        const username = getSessionUsername();
         if (username) submitRunScore(username, wave);
     }
 
     start() {
-        this.updateInterval = setInterval(this.updateLoop.bind(this), 1000 / fps);
+        this.updateInterval = window.setInterval(this.updateLoop.bind(this), 1000 / fps);
         requestAnimationFrame(this.drawLoop.bind(this));
         // The run itself is not started here: the game opens in IDLE so the player
         // can write the opening prompt first. `promptDefense.start()` (or the
@@ -104,7 +104,7 @@ class Game {
     }
 
     gameOver() {
-        setTimeout(() => {
+        window.setTimeout(() => {
             clearInterval(this.updateInterval);
             this.looping = false;
             waveManager.looping = false;
@@ -116,7 +116,7 @@ class Game {
             interfaceManager.showGameOver(this.collectStats(wave));
 
             // 名次以服务端为准，异步补齐；拿不到就保持 “—”。
-            const username = readUsernameCookie();
+            const username = getSessionUsername();
             if (username && playMode === 'ai') {
                 void fetchSharedLeaderboard(username).then(result => {
                     interfaceManager.setResultRank(result && result.me ? result.me.rank : null);

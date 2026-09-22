@@ -158,7 +158,7 @@ async function test(name, fn) {
             './WavesManager': { waveManager, humanPlanner: { plan: async () => {} } },
             './PlayMode': { playMode: 'ai', switchPlayMode() {} },
             './leaderboard/LeaderboardUI': { submitRunScore: (name, wave) => submissions.push([name, wave]) },
-            './leaderboard/LeaderboardStore': { readUsernameCookie: () => username },
+            './leaderboard/SessionIdentity': { getSessionUsername: () => username },
             './leaderboard/LeaderboardClient': { getSessionToken: () => null, fetchSharedLeaderboard: async () => null },
             './agent/GameLoop': { gameLoop: { setFocused() {}, onChange() {} } },
             './agent/GameActions': { GameActions: class {} },
@@ -169,7 +169,7 @@ async function test(name, fn) {
             './StrategyQueue': { queueStrategy: () => ({}), startRun: () => {} },
             './DecisionLog': { decisionLog: { add() {}, error() {} } },
         }, {
-            window: {},
+            window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {} },
             setInterval: () => 1,
             requestAnimationFrame: () => 1,
             setTimeout: fn => fn(),

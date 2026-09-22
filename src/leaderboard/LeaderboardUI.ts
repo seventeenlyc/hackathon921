@@ -1,19 +1,18 @@
 import {
     sanitizeUsername,
-    readUsernameCookie,
-    writeUsernameCookie,
     readStoredLeaderboard,
     writeStoredLeaderboard,
     submitScore,
 } from './LeaderboardStore';
 import type { LeaderboardEntry } from './LeaderboardStore';
+import {getSessionUsername, setSessionUsername} from './SessionIdentity';
 import { fetchSharedLeaderboard, syncReachedWave } from './LeaderboardClient';
 import type { RemoteLeaderboard } from './LeaderboardClient';
 import {onLangChange, t} from '../i18n';
 
 const TOP_N = 10;
 
-// 用户名弹窗：首次进入（无 cookie）时提示输入用户名（无需密码），校验后写入 cookie。
+// 用户名弹窗：AI 模式每次页面加载都要求输入昵称；昵称只活在当前页面内存。
 export class UsernameGate {
     private overlay: HTMLElement;
     private input: HTMLInputElement;
@@ -47,7 +46,10 @@ export class UsernameGate {
             this.errorEl.textContent = t('gate.invalid');
             return;
         }
-        writeUsernameCookie(name);
+        if (!setSessionUsername(name)) {
+            this.errorEl.textContent = t('gate.invalid');
+            return;
+        }
         this.hide();
         this.onDone(name);
     }
@@ -73,7 +75,7 @@ class LeaderboardPanel {
     private pendingRemote = false;
 
     constructor() {
-        this.username = readUsernameCookie();
+        this.username = getSessionUsername();
         this.root = document.createElement('section');
         this.root.className = 'leaderboard-panel';
         this.root.setAttribute('aria-labelledby', 'leaderboard-title');
@@ -104,7 +106,7 @@ class LeaderboardPanel {
     }
 
     setUsername(name: string) { this.username = name; this.render(); void this.refreshRemote(); }
-    refresh() { this.username = readUsernameCookie() || this.username; this.render(); void this.refreshRemote(); }
+    refresh() { this.username = getSessionUsername(); this.render(); void this.refreshRemote(); }
 
     /** 拉取服务端共享排行榜；失败则标记离线并继续用本地数据渲染。 */
     private async refreshRemote(): Promise<void> {

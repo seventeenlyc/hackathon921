@@ -1,6 +1,8 @@
 import {gameLoop} from './agent/GameLoop';
 import {effectiveWave, strategyStore, StrategyVersion} from './agent/StrategyStore';
 import {waveManager} from './WavesManager';
+import {getSessionUsername} from './leaderboard/SessionIdentity';
+import {playMode} from './PlayMode';
 
 /**
  * Glue between the live game and the versioned strategy store.
@@ -31,6 +33,7 @@ export function queueStrategy(text: string): StrategyVersion {
  */
 export function startRun(): void {
     if (!gameLoop.isIdle()) return;
+    if (playMode === 'ai' && !getSessionUsername()) return;
 
     const pending = strategyStore.queued();
     const text = (pending ? pending.text : strategyStore.active().text).trim();

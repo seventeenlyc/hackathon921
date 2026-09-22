@@ -5,7 +5,6 @@
 // 代码刻意与 DOM 解耦，便于在无 DOM 环境下单测。
 // 排行榜渲染对用户名转义，禁止 innerHTML 直出（用户名字符串不可信，AGENTS.md「不可信输入」）。
 
-export const USERNAME_COOKIE = 'pd_username';
 export const STORAGE_KEY = 'pd_leaderboard_v1';
 
 export interface LeaderboardEntry {
@@ -22,25 +21,6 @@ export function sanitizeUsername(raw: string): string | null {
     if (name.length < 1 || name.length > 16) return null;
     if (!/^[\w\-\u4e00-\u9fa5]+$/.test(name)) return null;
     return name;
-}
-
-/* 读 cookie 中的用户名；失败/非法返回 null。 */
-export function readUsernameCookie(): string | null {
-    if (typeof document === 'undefined') return null;
-    const match = document.cookie.match(new RegExp('(?:^|;\\s*)' + USERNAME_COOKIE + '=([^;]*)'));
-    if (!match) return null;
-    const name = sanitizeUsername(decodeURIComponent(match[1]));
-    return name;
-}
-
-/* 写用户名 cookie：默认会话级，这里给 365 天保持，path=/ 全局可见。 */
-export function writeUsernameCookie(username: string) {
-    if (typeof document === 'undefined') return;
-    const name = sanitizeUsername(username);
-    if (!name) return;
-    document.cookie = USERNAME_COOKIE + '=' + encodeURIComponent(name)
-        + '; expires=' + new Date(Date.now() + 365 * 24 * 3600 * 1000).toUTCString()
-        + '; path=/';
 }
 
 /* 读取 localStorage 排行榜；缺失时返回空数组，存储不可用或解析失败返回 null。 */
