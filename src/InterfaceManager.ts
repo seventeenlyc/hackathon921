@@ -12,6 +12,7 @@ import {controls} from "./Controls";
 import {queryParamsManager} from "./QueryParamsManager";
 import {textureManager} from "./tools/TextureManager";
 import {gameLoop, GameState, nextSpeed} from "./agent/GameLoop";
+import {otherMode, playMode, switchPlayMode} from "./PlayMode";
 
 class InterfaceManager {
     private versionElement = document.getElementById('version')!;
@@ -46,7 +47,21 @@ class InterfaceManager {
         this.setState(gameLoop.state);
         this.updateSpeedLabel();
 
-        this.setTowers()
+        // The class scopes which half of the UI is visible (see styles.less).
+        document.getElementById('inert')!.classList.add('mode-' + playMode);
+        // The tower palette exists only where the human is the player; in AI mode
+        // it is hidden and never populated (docs/PRODUCT_CONCEPT.md §5).
+        if (playMode === 'human') this.setTowers();
+        this.setupModeButton();
+    }
+
+    /** One button that restarts the game in the other play mode. */
+    private setupModeButton() {
+        const button = document.getElementById('mode') as HTMLButtonElement;
+        const target = otherMode(playMode);
+        button.textContent = `Switch to ${target} play`;
+        button.title = `Restart the game in ${target} mode`;
+        button.onclick = () => switchPlayMode(target);
     }
 
     showFocusLost() {
@@ -117,12 +132,8 @@ class InterfaceManager {
             `${(tower.damage.min / reloadDuration).toFixed(0)} - ${(tower.damage.max / reloadDuration).toFixed(0)}` :
             tower.damage / reloadDuration;
 
-        // `damage` is either a number or a {min,max} range. The old bare
-        // `tower.damage > 0` was always false for the range case (object > number),
-        // so the typeof guard keeps the rendered output identical while satisfying
-        // TS 5's stricter relational-operator check. Range-damage towers (laser)
-        // therefore still show no damage rows — a pre-existing bug this migration
-        // deliberately does not change.
+        // `damage` is either a number or a {min,max} range. The typeof guard keeps
+        // the range-damage case (laser) from showing nonsense rows.
         this.towersStatsElement.innerHTML = `
             <div class="title">${tower.name}</div>
             <div class="description">${tower.description}</div>

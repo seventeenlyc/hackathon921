@@ -105,7 +105,7 @@ async function test(name, fn) {
     await test('the current player score is submitted at each reached wave and after username entry', () => {
         const submissions = [];
         let username = 'Alice';
-        const waveManager = { waveCounter: 1, looping: true, setPlanner() {}, start() { this.onWaveReached(this.waveCounter); } };
+        const waveManager = { waveCounter: 1, looping: true, setPlanner() {}, setInterWaveDelay() {}, start() { this.onWaveReached(this.waveCounter); } };
         const game = loadSource('Game.ts', {
             './Canvas': { canvas: {}, ctx: {} },
             './config.json': { fps: 60 },
@@ -114,9 +114,10 @@ async function test(name, fn) {
             './Camera': { camera: {} },
             './EnemyManager': { enemyManager: {} },
             './MunitionManager': { munitionManager: {} },
-            './TowerPlacer': { towerPlacer: {} },
+            './TowerPlacer': { towerPlacer: { placing: false, update() {}, draw() {} } },
             './InterfaceManager': { interfaceManager: { showGameOver() {} } },
-            './WavesManager': { waveManager },
+            './WavesManager': { waveManager, humanPlanner: { plan: async () => {} } },
+            './PlayMode': { playMode: 'ai', switchPlayMode() {} },
             './leaderboard/LeaderboardUI': { submitRunScore: (name, wave) => submissions.push([name, wave]) },
             './leaderboard/LeaderboardStore': { readUsernameCookie: () => username },
             './leaderboard/LeaderboardClient': { getSessionToken: () => null },

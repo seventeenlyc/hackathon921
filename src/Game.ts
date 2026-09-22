@@ -21,6 +21,8 @@ import {AgentRuntime} from "./agent/AgentRuntime";
 import {formatSnapshot} from "./agent/snapshot";
 import {decisionLog} from "./DecisionLog";
 import {queueStrategy, startRun} from "./StrategyQueue";
+import {humanPlanner} from "./WavesManager";
+import {playMode, switchPlayMode} from "./PlayMode";
 
 class Game {
     private updateInterval: number = -1;
@@ -30,7 +32,11 @@ class Game {
         map.on('added', () => {
             enemyManager.updatePaths()
         });
-        waveManager.onWaveReached = wave => this.recordReachedWave(wave);
+        // Human-mode runs are not leaderboard entries: the board compares AI
+        // strategies, so a hand-played wave would not be comparable (see §9).
+        if (playMode === 'ai') {
+            waveManager.onWaveReached = wave => this.recordReachedWave(wave);
+        }
 
         // Focus is a gate separate from the player's PAUSED state; losing focus
         // freezes the sim and spawning, regaining it continues (issue #17).
@@ -98,8 +104,8 @@ class Game {
             this.looping = false;
             interfaceManager.showGameOver();
             waveManager.looping = false;
-            // 结算时再同步一次，以覆盖输入用户名或停止波次循环的边界时刻。
-            this.recordReachedWave();
+            // 结算时再同步一次，以覆盖停止波次循环的边界时刻。人类模式不入榜。
+            if (playMode === 'ai') this.recordReachedWave();
         }, 100)
     }
 }
@@ -117,10 +123,22 @@ const agentRuntime = new AgentRuntime({
 });
 
 // The AI plays through the same action port as the human console; the loop calls
-// it once per PLANNING round (issue #25).
-waveManager.setPlanner(agentRuntime);
+// it once per PLANNING round (issue #25). In human mode there is no AI planner at
+// all and the wave manager uses a fixed pause instead.
+waveManager.setPlanner(playMode === 'ai' ? agentRuntime : humanPlanner);
+
+/** Old inert `delayBetweenWaves`: human mode needs a real break between waves. */
+const HUMAN_INTER_WAVE_MS = 7000;
+waveManager.setInterWaveDelay(playMode === 'human' ? HUMAN_INTER_WAVE_MS : 0);
 
 export const game = new Game();
+
+// Human mode is the original inert experience: it plays as soon as it loads.
+// AI mode stays in IDLE until the player writes a prompt and presses Start.
+if (playMode === 'human') {
+    gameLoop.start();
+    void waveManager.start();
+}
 
 /**
  * Programmatic control surface (issue #2). Everything the AI is allowed to do
@@ -129,7 +147,7 @@ export const game = new Game();
  *
  *   promptDefense.actions.getState()
  *   promptDefense.actions.buildTower('canon', 10, 10)
- *   promptDefense.start(); promptDefense.pause(); promptDefense.resume()
+ *   promptDefense.start(); promptDefense.pause(); promptDefense.setMode('human')
  *   promptDefense.setSpeed(2)
  */
 (window as any).promptDefense = {
@@ -137,6 +155,8 @@ export const game = new Game();
     loop: gameLoop,
     strategy: strategyStore,
     agent: agentRuntime,
+    mode: playMode,
+    setMode: (mode: 'ai' | 'human') => switchPlayMode(mode),
     start: () => startRun(),
     pause: () => gameLoop.pause(),
     resume: () => gameLoop.resume(),
