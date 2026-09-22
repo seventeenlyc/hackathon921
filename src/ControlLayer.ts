@@ -1,4 +1,7 @@
 import {controls} from './Controls';
+import {isEditableTarget} from './tools/input';
+
+export {isEditableTarget};
 
 export type ControlLayerVisibility = 'hidden' | 'visible';
 
@@ -8,14 +11,6 @@ interface ControlEvents {
 
 export function toggleVisibility(visibility: ControlLayerVisibility): ControlLayerVisibility {
     return visibility === 'visible' ? 'hidden' : 'visible';
-}
-
-export function isEditableTarget(target: EventTarget | null): boolean {
-    if (!target || typeof target !== 'object') return false;
-
-    const element = target as HTMLElement;
-    const tagName = typeof element.tagName === 'string' ? element.tagName.toUpperCase() : '';
-    return tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT' || element.isContentEditable === true;
 }
 
 export class ControlLayer {
