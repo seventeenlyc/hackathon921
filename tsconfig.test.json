@@ -19,6 +19,7 @@
     "src/agent/GameLoop.ts",
     "src/agent/SpawnSettings.ts",
     "src/agent/StrategyLibrary.ts",
+    "src/agent/StrategyLimits.ts",
     "src/agent/StrategyStore.ts",
     "src/agent/snapshot.ts",
     "src/agent/types.ts",

@@ -145,11 +145,23 @@ body {
 
     .strategy {
       .strategy-label {
-        display: block;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
         text-transform: uppercase;
         font-size: 12px;
         letter-spacing: 1px;
         margin-bottom: 6px;
+      }
+
+      .strategy-count {
+        text-transform: none;
+        letter-spacing: 0;
+        color: #7c7c7c;
+
+        &.over {
+          color: #e07a7a;
+        }
       }
 
       .strategy-input {

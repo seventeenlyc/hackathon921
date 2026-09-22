@@ -14,7 +14,13 @@ import { verifyToken } from './token';
 
 export const DEEPSEEK_URL = 'https://api.deepseek.com/chat/completions';
 export const DEEPSEEK_MODEL = 'deepseek-chat';
-export const MAX_STRATEGY_LENGTH = 2000;
+/**
+ * Player-strategy character cap. Raised from 2000 to 5000 (2026-09-22): real
+ * multi-rule strategies routinely exceeded the old limit. This is the
+ * authoritative value; the browser mirrors it only to warn early
+ * (`src/agent/StrategyLimits.ts`) and never truncates.
+ */
+export const MAX_STRATEGY_LENGTH = 5000;
 export const MAX_ACTIONS_PER_DECISION = 8;
 export const PROVIDER_TIMEOUT_MS = 12000;
 
