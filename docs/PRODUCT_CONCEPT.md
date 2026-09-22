@@ -133,7 +133,7 @@ Quick Start 不是纯文字模板：不同的 Quick Start 必须导致 AI 出现
 | `PAUSED` | 玩家主动冻结，用于读战场与写 Prompt | **只由玩家手动 RESUME**，绝不自动恢复 |
 | `PLANNING` | 波次边界的 AI 思考时间 | AI 思考完成后自动开启下一波 |
 
-波的推进由 `PLANNING` 完成驱动，不再由固定计时器（原 `delayBetweenWaves`）驱动。`PAUSED` 不是编辑的前置条件。是否在未来引入冷却、次数或资源成本尚未确定。
+波的推进由 `PLANNING` 完成驱动，不再由固定计时器（原 `delayBetweenWaves`）驱动。`PLANNING` 在**本波生成完毕、下一个波次开始前**触发（不等待场上清空，残敌随暂停冻结）；AI 思考完成后**自动**开启下一波，玩家无需介入。`PAUSED` 不是编辑的前置条件。是否在未来引入冷却、次数或资源成本尚未确定。
 
 ## 8. 硬币（Coin）—— 不在 Hackathon MVP 内
 
@@ -281,8 +281,6 @@ DeepSeek 走国内 CDN 线路，实测 TLS 握手 25–80ms、请求总计约 10
 
 - 确切的 GameState schema。
 - 确切的 action / tool schema。
-- 波次边界的确切判定：本波生成完毕，还是场上清空。
-- 开波是否作为模型可调用的工具（倾向否，见 issue #17）。
 - 模型延迟应如何影响游戏体验。
 
 ### Prompt 系统
