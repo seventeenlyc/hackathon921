@@ -101,6 +101,8 @@ export interface EnemyComposition {
 export interface BuildCandidate {
     i: number;
     j: number;
+    /** 0-based index into `lanes`: which spawn lane this cell would guard. */
+    lane: number;
     /** Route cells within the reference aim radius; higher means longer coverage. */
     coverage: number;
     /** Route distance from this cell to the base, in tiles. Lower is nearer the base. */
@@ -112,6 +114,12 @@ export interface PathInfo {
     waypoints: Array<{ i: number; j: number }>;
     /** Total route length in tiles. */
     length: number;
+}
+
+/** One spawn lane: where its enemies enter and the (compressed) route to the base. */
+export interface LaneInfo {
+    spawn: { i: number; j: number };
+    path: PathInfo;
 }
 
 /**
@@ -126,9 +134,10 @@ export interface GameSnapshot {
     grid: { width: number; height: number };
     base: { i: number; j: number };
     spawns: Array<{ i: number; j: number }>;
+    /** Every lane currently on the map, in spawn order; index matches `buildCandidates[].lane`. */
+    lanes: LaneInfo[];
     enemies: EnemyComposition;
     towers: TowerInfo[];
     towerOptions: TowerOption[];
-    path: PathInfo | null;
     buildCandidates: BuildCandidate[];
 }

@@ -15,7 +15,7 @@ import {Enemy} from '../entities/enemies/Enemy';
 import {Point} from '../interfaces/Point';
 import {ActionError, EnemyType, GameSnapshot, TowerInfo, TowerOption} from './types';
 import {Battlefield} from './GameActions';
-import {buildSnapshot, EnemySample} from './snapshot';
+import {buildSnapshot, EnemySample, LaneRoute} from './snapshot';
 
 function numericDamage(tower: Tower): number {
     const damage = tower.damage;
@@ -144,7 +144,7 @@ export class InertBattlefield implements Battlefield {
             enemies,
             towers: this.towers(),
             towerOptions: this.towerOptions(),
-            route: this.mainRoute(),
+            routes: this.allRoutes(),
             isFree: (i, j) => Boolean(map.grid[i]) && map.grid[i][j] === 0,
             isBuildable: (i, j) => map.canBePlaced(i, j),
         });
@@ -187,20 +187,26 @@ export class InertBattlefield implements Battlefield {
         return pathLengthPixels(path) / pixelsPerSecond;
     }
 
-    /** The longest spawn->base route; used for waypoints and candidate scoring. */
-    private mainRoute(): Array<{ i: number; j: number }> | null {
-        let best: Array<{ i: number; j: number }> | null = null;
+    /**
+     * Every spawn lane, in spawn order. A single "main route" used to be enough
+     * when the map had one lane; with a live lane count (issue #40) the model
+     * must see them all or it will only ever defend the first one.
+     */
+    private allRoutes(): LaneRoute[] {
+        const routes: LaneRoute[] = [];
 
         for (const base of map.enemyBases) {
             const path = map.getPathFromGridCell(base.i, base.j);
             if (!path) continue;
-            const cells = path.map(point => ({
-                i: Math.floor(point.x / Map.TILE_SIZE),
-                j: Math.floor(point.y / Map.TILE_SIZE),
-            }));
-            if (!best || cells.length > best.length) best = cells;
+            routes.push({
+                spawn: {i: base.i, j: base.j},
+                cells: path.map(point => ({
+                    i: Math.floor(point.x / Map.TILE_SIZE),
+                    j: Math.floor(point.y / Map.TILE_SIZE),
+                })),
+            });
         }
 
-        return best;
+        return routes;
     }
 }

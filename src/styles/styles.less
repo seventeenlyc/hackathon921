@@ -291,6 +291,25 @@ body {
         text-transform: uppercase;
       }
 
+      .strategy-label {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .strategy-count {
+        color: var(--dim);
+        font-size: 9px;
+        font-weight: 400;
+        letter-spacing: 0.08em;
+        text-transform: none;
+
+        &.over {
+          color: #e07a7a;
+        }
+      }
+
       .strategy-input {
         display: block;
         width: 100%;
@@ -865,7 +884,7 @@ body {
     align-items: center;
     justify-content: center;
     padding: 50px 0;
-    background: rgba(15, 23, 22, 0.78);
+    background: rgba(52, 52, 52, 0.85);
     box-shadow: var(--shadow);
     color: var(--accent);
     opacity: 0;

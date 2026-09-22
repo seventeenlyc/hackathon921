@@ -13,6 +13,7 @@ import {Tower} from "./entities/towers/Tower";
 import {Map} from "./Map";
 import {towerPlacer} from "./TowerPlacer";
 import {getControlLayer} from "./ControlLayer";
+import {applyStaticTranslations, onLangChange, t, toggleLang} from './i18n';
 
 /** Summary shown on the settlement screen after the base falls. */
 export interface RunStats {
@@ -49,6 +50,7 @@ class InterfaceManager {
     private pauseButton = document.getElementById('pause') as HTMLButtonElement;
     private resumeButton = document.getElementById('resume') as HTMLButtonElement;
     private controlLayer = getControlLayer();
+    private lastTower: Tower | null = null;
     public snackbar = new Snackbar();
 
     constructor() {
@@ -72,6 +74,11 @@ class InterfaceManager {
             gameLoop.setSpeed(nextSpeed(gameLoop.speed));
             this.updateSpeedLabel();
         };
+        const langButton = document.getElementById('lang') as HTMLButtonElement | null;
+        langButton?.addEventListener('click', () => {
+            toggleLang();
+            applyStaticTranslations();
+        });
 
         gameLoop.onChange(state => {
             this.setState(state);
@@ -88,14 +95,22 @@ class InterfaceManager {
         // a card click into placement; AI mode keeps the cards informational.
         this.setTowers();
         this.setupModeButton();
+        onLangChange(() => {
+            this.setState(gameLoop.state);
+            this.updateSpeedLabel();
+            this.renderSpawners();
+            this.setupModeButton();
+            if (this.lastTower) this.showTowerStats(this.lastTower);
+        });
+        applyStaticTranslations();
     }
 
     /** One button that restarts the game in the other play mode. */
     private setupModeButton() {
         const button = document.getElementById('mode') as HTMLButtonElement;
         const target = otherMode(playMode);
-        button.textContent = `Switch to ${target} play`;
-        button.title = `Restart the game in ${target} mode`;
+        button.textContent = target === 'human' ? t('mode.toHuman') : t('mode.toAi');
+        button.title = target === 'human' ? t('mode.toHumanTitle') : t('mode.toAiTitle');
         button.onclick = () => switchPlayMode(target);
     }
 
@@ -114,13 +129,13 @@ class InterfaceManager {
 
     setState(state: GameState) {
         // `idle` is the not-started state shown before the player presses Start.
-        this.stateElement.textContent = state === 'idle' ? 'NOT STARTED' : state.toUpperCase();
+        this.stateElement.textContent = t(`state.${state}`);
         this.pauseButton.hidden = state !== 'running';
         this.resumeButton.hidden = state !== 'paused';
     }
 
     updateSpeedLabel() {
-        this.speedElement.textContent = `Speed x${gameLoop.speed}`;
+        this.speedElement.textContent = t('speed.label', {speed: gameLoop.speed});
     }
 
     renderSpawners() {
@@ -130,7 +145,7 @@ class InterfaceManager {
         });
 
         setText('spawner-status', spawnSettings.isPending
-            ? `${spawnSettings.applied} → ${spawnSettings.requested} at next wave`
+            ? t('spawner.pending', {applied: spawnSettings.applied, requested: spawnSettings.requested})
             : '');
     }
 
@@ -198,6 +213,7 @@ class InterfaceManager {
     }
 
     private showTowerStats(tower: Tower) {
+        this.lastTower = tower;
 
         const damage = typeof tower.damage === 'object' ?
             `${tower.damage.min} - ${tower.damage.max}` :
@@ -216,12 +232,12 @@ class InterfaceManager {
             <div class="title">${tower.name}</div>
             <div class="description">${tower.description}</div>
             <table class="table5050">
-                <tr><td>Cost: </td><td class="accent">${tower.cost} ¢</td></tr>
-                <tr><td>Aim radius:</td><td class="accent">${tower.aimRadius}</td></tr>
+                <tr><td>${t('tower.cost')} </td><td class="accent">${tower.cost} ¢</td></tr>
+                <tr><td>${t('tower.aimRadius')}</td><td class="accent">${tower.aimRadius}</td></tr>
                 ${hasDamage ? `
-                    <tr><td>Damage:</td><td class="accent">${damage}</td></tr>
-                    <tr><td>Reload:</td><td class="accent">${reloadDuration.toFixed(3)} s</td></tr>
-                    <tr><td title="Damage Per Second">DPS:</td><td class="accent">${dps}</td></tr>
+                    <tr><td>${t('tower.damage')}</td><td class="accent">${damage}</td></tr>
+                    <tr><td>${t('tower.reload')}</td><td class="accent">${reloadDuration.toFixed(3)} s</td></tr>
+                    <tr><td title="Damage Per Second">${t('tower.dps')}</td><td class="accent">${dps}</td></tr>
                 ` : ''}
             </table>
         `

@@ -57,6 +57,14 @@ test('validateAgentRequest 接受合法请求', () => {
     assert.equal(result.ok, true);
 });
 
+test('validateAgentRequest 接受恰好达到上限的策略', () => {
+    // The agreed cap (docs/PRODUCT_CONCEPT.md §7); pinning it makes a silent
+    // limit change a deliberate test edit.
+    assert.equal(MAX_STRATEGY_LENGTH, 5000);
+    const result = validateAgentRequest({ strategy: 'x'.repeat(MAX_STRATEGY_LENGTH), state: {} });
+    assert.equal(result.ok, true);
+});
+
 test('validateAgentRequest 拒绝非法请求', () => {
     assert.equal((validateAgentRequest(null) as any).error, 'INVALID_REQUEST');
     assert.equal((validateAgentRequest([]) as any).error, 'INVALID_REQUEST');

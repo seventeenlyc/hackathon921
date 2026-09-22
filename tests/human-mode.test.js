@@ -27,8 +27,8 @@ assert.match(interfaceSource, /if \(playMode === 'human'\) towerPlacer\.place\(T
 assert.doesNotMatch(interfaceSource, /if \(playMode === 'human'\) this\.setTowers\(\)/,
     'the tower palette must be mounted in both play modes');
 assert.match(interfaceSource, /aria-label/, 'tower choices must be keyboard and screen-reader discoverable');
-assert.match(interfaceSource, /Aim radius:/, 'tower stats must show deployment range');
-assert.match(interfaceSource, /DPS:/, 'tower stats must show damage per second when applicable');
+assert.match(interfaceSource, /tower\.aimRadius/, 'tower stats must show deployment range');
+assert.match(interfaceSource, /tower\.dps/, 'tower stats must show damage per second when applicable');
 assert.match(controls, /emit\(['"]click['"]/, 'Canvas clicks must be forwarded through the input boundary');
 assert.match(towerPlacer, /GameActions/, 'human placement must use the validated GameActions port');
 assert.match(towerPlacer, /buildTower\(/, 'human placement must execute through buildTower');
