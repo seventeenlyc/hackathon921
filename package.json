@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "parcel public/index.pug public/*.txt public/*.xml -d ./dev",
     "build": "parcel build public/index.pug public/*.txt public/*.xml -d ./dist",
-    "test": "npm run build && node tests/texture-assets.test.js"
+    "test": "npm run build && node tests/texture-assets.test.js && node tests/leaderboard-store.test.js"
   },
   "repository": {
     "type": "git",

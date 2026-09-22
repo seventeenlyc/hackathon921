@@ -263,6 +263,48 @@ body {
     }
   }
 
+  // 用户名弹窗（首次进入时覆盖全屏）
+  .username-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 20;
+    display: flex; align-items: center; justify-content: center;
+    background-color: rgba(20, 20, 22, 0.85);
+    .username-card {
+      width: 320px; padding: 30px 24px; display: flex; flex-direction: column; gap: 14px;
+      background-color: #2b2c31; border-radius: 8px; color: #a5a5a5;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+      h2 { text-transform: uppercase; text-align: center; font-size: 1.6em; font-weight: 400; color: var(--accent); }
+      input { padding: 10px 12px; border: 1px solid #575757; border-radius: 4px; background-color: #1b1c1e; color: #fff; font-size: 15px; }
+      button {
+        padding: 10px 0; text-transform: uppercase; background-color: var(--accent); color: #202125;
+        border: none; border-radius: 50px; font-weight: 700; cursor: pointer; transition: all ease 0.2s;
+        &:hover { background-color: #27ae60; }
+      }
+      .error { color: #e74c3c; font-size: 12px; min-height: 16px; text-align: center; }
+    }
+  }
+
+  // 排行榜面板：固定在界面左下角
+  .leaderboard-panel {
+    position: fixed; left: 15px; bottom: 15px; z-index: 2; width: 240px;
+    background-color: rgba(52, 52, 52, 0.55); color: #a5a5a5; border-radius: 5px;
+    box-shadow: 0 2px 1px -1px rgba(0,0,0,0.2), 0 1px 1px 0 rgba(0,0,0,0.14), 0 1px 3px 0 rgba(0,0,0,0.12);
+    font-size: 13px; padding: 10px 12px;
+    .leaderboard-title { text-transform: uppercase; text-align: center; font-size: 14px; color: var(--accent); margin-bottom: 8px; }
+    ol.leaderboard-list {
+      list-style: none; padding: 0; margin: 0 0 6px 0; max-height: 240px; overflow-y: auto;
+      li {
+        display: flex; align-items: baseline; padding: 3px 0; border-bottom: 1px solid rgba(87,87,87,0.4);
+        &:last-child { border-bottom: none; }
+        .rank { width: 22px; color: var(--accent); font-weight: 700; }
+        .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .wave { color: #cfcfcf; }
+        &.me { background-color: rgba(47,204,113,0.18); color: #fff; border-radius: 3px; padding: 3px 4px; .rank { color: var(--accent); } }
+        &.empty { justify-content: center; color: #777; padding: 6px 0; }
+      }
+    }
+    .leaderboard-footer { border-top: 1px solid #575757; padding-top: 6px; text-align: center; color: #cfcfcf; font-size: 12px; }
+  }
+
   #game-over {
     position: absolute;
     top: 50%;

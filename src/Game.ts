@@ -11,6 +11,8 @@ import './InterfaceManager';
 import './WavesManager';
 import {interfaceManager} from "./InterfaceManager";
 import {waveManager} from "./WavesManager";
+import {submitRunScore} from "./leaderboard/LeaderboardUI";
+import {readUsernameCookie} from "./leaderboard/LeaderboardStore";
 
 class Game {
     private updateInterval: number = -1;
@@ -63,6 +65,11 @@ class Game {
             this.looping = false;
             interfaceManager.showGameOver();
             waveManager.looping = false;
+            // 本局到达的最高波次作为成绩提交到本地排行榜（纯前端，待服务端就绪后替换）。
+            const username = readUsernameCookie();
+            if (username) {
+                submitRunScore(username, waveManager.waveCounter);
+            }
         }, 100)
     }
 }
