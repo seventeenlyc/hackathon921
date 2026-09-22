@@ -49,6 +49,22 @@ function createGame(deps: ApiDeps, token: string, mode = 'human', difficulty = 1
 
 const flush = () => new Promise<void>(resolve => setTimeout(resolve, 0));
 
+test('匿名会话可为人类模式开一局（昵称不作凭证）', () => {
+    const deps = makeDeps();
+    const anon = handleApi(deps, request({ method: 'POST', pathname: '/api/sessions/anonymous' }));
+    assert.equal(anon.status, 200);
+    assert.match(String(anon.body.username), /^anon-/);
+
+    const created = handleApi(deps, request({
+        method: 'POST',
+        pathname: '/api/games',
+        token: anon.body.token,
+        body: { mode: 'human', difficulty: 1 },
+    }));
+    assert.equal(created.status, 201);
+    assert.equal(created.body.mode, 'human');
+});
+
 test('POST /api/games 需要会话', () => {
     const res = handleApi(makeDeps(), request({ method: 'POST', pathname: '/api/games', body: { mode: 'human' } }));
     assert.equal(res.status, 401);

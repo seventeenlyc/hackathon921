@@ -65,6 +65,13 @@ export function handleApi(deps: ApiDeps, req: ApiRequest): ApiResponse {
         return json(200, { token: signToken(deps.secret, username, deps.now()), username });
     }
 
+    // 匿名会话（人类模式用）：人类模式没有昵称门禁，但托管对局仍需一个归属凭证。
+    // 主体由服务端随机生成，昵称从不作为凭证（docs/PRODUCT_CONCEPT.md §4）。
+    if (req.pathname === '/api/sessions/anonymous' && method === 'POST') {
+        const subject = 'anon-' + deps.newRunId();
+        return json(200, { token: signToken(deps.secret, subject, deps.now()), username: subject });
+    }
+
     // 开一局：服务端签发对局会话，后续波次必须挂在它下面。
     if (req.pathname === '/api/runs' && method === 'POST') {
         const username = verifyToken(deps.secret, req.token, deps.now());

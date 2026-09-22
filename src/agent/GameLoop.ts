@@ -74,6 +74,15 @@ export class GameLoop {
         this.listeners.push(listener);
     }
 
+    /**
+     * Mirror a state owned somewhere else (in phase C, the server) into this
+     * loop, so UI code can keep reading `state`/`isIdle()`/`onChange` unchanged
+     * while the browser no longer owns the simulation.
+     */
+    syncState(state: GameState) {
+        this.setState(state);
+    }
+
     setSpeed(speed: GameSpeed) {
         this._speed = speed;
     }
