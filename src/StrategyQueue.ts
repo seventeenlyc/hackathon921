@@ -4,6 +4,7 @@ import {waveManager} from './WavesManager';
 import {getSessionUsername} from './leaderboard/SessionIdentity';
 import {playMode} from './PlayMode';
 import {runSync} from './leaderboard/RunSync';
+import {audioManager} from './AudioManager';
 
 /**
  * Glue between the live game and the versioned strategy store.
@@ -40,6 +41,7 @@ export function startRun(): void {
     const text = (pending ? pending.text : strategyStore.active().text).trim();
     if (!text) return;
 
+    audioManager.startMusic();
     if (playMode === 'ai') runSync.prepareRun(getSessionUsername()!);
     gameLoop.start();
     void waveManager.start();

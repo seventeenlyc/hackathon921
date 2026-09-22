@@ -12,6 +12,7 @@ import {waveManager} from "./WavesManager";
 import {submitRunScore} from "./leaderboard/LeaderboardUI";
 import {getSessionUsername} from "./leaderboard/SessionIdentity";
 import {runSync} from "./leaderboard/RunSync";
+import {audioManager} from "./AudioManager";
 import {getSessionToken, fetchSharedLeaderboard} from "./leaderboard/LeaderboardClient";
 import {cashManager} from "./CashManager";
 import {Tower} from "./entities/towers/Tower";
@@ -34,6 +35,8 @@ let decisionsMade = 0;
 class Game {
     private updateInterval: number = -1;
     private looping: boolean = true;
+    private lastSoundWave = 0;
+    private gameOverScheduled = false;
 
     constructor() {
         map.on('added', () => {
@@ -41,9 +44,7 @@ class Game {
         });
         // Human-mode runs are not leaderboard entries: the board compares AI
         // strategies, so a hand-played wave would not be comparable (see §9).
-        if (playMode === 'ai') {
-            waveManager.onWaveReached = wave => this.recordReachedWave(wave);
-        }
+        waveManager.onWaveReached = wave => this.recordReachedWave(wave);
 
         // The run keeps going when the window loses focus — the player may want to
         // look elsewhere while the AI plays; the run ends only when the base falls.
@@ -65,8 +66,12 @@ class Game {
     }
 
     recordReachedWave(wave: number = waveManager.waveCounter) {
+        if (wave > this.lastSoundWave) {
+            this.lastSoundWave = wave;
+            audioManager.playWaveReached();
+        }
         const username = getSessionUsername();
-        if (username) submitRunScore(username, wave);
+        if (playMode === 'ai' && username) submitRunScore(username, wave);
     }
 
     start() {
@@ -112,10 +117,13 @@ class Game {
     }
 
     gameOver() {
+        if (this.gameOverScheduled) return;
+        this.gameOverScheduled = true;
         window.setTimeout(() => {
             clearInterval(this.updateInterval);
             this.looping = false;
             waveManager.looping = false;
+            audioManager.playGameOver();
 
             const wave = waveManager.waveCounter;
             // 结算时再同步一次，以覆盖停止波次循环的边界时刻。人类模式不入榜。

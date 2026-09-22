@@ -54,6 +54,8 @@ const STRINGS: { [key: string]: Entry } = {
     'control.restart': {zh: '重新开始', en: 'Restart'},
     'control.lang': {zh: 'EN', en: '中文'},
     'control.langTitle': {zh: '切换语言（中 / EN）', en: 'Switch language (EN / 中文)'},
+    'control.audio': {zh: '音效开', en: 'Sound on'},
+    'control.audioMuted': {zh: '音效关', en: 'Sound off'},
 
     'state.idle': {zh: '未开始', en: 'Not started'},
     'state.running': {zh: '运行中', en: 'Running'},

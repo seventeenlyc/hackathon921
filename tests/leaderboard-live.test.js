@@ -169,6 +169,7 @@ async function test(name, fn) {
             './StrategyQueue': { queueStrategy: () => ({}), startRun: () => {} },
             './DecisionLog': { decisionLog: { add() {}, error() {} } },
             './leaderboard/RunSync': { runSync: { enqueuePrompt() {}, retryPending() {} } },
+            './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, startMusic() {} } },
         }, {
             window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {} },
             setInterval: () => 1,

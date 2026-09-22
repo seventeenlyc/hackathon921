@@ -14,6 +14,7 @@ import {Map} from "./Map";
 import {towerPlacer} from "./TowerPlacer";
 import {getControlLayer} from "./ControlLayer";
 import {applyStaticTranslations, onLangChange, t, toggleLang} from './i18n';
+import {audioManager} from './AudioManager';
 
 /** Summary shown on the settlement screen after the base falls. */
 export interface RunStats {
@@ -49,6 +50,7 @@ class InterfaceManager {
     private gameOverElement = document.getElementById('game-over')!;
     private pauseButton = document.getElementById('pause') as HTMLButtonElement;
     private resumeButton = document.getElementById('resume') as HTMLButtonElement;
+    private audioButton = document.getElementById('audio-toggle') as HTMLButtonElement | null;
     private controlLayer = getControlLayer();
     private lastTower: Tower | null = null;
     public snackbar = new Snackbar();
@@ -74,6 +76,12 @@ class InterfaceManager {
             gameLoop.setSpeed(nextSpeed(gameLoop.speed));
             this.updateSpeedLabel();
         };
+        this.audioButton?.addEventListener('click', () => {
+            const muted = !audioManager.isMuted();
+            audioManager.setMuted(muted);
+            if (!muted) audioManager.startMusic();
+            this.updateAudioLabel();
+        });
         const langButton = document.getElementById('lang') as HTMLButtonElement | null;
         langButton?.addEventListener('click', () => {
             toggleLang();
@@ -87,6 +95,7 @@ class InterfaceManager {
         });
         this.setState(gameLoop.state);
         this.updateSpeedLabel();
+        this.updateAudioLabel();
         this.renderSpawners();
 
         // The class scopes which half of the UI is visible (see styles.less).
@@ -98,6 +107,7 @@ class InterfaceManager {
         onLangChange(() => {
             this.setState(gameLoop.state);
             this.updateSpeedLabel();
+            this.updateAudioLabel();
             this.renderSpawners();
             this.setupModeButton();
             if (this.lastTower) this.showTowerStats(this.lastTower);
@@ -137,6 +147,12 @@ class InterfaceManager {
 
     updateSpeedLabel() {
         this.speedElement.textContent = t('speed.label', {speed: gameLoop.speed});
+    }
+
+    updateAudioLabel() {
+        if (!this.audioButton) return;
+        this.audioButton.textContent = audioManager.isMuted() ? t('control.audioMuted') : t('control.audio');
+        this.audioButton.setAttribute('aria-pressed', String(audioManager.isMuted()));
     }
 
     renderSpawners() {
