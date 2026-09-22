@@ -363,11 +363,25 @@ body {
       text-decoration: none;
       padding: 2px 5px;
       border-radius: 4px;
+      /* Rendered as a button so a lane change does not reload the page (#40). */
+      background: transparent;
+      border: 0;
+      font-family: inherit;
+      font-size: inherit;
+      line-height: inherit;
+      cursor: pointer;
 
       &:hover, &.active{
         background-color: var(--accent);
         color: #202125;
       }
+    }
+
+    .spawner-status {
+      margin-top: 4px;
+      font-size: 11px;
+      color: #8b8b8b;
+      min-height: 14px;
     }
 
   }

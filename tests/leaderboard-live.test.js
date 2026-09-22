@@ -35,6 +35,7 @@ async function test(name, fn) {
             './entities/enemies/BossEnemy': { BossEnemy: class {} },
             './Map': { map: { enemyBases: [] } },
             './tools/helphers': { rand: () => 0 },
+            './SpawnQueue': { applyPendingSpawnCount: () => false },
             './agent/GameLoop': { gameLoop: {
                 sleep: async () => {},
                 holdForPlanning: async () => {
@@ -76,6 +77,7 @@ async function test(name, fn) {
             './entities/enemies/BossEnemy': { BossEnemy: class {} },
             './Map': { map: { enemyBases: [] } },
             './tools/helphers': { rand: () => 0 },
+            './SpawnQueue': { applyPendingSpawnCount: () => false },
             './agent/GameLoop': { gameLoop: {
                 sleep: async () => {},
                 // Stop the run during the planning window that precedes wave 2.
@@ -111,6 +113,7 @@ async function test(name, fn) {
             './entities/enemies/BossEnemy': { BossEnemy: class {} },
             './Map': { map: { enemyBases: [] } },
             './tools/helphers': { rand: () => 0 },
+            './SpawnQueue': { applyPendingSpawnCount: () => false },
             './agent/GameLoop': { gameLoop: {
                 sleep: async () => {},
                 holdForPlanning: async () => {},

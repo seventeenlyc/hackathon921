@@ -14,6 +14,15 @@ class Map extends EventEmitter {
     public static GRID_H = 31;
     public grid: (GridRenderable | 0 | 1)[][] = new Array(Map.GRID_W).fill(0).map(() => new Array(Map.GRID_H).fill(0));
     public static TILE_SIZE: number = 40;
+
+    /** The four spawn points, in the order lanes are enabled (issue #40). */
+    public static SPAWN_POINTS = [
+        {i: 4, j: Map.GRID_H - 5},
+        {i: Map.GRID_W - 5, j: 4},
+        {i: Map.GRID_W - 5, j: Map.GRID_H - 5},
+        {i: 4, j: 4},
+    ];
+
     public homeBase: Base;
     public enemyBases: Base[] = [];
     private pathsCache: { [k: string]: Point[] | false } = {}
@@ -24,15 +33,50 @@ class Map extends EventEmitter {
 
         const difficulty = queryParamsManager.getDifficulty();
 
-        this.enemyBases.push(this.addBase(4, Map.GRID_H - 5))
-        if (difficulty > 1) this.enemyBases.push(this.addBase(Map.GRID_W - 5, 4))
-        if (difficulty > 2) this.enemyBases.push(this.addBase(Map.GRID_W - 5, Map.GRID_H - 5))
-        if (difficulty > 3) this.enemyBases.push(this.addBase(4, 4))
+        this.enemyBases.push(this.addBase(Map.SPAWN_POINTS[0].i, Map.SPAWN_POINTS[0].j))
+        for (let index = 1; index < difficulty; ++index) {
+            this.enemyBases.push(this.addBase(Map.SPAWN_POINTS[index].i, Map.SPAWN_POINTS[index].j))
+        }
 
-        console.log(this.enemyBases);
         for (let i = 0; i < 150; i++) {
             this.addElement(randIndex(this.grid), randIndex(this.grid[0]), Rock)
         }
+    }
+
+    /**
+     * Add or remove spawn lanes on a live map (issue #40).
+     *
+     * Rocks on a spawn point are cleared, but a tower is never bulldozed to make
+     * room for a lane — the count simply stops short. Paths are invalidated and
+     * recomputed, otherwise the new lane would keep using stale A* results.
+     */
+    setSpawnCount(count: number): number {
+        const target = Math.max(1, Math.min(Map.SPAWN_POINTS.length, Math.floor(count)));
+
+        while (this.enemyBases.length > target) {
+            const base = this.enemyBases.pop()!;
+            this.grid[base.i][base.j] = 0;
+        }
+
+        while (this.enemyBases.length < target) {
+            const point = Map.SPAWN_POINTS[this.enemyBases.length];
+            const cell = this.grid[point.i][point.j];
+
+            if (cell instanceof Rock) {
+                this.grid[point.i][point.j] = 0;
+            } else if (cell !== 0) {
+                break;
+            }
+
+            this.enemyBases.push(this.addBase(point.i, point.j));
+        }
+
+        this.invalidatePathsCache();
+        // `added` is what makes Game recompute enemy routes and what
+        // canBePlaced() consults, so a new lane is immediately respected.
+        this.emit('added');
+
+        return this.enemyBases.length;
     }
 
     drawGrid(ctx: CanvasRenderingContext2D) {
