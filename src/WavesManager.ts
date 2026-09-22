@@ -31,12 +31,22 @@ const idlePlanner: Planner = {
     plan: () => new Promise(resolve => setTimeout(resolve, 500))
 };
 
+/**
+ * Human mode: nobody plans, so the boundary resolves immediately. The pause
+ * between waves is handled by `interWaveDelayMs`, not by a fake "thinking" time.
+ */
+export const humanPlanner: Planner = {
+    plan: () => Promise.resolve()
+};
+
 class WavesManager {
     public waveCounter = 1
     public looping = true;
     public onWaveReached: ((wave: number) => void) | null = null;
     private planner: Planner = idlePlanner;
     private started = false;
+    /** Breathing room between waves in human mode; 0 in AI mode. */
+    private interWaveDelayMs = 0;
 
     constructor() {
     }
@@ -44,6 +54,14 @@ class WavesManager {
     /** The agent runtime plugs in here. */
     setPlanner(planner: Planner) {
         this.planner = planner;
+    }
+
+    /**
+     * In human mode there is no AI latency to separate waves, so the caller gives
+     * the player a fixed pause instead (the old `delayBetweenWaves`).
+     */
+    setInterWaveDelay(ms: number) {
+        this.interWaveDelayMs = Math.max(0, ms);
     }
 
     /**
@@ -58,6 +76,14 @@ class WavesManager {
         this.started = true;
 
         while (this.looping) {
+            // Human mode: a fixed pause between waves, since there is no AI think
+            // time to create one. It elapses only while stepping, so PAUSE / lost
+            // focus freeze it like everything else.
+            if (this.interWaveDelayMs > 0 && this.waveCounter > 1) {
+                await gameLoop.sleep(this.interWaveDelayMs);
+                if (!this.looping) break;
+            }
+
             // Freeze and let the planner issue orders for `waveCounter` before its
             // enemies exist. A wave boundary is the only place the AI may act.
             await gameLoop.holdForPlanning(this.planner);
