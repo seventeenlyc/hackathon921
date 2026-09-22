@@ -67,6 +67,19 @@
           </table>
         </div>
         <hr />
+        <div class="strategy">
+          <label class="strategy-label" for="strategy-input">Your strategy</label>
+          <textarea
+            id="strategy-input"
+            class="strategy-input"
+            rows="6"
+            spellcheck="false"
+            placeholder="Tell your AI how to play…"
+          ></textarea>
+          <button id="strategy-apply" class="strategy-apply" type="button">Apply strategy</button>
+          <div id="strategy-status" class="strategy-status"></div>
+        </div>
+        <hr />
         <div class="state-controls">
           <button id="pause">Pause</button>
           <button id="resume">Resume</button>
@@ -95,7 +108,7 @@
         <footer>
           <div>
             Inert
-            <span id="version" class="accent">v0.1.3</span>
+            <span id="version" class="accent">v0.1.4</span>
           </div>
           <div class="code">
             <span>Source code:</span>
