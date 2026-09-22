@@ -167,6 +167,35 @@ export class GameMap extends EventEmitter {
         }
     }
 
+    /**
+     * Cheap placement probe for the AI *observation* only.
+     *
+     * The authoritative \`canBePlaced\` additionally runs \`enemies.canAllReachBase()\`,
+     * which is one A* per live enemy; snapshot building called it up to 16 times
+     * per wave, so its cost grew with the number of enemies (measured: ~0.6 s at
+     * ~100 enemies, blocking the single-threaded loop). This probe only checks
+     * that every spawn still reaches the base.
+     *
+     * A cell it approves can therefore trap an enemy in a pocket; the real build
+     * still goes through \`canBePlaced\` and is rejected with BLOCKS_PATH, which the
+     * model sees. That is the same trade-off upstream made for path-shaping.
+     */
+    canBePlacedForObservation(i: number, j: number) {
+        if (this.grid[i] && this.grid[i][j] === 0) {
+            this.grid[i][j] = 1;
+
+            const savedCache = this.pathsCache;
+            this.pathsCache = {};
+
+            const ok = this.enemyBases.every(base => this.pathFind(base.i, base.j));
+
+            this.pathsCache = savedCache;
+            this.grid[i][j] = 0;
+            return ok;
+        }
+        return false;
+    }
+
     /** Only towers have simulation to advance; bases and rocks updated hover in the old build. */
     update() {
         this.grid.forEach(row => row.forEach(el => {

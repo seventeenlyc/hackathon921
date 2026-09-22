@@ -10,7 +10,7 @@
     "test": "npm run build && node tests/texture-assets.test.js && node tests/leaderboard-store.test.js && node tests/leaderboard-ui.test.js && node tests/control-layer.test.js && node tests/human-mode.test.js && npm run test:agent && npm run test:engine",
     "test:agent": "tsc -p tsconfig.test.json && node tests/agent/play-mode.test.js && node tests/agent/game-actions.test.js && node tests/agent/game-loop.test.js && node tests/agent/strategy-store.test.js && node tests/agent/strategy-library.test.js && node tests/agent/strategy-limits.test.js && node tests/agent/agent-runtime.test.js && node tests/agent/snapshot.test.js && node tests/agent/spawn-settings.test.js",
     "build:server": "tsc -p tsconfig.server.json",
-    "test:engine": "tsc -p tsconfig.test.json && node tests/engine/rng.test.js && node tests/engine/engine.test.js && node tests/engine/battlefield.test.js && node tests/engine/render-snapshot.test.js && node tests/net/game-client.test.js && node tests/net/session.test.js && node tests/view/interpolate.test.js",
+    "test:engine": "tsc -p tsconfig.test.json && node tests/engine/rng.test.js && node tests/engine/engine.test.js && node tests/engine/battlefield.test.js && node tests/engine/render-snapshot.test.js && node tests/net/game-client.test.js && node tests/net/session.test.js && node tests/view/interpolate.test.js && node tests/view/frameBuffer.test.js",
     "test:server": "npm run build:server && node --test \"server-dist/server/tests/*.test.js\""
   },
   "repository": {

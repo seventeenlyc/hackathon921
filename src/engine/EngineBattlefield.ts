@@ -151,7 +151,9 @@ export class EngineBattlefield implements Battlefield {
             towerOptions: this.towerOptions(),
             routes: this.allRoutes(),
             isFree: (i, j) => Boolean(engine.map.grid[i]) && engine.map.grid[i][j] === 0,
-            isBuildable: (i, j) => engine.map.canBePlaced(i, j),
+            // Observation only: the cheaper probe, so snapshot cost does not grow
+            // with the number of live enemies. Real builds still use canPlaceAt().
+            isBuildable: (i, j) => engine.map.canBePlacedForObservation(i, j),
             routeLengthAfterBuilding: (lane, i, j) => this.routeLengthAfterBuilding(lane, i, j),
         });
     }
