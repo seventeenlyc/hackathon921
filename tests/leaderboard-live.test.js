@@ -109,6 +109,7 @@ async function test(name, fn) {
             './agent/GameActions': { GameActions: class {} },
             './agent/InertBattlefield': { InertBattlefield: class {} },
             './agent/AgentRuntime': { AgentRuntime: class {} },
+            './agent/snapshot': { formatSnapshot: () => '' },
             './agent/StrategyStore': { strategyStore: { lock() {} } },
             './StrategyQueue': { queueStrategy: () => ({}) },
             './DecisionLog': { decisionLog: { add() {}, error() {} } },

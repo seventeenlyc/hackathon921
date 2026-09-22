@@ -18,6 +18,7 @@ import {GameActions} from "./agent/GameActions";
 import {InertBattlefield} from "./agent/InertBattlefield";
 import {strategyStore} from "./agent/StrategyStore";
 import {AgentRuntime} from "./agent/AgentRuntime";
+import {formatSnapshot} from "./agent/snapshot";
 import {decisionLog} from "./DecisionLog";
 import {queueStrategy} from "./StrategyQueue";
 
@@ -136,4 +137,7 @@ export const game = new Game();
     resume: () => gameLoop.resume(),
     setSpeed: (speed: GameSpeed) => gameLoop.setSpeed(speed),
     setStrategy: (text: string) => queueStrategy(text),
+    // Debug view (issue #4): what the AI actually observed this round.
+    state: () => actions.getState(),
+    stateText: () => formatSnapshot(actions.getState()),
 };

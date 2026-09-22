@@ -88,24 +88,21 @@ class FakeBattlefield {
         return this._wave;
     }
 
-    baseLife() {
-        return this._baseLife;
-    }
-
-    baseMaxLife() {
-        return this._baseMaxLife;
-    }
-
-    base() {
-        return {i: 5, j: 5};
-    }
-
-    spawns() {
-        return [{i: 0, j: 9}];
-    }
-
-    enemies() {
-        return {simple: 2, fast: 1, armored: 0, healer: 0, boss: 0, total: 3};
+    snapshot() {
+        return this._snapshot || {
+            wave: this._wave,
+            cash: this._cash,
+            baseLife: this._baseLife,
+            baseMaxLife: this._baseMaxLife,
+            grid: {width: this.gridWidth, height: this.gridHeight},
+            base: {i: 5, j: 5},
+            spawns: [{i: 0, j: 9}],
+            enemies: {total: 0, groups: [], nearestThreat: null},
+            towers: this.towers(),
+            towerOptions: this._options,
+            path: null,
+            buildCandidates: [],
+        };
     }
 
     /** Simulate a live engine tick without going through GameActions. */
@@ -222,23 +219,25 @@ test('upgradeTower succeeds and reports the new level once', () => {
     assert.strictEqual(result.data.level, field.towerAt(1, 1).level);
 });
 
-test('getState exposes the compressed snapshot the model receives', () => {
-    const field = new FakeBattlefield({wave: 7, cash: 370, baseLife: 9});
-    field.build('canon', 2, 2);
-    const state = new GameActions(field).getState();
+test('getState returns the snapshot the battlefield provides', () => {
+    const field = new FakeBattlefield({wave: 7, cash: 320, baseLife: 9});
+    const snapshot = {
+        wave: 7,
+        cash: 320,
+        baseLife: 9,
+        baseMaxLife: 15,
+        grid: {width: 10, height: 10},
+        base: {i: 5, j: 5},
+        spawns: [{i: 0, j: 9}],
+        enemies: {total: 3, groups: [{type: 'simple', count: 3, avgLife: 10, avgRemainingLife: 8}], nearestThreat: null},
+        towers: [],
+        towerOptions: OPTIONS,
+        path: {waypoints: [{i: 0, j: 9}, {i: 5, j: 5}], length: 12},
+        buildCandidates: [{i: 1, j: 8, coverage: 3, distanceToBase: 10}],
+    };
+    field._snapshot = snapshot;
 
-    assert.deepStrictEqual(state.grid, {width: 10, height: 10});
-    assert.strictEqual(state.wave, 7);
-    // Building a canon (50) must be reflected in the snapshot the model sees.
-    assert.strictEqual(state.cash, 320);
-    assert.strictEqual(state.baseLife, 9);
-    assert.strictEqual(state.baseMaxLife, 15);
-    assert.deepStrictEqual(state.base, {i: 5, j: 5});
-    assert.deepStrictEqual(state.spawns, [{i: 0, j: 9}]);
-    assert.strictEqual(state.enemies.total, 3);
-    assert.strictEqual(state.towers.length, 1);
-    assert.strictEqual(state.towers[0].id, '2:2');
-    assert.strictEqual(state.towerOptions.length, 2);
+    assert.strictEqual(new GameActions(field).getState(), snapshot);
 });
 
 console.log('All GameActions tests passed.');
