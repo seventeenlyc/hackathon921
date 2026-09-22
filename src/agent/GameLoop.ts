@@ -37,7 +37,6 @@ const TICK_MS = 16;
 export class GameLoop {
     private _state: GameState = 'idle';
     private _speed: GameSpeed = 1;
-    private _focused = true;
     private listeners: StateListener[] = [];
 
     get state(): GameState {
@@ -48,9 +47,13 @@ export class GameLoop {
         return this._speed;
     }
 
-    /** True only when the simulation is allowed to advance. */
+    /**
+     * True when the simulation is allowed to advance. Deliberately independent of
+     * window focus: the run keeps going while the player looks elsewhere, and ends
+     * on its own only when the base falls.
+     */
     isStepping(): boolean {
-        return this._state === 'running' && this._focused;
+        return this._state === 'running';
     }
 
     /** True until the player has started the run. */
@@ -73,15 +76,6 @@ export class GameLoop {
 
     setSpeed(speed: GameSpeed) {
         this._speed = speed;
-    }
-
-    /**
-     * Tab focus is a separate gate from PAUSED: losing focus freezes everything
-     * (including spawning) and regaining it continues, without demanding a manual
-     * resume. Only an explicit pause() makes the player's PAUSED sticky.
-     */
-    setFocused(focused: boolean) {
-        this._focused = focused;
     }
 
     /** Player-initiated. Ignored unless the game is actually running. */
@@ -111,8 +105,8 @@ export class GameLoop {
 
     /**
      * Delay that only elapses while the game is stepping, and runs `speed` times
-     * faster in fast mode. Replaces the old focus-aware `asyncSleep` so spawning
-     * honours PAUSED / PLANNING / speed exactly like the simulation does.
+     * faster in fast mode. Keeps spawning in step with the simulation under
+     * PAUSED / PLANNING / speed.
      */
     sleep(ms: number): Promise<void> {
         return new Promise(resolve => {

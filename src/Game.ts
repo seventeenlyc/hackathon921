@@ -5,14 +5,16 @@ import {map} from "./Map";
 import {camera} from "./Camera";
 import {enemyManager} from "./EnemyManager";
 import {munitionManager} from "./MunitionManager";
-import {controls} from "./Controls";
 import {towerPlacer} from "./TowerPlacer";
 import './InterfaceManager';
 import {interfaceManager} from "./InterfaceManager";
 import {waveManager} from "./WavesManager";
 import {submitRunScore} from "./leaderboard/LeaderboardUI";
 import {readUsernameCookie} from "./leaderboard/LeaderboardStore";
-import {getSessionToken} from "./leaderboard/LeaderboardClient";
+import {getSessionToken, fetchSharedLeaderboard} from "./leaderboard/LeaderboardClient";
+import {cashManager} from "./CashManager";
+import {Tower} from "./entities/towers/Tower";
+import type {RunStats} from "./InterfaceManager";
 import {gameLoop, GameSpeed} from "./agent/GameLoop";
 import {GameActions} from "./agent/GameActions";
 import {InertBattlefield} from "./agent/InertBattlefield";
@@ -21,6 +23,10 @@ import {AgentRuntime} from "./agent/AgentRuntime";
 import {formatSnapshot} from "./agent/snapshot";
 import {decisionLog} from "./DecisionLog";
 import {queueStrategy, startRun} from "./StrategyQueue";
+
+// Settlement stats gathered across the run (see the result screen).
+let runStartedAt: number | null = null;
+let decisionsMade = 0;
 
 class Game {
     private updateInterval: number = -1;
@@ -32,16 +38,13 @@ class Game {
         });
         waveManager.onWaveReached = wave => this.recordReachedWave(wave);
 
-        // Focus is a gate separate from the player's PAUSED state; losing focus
-        // freezes the sim and spawning, regaining it continues (issue #17).
-        controls.on('focusin', () => gameLoop.setFocused(true));
-        controls.on('focusout', () => gameLoop.setFocused(false));
-        gameLoop.setFocused(controls.tabHasFocus());
-
+        // The run keeps going when the window loses focus — the player may want to
+        // look elsewhere while the AI plays; the run ends only when the base falls.
         // Entering PLANNING is the moment a queued prompt is locked in: the AI
         // plans the upcoming wave with exactly this version (issue #17).
         gameLoop.onChange(state => {
             if (state === 'planning') strategyStore.lock();
+            if (state === 'running' && runStartedAt === null) runStartedAt = Date.now();
         });
 
         this.start()
@@ -96,11 +99,51 @@ class Game {
         setTimeout(() => {
             clearInterval(this.updateInterval);
             this.looping = false;
-            interfaceManager.showGameOver();
             waveManager.looping = false;
+
+            const wave = waveManager.waveCounter;
             // 结算时再同步一次，以覆盖输入用户名或停止波次循环的边界时刻。
-            this.recordReachedWave();
+            this.recordReachedWave(wave);
+
+            interfaceManager.showGameOver(this.collectStats(wave));
+
+            // 名次以服务端为准，异步补齐；拿不到就保持 “—”。
+            const username = readUsernameCookie();
+            if (username) {
+                void fetchSharedLeaderboard(username).then(result => {
+                    interfaceManager.setResultRank(result && result.me ? result.me.rank : null);
+                });
+            }
         }, 100)
+    }
+
+    private collectStats(wave: number): RunStats {
+        const byType = new Map<string, number>();
+        let total = 0;
+
+        for (let i = 0; i < map.grid.length; ++i) {
+            for (let j = 0; j < map.grid[i].length; ++j) {
+                const cell = map.grid[i][j];
+                if (cell instanceof Tower) {
+                    total += 1;
+                    byType.set(cell.name, (byType.get(cell.name) || 0) + 1);
+                }
+            }
+        }
+
+        return {
+            wave,
+            towers: {
+                total,
+                byType: Array.from(byType.entries())
+                    .map(([type, count]) => ({type, count}))
+                    .sort((a, b) => b.count - a.count || a.type.localeCompare(b.type)),
+            },
+            cash: cashManager.getBalance(),
+            decisions: decisionsMade,
+            durationMs: runStartedAt === null ? 0 : Date.now() - runStartedAt,
+            rank: null,
+        };
     }
 }
 
@@ -112,7 +155,10 @@ const agentRuntime = new AgentRuntime({
     fetchImpl: (input, init) => fetch(input, init),
     // The server requires a valid session; the leaderboard client owns it.
     getToken: () => getSessionToken(),
-    onDecision: entry => decisionLog.add(entry),
+    onDecision: entry => {
+        decisionLog.add(entry);
+        decisionsMade += 1;
+    },
     onError: message => decisionLog.error(message),
 });
 
