@@ -7,6 +7,7 @@ import { LeaderboardStore } from './store';
 import { signToken, verifyToken } from './token';
 import { sanitizeLimit, sanitizeUsername, sanitizeWave } from './validate';
 import type { AgentConfig } from './agent';
+import { MAX_PROMPT_LENGTH } from './prompts';
 
 export interface ApiRequest {
     method: string;
@@ -31,6 +32,8 @@ export interface ApiDeps {
 }
 
 const WAVE_PATH = /^\/api\/runs\/([^/]+)\/waves$/;
+const PROMPT_WRITE_PATH = /^\/api\/runs\/([^/]+)\/prompts$/;
+const PROMPT_HISTORY_PATH = /^\/api\/leaderboard\/([^/]+)\/prompts$/;
 
 function json(status: number, body: any): ApiResponse {
     return { status, body };
@@ -88,6 +91,56 @@ export function handleApi(deps: ApiDeps, req: ApiRequest): ApiResponse {
             return json(status, { accepted: false, reason: result.reason });
         }
         return json(200, { accepted: true, bestWave: result.bestWave });
+    }
+
+    // Store only versions that the client reports after StrategyStore.lock().
+    const promptWriteMatch = PROMPT_WRITE_PATH.exec(req.pathname);
+    if (promptWriteMatch && method === 'POST') {
+        const username = verifyToken(deps.secret, req.token, deps.now());
+        if (!username) return json(401, { error: 'INVALID_SESSION' });
+
+        const version = field(req.body, 'version');
+        const prompt = field(req.body, 'prompt');
+        const fromWave = field(req.body, 'fromWave');
+        if (!Number.isInteger(version) || (version as number) < 1) {
+            return json(400, { recorded: false, reason: 'PROMPT_VERSION_INVALID' });
+        }
+        if (typeof prompt !== 'string' || prompt.trim() === '' || prompt.length > MAX_PROMPT_LENGTH) {
+            return json(400, { recorded: false, reason: 'PROMPT_INVALID' });
+        }
+        const safeWave = sanitizeWave(fromWave);
+        if (safeWave == null) return json(400, { recorded: false, reason: 'PROMPT_WAVE_INVALID' });
+
+        const result = deps.store.recordPrompt(
+            promptWriteMatch[1],
+            username,
+            { version: version as number, prompt, fromWave: safeWave },
+            deps.now()
+        );
+        if (result.recorded) return json(200, result);
+        const status =
+            result.reason === 'RUN_NOT_FOUND' || result.reason === 'RUN_EXPIRED'
+                ? 404
+                : result.reason === 'USERNAME_MISMATCH'
+                  ? 403
+                  : result.reason.startsWith('PROMPT_VERSION_') || result.reason === 'PROMPT_WAVE_BEHIND'
+                    ? 409
+                    : 400;
+        return json(status, result);
+    }
+
+    // Prompt history is public by design, but only for the server-selected best run.
+    const promptHistoryMatch = PROMPT_HISTORY_PATH.exec(req.pathname);
+    if (promptHistoryMatch && method === 'GET') {
+        let decoded: string;
+        try {
+            decoded = decodeURIComponent(promptHistoryMatch[1]);
+        } catch (e) {
+            return json(400, { error: 'INVALID_USERNAME' });
+        }
+        const username = sanitizeUsername(decoded);
+        if (!username) return json(400, { error: 'INVALID_USERNAME' });
+        return json(200, deps.store.bestRunPrompts(username));
     }
 
     // 读取共享排行榜；带 token 时额外返回本人的名次。

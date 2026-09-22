@@ -8,7 +8,7 @@ export class Timer {
 
     resume() {
         this.start = Date.now();
-        this.timerID = setTimeout(this.callback, this.delay);
+        this.timerID = window.setTimeout(this.callback, this.delay);
         return this;
     }
 
@@ -19,7 +19,7 @@ export class Timer {
     }
 
     clear() {
-        clearTimeout(this.timerID);
+        window.clearTimeout(this.timerID);
         return this;
     }
 }

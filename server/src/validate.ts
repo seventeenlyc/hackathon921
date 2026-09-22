@@ -7,6 +7,7 @@ export const MIN_USERNAME_LENGTH = 1;
 
 /** 单局合理的最大波次上限。无限塔防没有硬性终局，这里只是拒绝荒谬值（如 Number.MAX_SAFE_INTEGER）。 */
 export const MAX_WAVE = 100000;
+export const MAX_STRATEGY_LENGTH = 5000;
 
 const USERNAME_PATTERN = /^[\w\-\u4e00-\u9fa5]+$/;
 

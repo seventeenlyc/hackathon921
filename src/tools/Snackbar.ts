@@ -22,7 +22,7 @@ export class Snackbar {
 
     clearTimeout() {
         if (this.timeoutID) {
-            clearTimeout(this.timeoutID);
+            window.clearTimeout(this.timeoutID);
         }
     }
 
@@ -32,6 +32,6 @@ export class Snackbar {
         this.setText(text);
         this.show()
 
-        this.timeoutID = setTimeout(() => this.hide(), duration)
+        this.timeoutID = window.setTimeout(() => this.hide(), duration)
     }
 }

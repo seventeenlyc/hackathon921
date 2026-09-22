@@ -1,19 +1,20 @@
 import {
     sanitizeUsername,
-    readUsernameCookie,
-    writeUsernameCookie,
     readStoredLeaderboard,
     writeStoredLeaderboard,
     submitScore,
 } from './LeaderboardStore';
 import type { LeaderboardEntry } from './LeaderboardStore';
-import { fetchSharedLeaderboard, syncReachedWave } from './LeaderboardClient';
+import {getSessionUsername, setSessionUsername} from './SessionIdentity';
+import { fetchSharedLeaderboard } from './LeaderboardClient';
 import type { RemoteLeaderboard } from './LeaderboardClient';
+import {runSync} from './RunSync';
+import {PromptHistoryDialog} from './PromptHistoryDialog';
 import {onLangChange, t} from '../i18n';
 
 const TOP_N = 10;
 
-// 用户名弹窗：首次进入（无 cookie）时提示输入用户名（无需密码），校验后写入 cookie。
+// 用户名弹窗：AI 模式每次页面加载都要求输入昵称；昵称只活在当前页面内存。
 export class UsernameGate {
     private overlay: HTMLElement;
     private input: HTMLInputElement;
@@ -47,7 +48,10 @@ export class UsernameGate {
             this.errorEl.textContent = t('gate.invalid');
             return;
         }
-        writeUsernameCookie(name);
+        if (!setSessionUsername(name)) {
+            this.errorEl.textContent = t('gate.invalid');
+            return;
+        }
         this.hide();
         this.onDone(name);
     }
@@ -67,13 +71,17 @@ class LeaderboardPanel {
     private listEl: HTMLElement;
     private footerEl: HTMLElement;
     private statusEl: HTMLElement;
+    private retryButton: HTMLButtonElement;
     private username: string | null;
     private remote: RemoteLeaderboard | null = null;
     private remoteFailed = false;
     private pendingRemote = false;
+    private syncFailed = false;
+    private remoteRequestNumber = 0;
+    private readonly historyDialog: PromptHistoryDialog;
 
     constructor() {
-        this.username = readUsernameCookie();
+        this.username = getSessionUsername();
         this.root = document.createElement('section');
         this.root.className = 'leaderboard-panel';
         this.root.setAttribute('aria-labelledby', 'leaderboard-title');
@@ -83,12 +91,18 @@ class LeaderboardPanel {
         title.textContent = t('lb.title');
         this.statusEl = document.createElement('div');
         this.statusEl.className = 'leaderboard-status';
+        this.retryButton = document.createElement('button');
+        this.retryButton.type = 'button';
+        this.retryButton.className = 'leaderboard-retry';
+        this.retryButton.addEventListener('click', () => runSync.retryPending());
+        this.historyDialog = new PromptHistoryDialog();
         this.listEl = document.createElement('ol');
         this.listEl.className = 'leaderboard-list';
         this.footerEl = document.createElement('div');
         this.footerEl.className = 'leaderboard-footer';
         this.root.appendChild(title);
         this.root.appendChild(this.statusEl);
+        this.root.appendChild(this.retryButton);
         this.root.appendChild(this.listEl);
         this.root.appendChild(this.footerEl);
         const slot = document.getElementById('leaderboard-slot');
@@ -98,19 +112,25 @@ class LeaderboardPanel {
             document.getElementById('inert')!.appendChild(this.root);
         }
         this.render();
+        runSync.onStatus(status => {
+            this.syncFailed = status.state === 'failed';
+            this.render();
+        });
+        runSync.onDrained(() => this.refresh());
         // The panel is text-only, so a language switch just re-renders it.
         onLangChange(() => this.render());
         void this.refreshRemote();
     }
 
     setUsername(name: string) { this.username = name; this.render(); void this.refreshRemote(); }
-    refresh() { this.username = readUsernameCookie() || this.username; this.render(); void this.refreshRemote(); }
+    refresh() { this.username = getSessionUsername(); this.render(); void this.refreshRemote(); }
 
     /** 拉取服务端共享排行榜；失败则标记离线并继续用本地数据渲染。 */
     private async refreshRemote(): Promise<void> {
-        if (this.pendingRemote) return;
+        const requestNumber = ++this.remoteRequestNumber;
         this.pendingRemote = true;
         const result = await fetchSharedLeaderboard(this.username, TOP_N);
+        if (requestNumber !== this.remoteRequestNumber) return;
         this.pendingRemote = false;
         if (result) {
             this.remote = result;
@@ -145,19 +165,25 @@ class LeaderboardPanel {
             const rankSpan = document.createElement('span');
             rankSpan.className = 'rank';
             rankSpan.textContent = String(i + 1);
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'name';
-            nameSpan.textContent = e.username;
+            const nameButton = document.createElement('button');
+            nameButton.type = 'button';
+            nameButton.className = 'name';
+            nameButton.textContent = e.username;
+            nameButton.setAttribute('aria-label', t('history.open', {name: e.username}));
+            nameButton.addEventListener('click', () => { void this.historyDialog.open(e.username); });
             const waveSpan = document.createElement('span');
             waveSpan.className = 'wave';
             waveSpan.textContent = t('lb.wave', {wave: e.wave});
             li.appendChild(rankSpan);
-            li.appendChild(nameSpan);
+            li.appendChild(nameButton);
             li.appendChild(waveSpan);
             this.listEl.appendChild(li);
         });
 
-        if (shared) {
+        if (this.syncFailed) {
+            this.statusEl.textContent = t('lb.syncFailed');
+            this.statusEl.classList.add('offline');
+        } else if (shared) {
             this.statusEl.textContent = t('lb.shared');
             this.statusEl.classList.remove('offline');
         } else if (this.remoteFailed) {
@@ -167,6 +193,8 @@ class LeaderboardPanel {
             this.statusEl.textContent = '';
             this.statusEl.classList.remove('offline');
         }
+        this.retryButton.hidden = !this.syncFailed;
+        this.retryButton.textContent = t('lb.retrySync');
 
         if (this.username) {
             // 优先用服务端给出的名次；离线时回退到本地列表里的位置。
@@ -196,6 +224,6 @@ export function submitRunScore(name: string, score: number): number | null {
     writeStoredLeaderboard(entries);
     leaderboardPanel.refresh();
     // 再异步同步到服务端（共享排行榜的真值来源）；同步完成后刷新一次以拿到全局排名。
-    void syncReachedWave(clean, score).then(() => leaderboardPanel.refresh());
+    runSync.enqueueWave(clean, score);
     return rank;
 }
