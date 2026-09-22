@@ -3,6 +3,7 @@ import {
     EnemyGroup,
     EnemyType,
     GameSnapshot,
+    LaneInfo,
     PathInfo,
     ThreatInfo,
     TowerInfo,
@@ -30,6 +31,12 @@ export interface EnemySample {
     etaSeconds: number;
 }
 
+/** One spawn lane as the adapter sees it: its spawn point and traversed cells. */
+export interface LaneRoute {
+    spawn: { i: number; j: number };
+    cells: Array<{ i: number; j: number }>;
+}
+
 export interface SnapshotInput {
     wave: number;
     cash: number;
@@ -42,8 +49,11 @@ export interface SnapshotInput {
     enemies: EnemySample[];
     towers: TowerInfo[];
     towerOptions: TowerOption[];
-    /** The enemy route as grid cells, spawn -> base. Null when unknown. */
-    route: Array<{ i: number; j: number }> | null;
+    /**
+     * Every spawn lane, in spawn order (spawn -> base). The index is the `lane`
+     * reported on `buildCandidates`; a map can gain lanes mid-run (issue #40).
+     */
+    routes: LaneRoute[];
     /** Cheap check: is this cell empty? */
     isFree: (i: number, j: number) => boolean;
     /** Authoritative check (runs A*): may a tower legally stand here? */
@@ -127,22 +137,20 @@ function compressRoute(route: Array<{ i: number; j: number }> | null): PathInfo 
 }
 
 /**
- * Cells adjacent to the route, ranked by how much of it a tower there would
- * cover and how close to the base that is. This is what makes "build along the
- * path" or "hold the choke point" actually executable by the model.
+ * Score candidate cells adjacent to ONE lane's route. Coverage counts that
+ * lane's own cells, so a cell is attributed to the lane it actually guards.
  */
-function buildCandidates(input: SnapshotInput): BuildCandidate[] {
-    const route = input.route;
-    if (!route || route.length === 0) return [];
-
-    const onRoute = new Set<string>();
-    route.forEach(cell => onRoute.add(`${cell.i}:${cell.j}`));
-
+function scoreLaneCandidates(
+    lane: number,
+    cells: Array<{ i: number; j: number }>,
+    input: SnapshotInput,
+    onRoute: Set<string>
+): BuildCandidate[] {
     const inGrid = (i: number, j: number) =>
         i >= 0 && j >= 0 && i < input.gridWidth && j < input.gridHeight;
 
     const neighbours = new Map<string, { i: number; j: number }>();
-    for (const cell of route) {
+    for (const cell of cells) {
         for (let di = -1; di <= 1; ++di) {
             for (let dj = -1; dj <= 1; ++dj) {
                 if (di === 0 && dj === 0) continue;
@@ -164,9 +172,9 @@ function buildCandidates(input: SnapshotInput): BuildCandidate[] {
         let coverage = 0;
         let deepestIndex = -1;
 
-        for (let index = 0; index < route.length; ++index) {
-            const di = route[index].i - cell.i;
-            const dj = route[index].j - cell.j;
+        for (let index = 0; index < cells.length; ++index) {
+            const di = cells[index].i - cell.i;
+            const dj = cells[index].j - cell.j;
             if (di * di + dj * dj <= radiusSquared) {
                 coverage += 1;
                 deepestIndex = index;
@@ -177,22 +185,64 @@ function buildCandidates(input: SnapshotInput): BuildCandidate[] {
         scored.push({
             i: cell.i,
             j: cell.j,
+            lane,
             coverage,
-            distanceToBase: route.length - 1 - deepestIndex,
+            distanceToBase: cells.length - 1 - deepestIndex,
         });
     });
 
     scored.sort((a, b) => b.coverage - a.coverage || a.distanceToBase - b.distanceToBase);
+    return scored;
+}
 
-    // Probing legality runs A*, so only the most promising cells are checked.
+/**
+ * Cells worth building on, across EVERY lane. Candidates are selected
+ * round-robin between lanes so one long or high-coverage lane cannot consume the
+ * whole budget and leave the others undefended — a map can gain lanes mid-run
+ * (issue #40). Legality is still answered by the engine (`isBuildable`), and the
+ * A* probe budget is shared across lanes. The result is re-sorted globally so
+ * the "best coverage first" contract still holds, and every candidate carries
+ * its `lane` so the model can tell which lane it guards.
+ */
+function buildCandidates(routes: LaneRoute[], input: SnapshotInput): BuildCandidate[] {
+    if (routes.length === 0) return [];
+
+    // A cell on ANY lane's route is not a build spot, even if it neighbours another lane.
+    const onRoute = new Set<string>();
+    routes.forEach(route => route.cells.forEach(cell => onRoute.add(`${cell.i}:${cell.j}`)));
+
+    const perLane = routes.map((route, lane) => scoreLaneCandidates(lane, route.cells, input, onRoute));
+
     const accepted: BuildCandidate[] = [];
+    const seen = new Set<string>();
     let probes = 0;
-    for (const candidate of scored) {
-        if (accepted.length >= MAX_BUILD_CANDIDATES || probes >= MAX_BUILDABILITY_PROBES) break;
-        probes += 1;
-        if (input.isBuildable(candidate.i, candidate.j)) accepted.push(candidate);
+    let rank = 0;
+    let advanced = true;
+
+    while (advanced && accepted.length < MAX_BUILD_CANDIDATES && probes < MAX_BUILDABILITY_PROBES) {
+        advanced = false;
+
+        for (const lane of perLane) {
+            if (accepted.length >= MAX_BUILD_CANDIDATES || probes >= MAX_BUILDABILITY_PROBES) break;
+
+            const candidate = lane[rank];
+            if (!candidate) continue;
+            advanced = true;
+
+            const key = `${candidate.i}:${candidate.j}`;
+            if (seen.has(key)) continue;
+
+            probes += 1;
+            if (input.isBuildable(candidate.i, candidate.j)) {
+                seen.add(key);
+                accepted.push(candidate);
+            }
+        }
+
+        rank += 1;
     }
 
+    accepted.sort((a, b) => b.coverage - a.coverage || a.distanceToBase - b.distanceToBase);
     return accepted;
 }
 
@@ -204,6 +254,14 @@ export function buildSnapshot(input: SnapshotInput): GameSnapshot {
         .sort((a, b) => b.level - a.level || b.dps - a.dps)
         .slice(0, MAX_TOWERS_IN_SNAPSHOT);
 
+    // Both `lanes` and the `lane` index on candidates come from this same
+    // filtered list, so they stay aligned.
+    const routes = input.routes.filter(route => route.cells.length > 0);
+    const lanes: LaneInfo[] = routes.map(route => ({
+        spawn: route.spawn,
+        path: compressRoute(route.cells)!,
+    }));
+
     return {
         wave: input.wave,
         cash: input.cash,
@@ -212,6 +270,7 @@ export function buildSnapshot(input: SnapshotInput): GameSnapshot {
         grid: { width: input.gridWidth, height: input.gridHeight },
         base: input.base,
         spawns: input.spawns,
+        lanes,
         enemies: {
             total: input.enemies.length,
             groups,
@@ -219,8 +278,7 @@ export function buildSnapshot(input: SnapshotInput): GameSnapshot {
         },
         towers,
         towerOptions: input.towerOptions,
-        path: compressRoute(input.route),
-        buildCandidates: buildCandidates(input),
+        buildCandidates: buildCandidates(routes, input),
     };
 }
 
@@ -235,8 +293,12 @@ export function formatSnapshot(snapshot: GameSnapshot): string {
         .map(tower => `${tower.type} L${tower.level}@(${tower.i},${tower.j})${tower.targetInRange ? '*' : ''}`)
         .join(', ');
 
+    const lanes = snapshot.lanes
+        .map((lane, index) => `L${index} from (${lane.spawn.i},${lane.spawn.j}) ${lane.path.waypoints.length}wp/${lane.path.length}t`)
+        .join('; ');
+
     const candidates = snapshot.buildCandidates
-        .map(candidate => `(${candidate.i},${candidate.j}) cov${candidate.coverage} dBase${candidate.distanceToBase}`)
+        .map(candidate => `L${candidate.lane}(${candidate.i},${candidate.j}) cov${candidate.coverage} dBase${candidate.distanceToBase}`)
         .join('; ');
 
     return [
@@ -244,7 +306,7 @@ export function formatSnapshot(snapshot: GameSnapshot): string {
         `Enemies (${snapshot.enemies.total}): ${groups || 'none'}`,
         `Nearest threat: ${threat ? `${threat.type} at (${threat.i},${threat.j}) ETA ${threat.etaSeconds}s hp ${threat.remainingLife}` : 'none'}`,
         `Towers (${snapshot.towers.length}): ${towers || 'none'}`,
-        `Path: ${snapshot.path ? `${snapshot.path.waypoints.length} waypoints, ${snapshot.path.length} tiles` : 'unknown'}`,
+        `Lanes (${snapshot.lanes.length}): ${lanes || 'unknown'}`,
         `Build candidates: ${candidates || 'none'}`,
     ].join('\n');
 }
