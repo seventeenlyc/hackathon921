@@ -10,7 +10,7 @@
 
 ## 技术栈与真值来源
 
-- TypeScript + Vite + HTML5 Canvas。游戏底座 fork 自 inert（MIT），**必须保留原 LICENSE 与原作者署名**。
+- TypeScript + Vite + HTML5 Canvas。游戏底座 fork 自 inert（**GPL-3.0** —— 上游 README 误写为 MIT，以仓库 `LICENSE` 为准），**必须保留原 LICENSE 与原作者署名**。
 - 包管理器的 lockfile 是真值来源，依赖变更必须连同 lockfile 一起提交。
 - **产品真值是 `docs/PRODUCT_CONCEPT.md`** —— 它只记录已确认的决定，末尾的「未决问题」清单同样有约束力：列在那里的事项尚未决定，不得当作需求实现。
 - `docs/IDEA.md` 与 `docs/USER_STORY.md` 是背景、意图和用户故事，用于理解「为什么」，不是需求规格。

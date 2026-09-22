@@ -210,9 +210,11 @@ MVP 必须建立：
 
 ### 塔防底座
 
-采用 [CorentinTh/inert](https://github.com/CorentinTh/inert)（MIT，TypeScript，约 2200 LOC）。
+采用 [CorentinTh/inert](https://github.com/CorentinTh/inert)（GPL-3.0，TypeScript，约 2200 LOC）。
 
 选择理由：原生支持无限波次与 RNG 波次生成；已有 5 种敌人与 5 种防御塔，策略空间足以让不同 Prompt 分化；A* 寻路 + 「塔即墙」使放置位置本身具有战略含义。落地事项见 issue #7 及其子项。
+
+**License 更正（2026-09-22，issue #1）**：上游 README 自称 MIT，但上游仓库的 `LICENSE` 文件与 GitHub 的识别结果都是 **GNU GPL-3.0**，本仓库沿用上游 LICENSE 原文。本项目是非商业黑客松 demo，黑客松结束后不再维护，因此接受 GPL-3.0 的 copyleft 义务。`AGENTS.md`、`README.md` 与 `package.json` 的 license 声明已按 GPL-3.0 更正。
 
 需要自行补齐的能力：防御塔升级 / 出售（inert 原版没有）。
 

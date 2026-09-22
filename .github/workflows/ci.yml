@@ -15,10 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # package.json 的 engines 写的是 >=14 <18，那是上游 inert 留下的过时声明：
-      # 它描述的是 Windows 上缺 VS Build Tools 时 deasync 装不上的情况（见 .NODE_ENV_README.md），
-      # 不是跨平台约束。Linux runner 自带编译工具链，Node 22 下全部检查通过。
-      # engines 字段的清理属于 issue #1（迁移到 Vite）的范围。
+      # 构建是 Vite（issue #1 已迁移完成）。engines 是 >=20.19.0，CI 用 Node 22，满足要求。
       #
       # 这份配置与 deploy.yml 的 build job 必须保持一致，改动其一时记得同步另一个。
       - uses: actions/setup-node@v7
@@ -28,7 +25,7 @@ jobs:
 
       - run: npm ci
 
-      # npm run test == parcel build + tests/texture-assets.test.js，
+      # npm run test == vite build + tests/texture-assets.test.js，
       # 一步同时覆盖构建与产物贴图校验。
       - name: Build and validate
         run: npm run test

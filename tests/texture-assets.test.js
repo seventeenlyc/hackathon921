@@ -5,17 +5,17 @@ const path = require('path');
 const projectRoot = path.resolve(__dirname, '..');
 
 const textureFiles = [
-  'public/img/entities/enemies/simple.png',
-  'public/img/entities/enemies/fast.png',
-  'public/img/entities/enemies/armored.png',
-  'public/img/entities/enemies/healer.png',
-  'public/img/entities/enemies/boss.png',
-  'public/img/entities/towers/canon.png',
-  'public/img/entities/towers/gatling.png',
-  'public/img/entities/towers/slow.png',
-  'public/img/entities/towers/sniper.png',
-  'public/img/entities/towers/laser.png',
-  'public/img/entities/terrain/rock.png'
+  'src/assets/entities/enemies/simple.png',
+  'src/assets/entities/enemies/fast.png',
+  'src/assets/entities/enemies/armored.png',
+  'src/assets/entities/enemies/healer.png',
+  'src/assets/entities/enemies/boss.png',
+  'src/assets/entities/towers/canon.png',
+  'src/assets/entities/towers/gatling.png',
+  'src/assets/entities/towers/slow.png',
+  'src/assets/entities/towers/sniper.png',
+  'src/assets/entities/towers/laser.png',
+  'src/assets/entities/terrain/rock.png'
 ];
 
 const renderers = [
@@ -40,11 +40,24 @@ for (const relativePath of renderers) {
   );
 }
 
-const distFiles = fs.readdirSync(path.join(projectRoot, 'dist'));
+// Vite copies hashed assets into dist/assets/, so the lookup is recursive
+// instead of a flat readdir of dist/.
+function listFilesRecursively(directory) {
+  const entries = fs.readdirSync(directory, { withFileTypes: true });
+  return entries.flatMap(entry => {
+    const fullPath = path.join(directory, entry.name);
+    return entry.isDirectory() ? listFilesRecursively(fullPath) : [fullPath];
+  });
+}
+
+const distFiles = listFilesRecursively(path.join(projectRoot, 'dist')).map(file => path.basename(file));
 for (const relativePath of textureFiles) {
   const fileName = path.basename(relativePath, path.extname(relativePath));
   assert.ok(
-    distFiles.some(file => file.startsWith(`${fileName}.`) && file.endsWith('.png')),
+    distFiles.some(
+      file =>
+        file.endsWith('.png') && (file === `${fileName}.png` || file.startsWith(`${fileName}-`))
+    ),
     `Bundled build is missing texture: ${fileName}.png`
   );
 }
