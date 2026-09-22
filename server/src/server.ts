@@ -63,6 +63,9 @@ function handleGameStream(
         return true;
     }
 
+    // 连接即视为「在线」：断开后由 GameHost 启动宽限计时（§4）。
+    deps.games.clientConnected(game.id);
+
     res.writeHead(200, {
         'content-type': 'text/event-stream; charset=utf-8',
         'cache-control': 'no-cache, no-transform',
@@ -87,6 +90,7 @@ function handleGameStream(
         clearInterval(timer);
         if (typeof res.removeListener === 'function') res.removeListener('drain', onDrain);
         res.end();
+        deps.games!.clientDisconnected(game.id);
     };
 
     // First frame immediately so a fresh tab has something to draw.

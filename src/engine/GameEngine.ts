@@ -52,6 +52,14 @@ export class GameEngine {
 
     private tickCount = 0;
     private over = false;
+    /** Frozen by the host (phase D: disconnect grace, maintenance). No simulation, no planning. */
+    private frozen = false;
+    /**
+     * Bumped whenever the plan in flight must be discarded. The scheduler captures
+     * it before awaiting a planner and drops the result if it changed, so a late
+     * model response can never execute or open the next wave.
+     */
+    private planGeneration = 0;
     private waveReachedCb: ((wave: number) => void) | null = null;
     private gameOverCb: (() => void) | null = null;
     private countdownCb: ((seconds: number) => void) | null = null;
@@ -93,6 +101,7 @@ export class GameEngine {
             loop: this.loop,
             interWaveDelayMs: options.interWaveDelayMs === undefined ? 0 : options.interWaveDelayMs,
             applyPendingSpawnCount: () => this.spawnSettings.applyPending(),
+            planGeneration: () => this.planGeneration,
             onWaveReached: wave => {
                 if (this.waveReachedCb) this.waveReachedCb(wave);
             },
@@ -108,7 +117,9 @@ export class GameEngine {
     }
 
     get state(): EngineState {
-        return this.over ? 'over' : this.loop.state;
+        if (this.over) return 'over';
+        if (this.frozen) return 'paused';
+        return this.loop.state;
     }
 
     get speed(): GameSpeed {
@@ -125,7 +136,27 @@ export class GameEngine {
     }
 
     isStepping(): boolean {
-        return !this.over && this.loop.isStepping();
+        return !this.over && !this.frozen && this.loop.isStepping();
+    }
+
+    get isFrozen(): boolean {
+        return this.frozen;
+    }
+
+    /**
+     * Freeze the simulation and invalidate any plan in flight (phase D). Used for
+     * a disconnect grace expiry or maintenance: no ticks, and a planner that
+     * resolves later is discarded instead of executing or starting a wave.
+     */
+    freeze(): void {
+        this.frozen = true;
+        this.planGeneration += 1;
+    }
+
+    /** Lift a freeze and, if a planning round was cancelled, run it again. */
+    unfreeze(): void {
+        this.frozen = false;
+        this.scheduler.resumeAfterFreeze();
     }
 
     isIdle(): boolean {

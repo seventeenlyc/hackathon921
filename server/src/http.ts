@@ -145,26 +145,37 @@ export function handleApi(deps: ApiDeps, req: ApiRequest): ApiResponse {
 
         const verb = gameAction[2];
 
+        // 指令幂等（§5）：重复的 commandId 返回首次结果，避免重试导致重复开局或重复扣费。
+        const rawCommandId = field(req.body, 'commandId');
+        const commandId = typeof rawCommandId === 'string' && rawCommandId.length > 0 ? rawCommandId : null;
+        const cached = game.commandResult(commandId);
+        if (cached.hit) return json(200, cached.result);
+
+        const respond = (response: ApiResponse): ApiResponse => {
+            if (commandId && response.status < 400) game.rememberCommand(commandId, response.body);
+            return response;
+        };
+
         if (verb === 'start') {
             if (!game.isOver) {
                 game.start();
                 deps.games.startDriver(game.id);
             }
-            return json(200, deps.games.summary(game));
+            return respond(json(200, deps.games.summary(game)));
         }
         if (verb === 'pause') {
             game.pause();
-            return json(200, deps.games.summary(game));
+            return respond(json(200, deps.games.summary(game)));
         }
         if (verb === 'resume') {
             game.resume();
-            return json(200, deps.games.summary(game));
+            return respond(json(200, deps.games.summary(game)));
         }
         if (verb === 'speed') {
             const speed = Number(field(req.body, 'speed'));
             if (GAME_SPEEDS.indexOf(speed) === -1) return json(400, { error: 'INVALID_SPEED' });
             game.setSpeed(speed as 1 | 2 | 4 | 8);
-            return json(200, deps.games.summary(game));
+            return respond(json(200, deps.games.summary(game)));
         }
         if (verb === 'strategy') {
             const text = field(req.body, 'text');
@@ -175,17 +186,17 @@ export function handleApi(deps: ApiDeps, req: ApiRequest): ApiResponse {
                 return json(400, { error: 'STRATEGY_TOO_LONG' });
             }
             const version = game.submitStrategy(text);
-            return json(200, { accepted: true, version: version.version, effectiveWave: version.fromWave });
+            return respond(json(200, { accepted: true, version: version.version, effectiveWave: version.fromWave }));
         }
         if (verb === 'lanes') {
             const count = Number(field(req.body, 'count'));
             if (!Number.isInteger(count)) return json(400, { error: 'INVALID_LANE_COUNT' });
             const requested = game.requestSpawnCount(count);
-            return json(200, {
+            return respond(json(200, {
                 accepted: true,
                 requested,
                 appliedLanes: game.engine.map.enemyBases.length,
-            });
+            }));
         }
         if (verb === 'actions') {
             // AI 模式禁止浏览器直接提交建塔指令（docs/PRODUCT_CONCEPT.md §2）；只有人类模式允许。
@@ -196,15 +207,15 @@ export function handleApi(deps: ApiDeps, req: ApiRequest): ApiResponse {
                 const type = field(req.body, 'type');
                 if (typeof type !== 'string') return json(400, { error: 'INVALID_ACTION' });
                 const result = game.actions.buildTower(type, Number(field(req.body, 'i')), Number(field(req.body, 'j')));
-                return json(result.ok ? 200 : 409, result);
+                return respond(json(result.ok ? 200 : 409, result));
             }
             if (action === 'upgrade_tower') {
                 const id = field(req.body, 'id');
                 if (typeof id !== 'string') return json(400, { error: 'INVALID_ACTION' });
                 const result = game.actions.upgradeTower(id);
-                return json(result.ok ? 200 : 409, result);
+                return respond(json(result.ok ? 200 : 409, result));
             }
-            return json(400, { error: 'UNKNOWN_ACTION' });
+            return respond(json(400, { error: 'UNKNOWN_ACTION' }));
         }
 
         return json(404, { error: 'NOT_FOUND' });

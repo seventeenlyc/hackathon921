@@ -314,6 +314,40 @@ function test(name, fn) {
         assert.strictEqual(reached.length, before);
     });
 
+    await test('freezing discards the plan in flight; unfreeze re-runs it', async () => {
+        const engine = new GameEngine({seed: 55, difficulty: 1});
+        let resolvePlan = null;
+        let planCount = 0;
+        engine.setPlanner({plan: () => {
+            planCount += 1;
+            return new Promise(resolve => {
+                resolvePlan = resolve;
+            });
+        }});
+
+        const reached = [];
+        engine.onWaveReached(wave => reached.push(wave));
+        engine.start();
+        await flush();
+        assert.strictEqual(planCount, 1, 'planning must be waiting on the planner');
+
+        engine.freeze();
+        assert.strictEqual(engine.state, 'paused');
+        const frozenTick = engine.currentTick;
+        engine.tick();
+        assert.strictEqual(engine.currentTick, frozenTick, 'a frozen engine must not advance');
+
+        resolvePlan();
+        await flush();
+        engine.tick();
+        engine.tick();
+        assert.deepStrictEqual(reached, [], 'a late plan must not open a wave');
+
+        engine.unfreeze();
+        await flush();
+        assert.strictEqual(planCount, 2, 'unfreeze re-runs the cancelled planning round');
+    });
+
     console.log('All GameEngine tests passed.');
 })().catch(error => {
     console.error(error);

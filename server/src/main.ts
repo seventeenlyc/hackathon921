@@ -96,6 +96,9 @@ function main(): void {
         games,
     });
 
+    // 周期性回收过期实例（未开始 / 已结束 / 断线超时），避免资源泄漏（§4/§5）。
+    setInterval(() => games.sweep(), 60_000).unref?.();
+
     server.listen(port, '127.0.0.1', () => {
         console.log(`排行榜 API 监听 127.0.0.1:${port}`);
         console.log(deepseekApiKey
@@ -110,7 +113,9 @@ function main(): void {
                 console.log(
                     `检测到版本变化（${startedVersion} -> ${current}），退出以让 systemd 拉起新代码`
                 );
-                games.stopAllDrivers();
+                // 维护退出（阶段 D）：停止接收新局、冻结在途对局（不再执行决策），
+                // 已确认的波次成绩此前已逐波写库，然后关闭服务由 systemd 拉起新代码。
+                games.beginMaintenance();
                 server.close(() => process.exit(0));
                 // 兜底：仍有长连接没断开时强制退出，避免一直跑旧代码。
                 setTimeout(() => process.exit(0), FORCE_EXIT_MS);

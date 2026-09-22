@@ -39,6 +39,8 @@ export interface HostedGameOptions {
     interWaveDelayMs?: number;
     /** Provider config. Absent means the AI has nothing to call and takes no action. */
     agent?: AgentConfig;
+    /** Injected clock, so lifecycle tests can control time. Defaults to Date.now. */
+    now?: () => number;
     onWaveReached?: (game: HostedGame, wave: number) => void;
     onGameOver?: (game: HostedGame) => void;
     onDecision?: (game: HostedGame, entry: DecisionRecord) => void;
@@ -145,6 +147,16 @@ export class HostedGame {
     readonly createdAt: number;
     /** How many AI decisions have been made this run (for the result screen). */
     decisionsMade = 0;
+    /** Set when the run ends, for the reclaim sweep. */
+    finishedAt: number | null = null;
+
+    private readonly now: () => number;
+    private clients = 0;
+    private pausedByDisconnect = false;
+    private interrupted = false;
+    /** Recent command results, keyed by the caller's command id (idempotency). */
+    private readonly commands = new Map<string, unknown>();
+    private readonly commandOrder: string[] = [];
 
     private readonly onWaveReachedCb?: (game: HostedGame, wave: number) => void;
     private readonly onGameOverCb?: (game: HostedGame) => void;
@@ -155,7 +167,8 @@ export class HostedGame {
         this.id = options.id;
         this.username = options.username;
         this.mode = options.mode;
-        this.createdAt = Date.now();
+        this.now = options.now || (() => Date.now());
+        this.createdAt = this.now();
         this.onWaveReachedCb = options.onWaveReached;
         this.onGameOverCb = options.onGameOver;
         this.onDecisionCb = options.onDecision;
@@ -181,6 +194,7 @@ export class HostedGame {
             if (this.onWaveReachedCb) this.onWaveReachedCb(this, wave);
         });
         this.engine.onGameOver(() => {
+            this.finishedAt = this.now();
             if (this.onGameOverCb) this.onGameOverCb(this);
         });
 
@@ -230,7 +244,66 @@ export class HostedGame {
     }
 
     resume() {
+        // A reconnect leaves the game paused; only an explicit resume lifts it.
+        if (this.pausedByDisconnect) {
+            this.pausedByDisconnect = false;
+            this.engine.unfreeze();
+        }
         this.engine.resume();
+    }
+
+    /** A browser stream attached. */
+    clientConnected() {
+        this.clients += 1;
+    }
+
+    /** A browser stream detached; the host turns "nobody connected" into a grace timer. */
+    clientDisconnected() {
+        this.clients = Math.max(0, this.clients - 1);
+    }
+
+    get hasClients(): boolean {
+        return this.clients > 0;
+    }
+
+    get isPausedByDisconnect(): boolean {
+        return this.pausedByDisconnect;
+    }
+
+    /** Grace expired with nobody connected: freeze the game and drop the plan in flight. */
+    pauseForDisconnect() {
+        if (this.engine.isOver) return;
+        this.pausedByDisconnect = true;
+        this.engine.freeze();
+    }
+
+    /** Maintenance: stop this game from making further decisions or progress. */
+    interrupt() {
+        this.interrupted = true;
+        this.engine.freeze();
+    }
+
+    get isInterrupted(): boolean {
+        return this.interrupted;
+    }
+
+    /* ---- command idempotency (§5): a repeated id returns the first result ---- */
+
+    commandResult(commandId: string | null | undefined): { hit: boolean; result?: unknown } {
+        if (!commandId) return {hit: false};
+        if (!this.commands.has(commandId)) return {hit: false};
+        return {hit: true, result: this.commands.get(commandId)};
+    }
+
+    rememberCommand(commandId: string | null | undefined, result: unknown) {
+        if (!commandId) return;
+        if (this.commands.has(commandId)) return;
+        this.commands.set(commandId, result);
+        this.commandOrder.push(commandId);
+        while (this.commandOrder.length > 100) {
+            const oldest = this.commandOrder.shift()!;
+            this.commands.delete(oldest);
+        }
     }
 
     setSpeed(speed: GameSpeed) {

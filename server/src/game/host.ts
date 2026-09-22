@@ -8,6 +8,8 @@ import type {AgentConfig} from '../agent';
 import type {DecisionRecord, GameMode} from './hosted';
 import {HostedGame} from './hosted';
 
+export type {HostedGame};
+
 export interface GameHostOptions {
     newGameId: () => string;
     /** Provider config, shared by every AI game. */
@@ -15,6 +17,21 @@ export interface GameHostOptions {
     /** Driver frame interval in ms; defaults to 1000/30. */
     tickMs?: number;
     defaultDifficulty?: number;
+    /** Injected clock; defaults to Date.now. */
+    now?: () => number;
+    /** Continue this long after the last stream disconnects (default 30 s). */
+    graceMs?: number;
+    /** Reclaim a disconnect-paused game after this long (default 10 min). */
+    reclaimMs?: number;
+    /** Keep a finished game before reclaiming it (default 5 min). */
+    finishedTtlMs?: number;
+    /** Reclaim a game that was never started after this long (default 30 min). */
+    idleTtlMs?: number;
+    /** Injectable timers, so lifecycle tests drive them without real time. */
+    setTimer?: (fn: () => void, ms: number) => any;
+    clearTimer?: (handle: any) => void;
+    onReclaimed?: (game: HostedGame, reason: string) => void;
+    onMaintenance?: (game: HostedGame) => void;
     /** Called right after a game is registered, so the host can open its run row. */
     onCreated?: (game: HostedGame) => void;
     onWaveReached?: (game: HostedGame, wave: number) => void;
@@ -39,14 +56,130 @@ function seedFromId(id: string): number {
     return hash >>> 0;
 }
 
+const DEFAULT_GRACE_MS = 30_000;
+const DEFAULT_RECLAIM_MS = 10 * 60_000;
+const DEFAULT_FINISHED_TTL_MS = 5 * 60_000;
+const DEFAULT_IDLE_TTL_MS = 30 * 60_000;
+
 export class GameHost {
     private readonly games = new Map<string, HostedGame>();
     private readonly timers = new Map<string, any>();
+    private readonly graceTimers = new Map<string, any>();
+    private readonly reclaimTimers = new Map<string, any>();
+    private accepting = true;
 
     constructor(private readonly options: GameHostOptions) {
     }
 
+    get isAccepting(): boolean {
+        return this.accepting;
+    }
+
+    private now(): number {
+        return this.options.now ? this.options.now() : Date.now();
+    }
+
+    private setTimer(fn: () => void, ms: number): any {
+        if (this.options.setTimer) return this.options.setTimer(fn, ms);
+        const handle = setTimeout(fn, ms);
+        // Grace/reclaim timers are housekeeping: they must never keep the process
+        // (or a test runner) alive on their own.
+        if (handle && typeof handle.unref === 'function') handle.unref();
+        return handle;
+    }
+
+    private clearTimer(handle: any) {
+        if (handle === undefined || handle === null) return;
+        if (this.options.clearTimer) this.options.clearTimer(handle);
+        else clearTimeout(handle);
+    }
+
+    private clearLifecycleTimers(id: string) {
+        this.clearTimer(this.graceTimers.get(id));
+        this.graceTimers.delete(id);
+        this.clearTimer(this.reclaimTimers.get(id));
+        this.reclaimTimers.delete(id);
+    }
+
+    /** A browser stream attached: cancel any grace/reclaim countdown. */
+    clientConnected(id: string) {
+        const game = this.games.get(id);
+        if (!game) return;
+        this.clearLifecycleTimers(id);
+        game.clientConnected();
+    }
+
+    /**
+     * A browser stream detached. When the last one goes, keep the game running for
+     * the grace window (a refresh must not pause a run), then pause it.
+     */
+    clientDisconnected(id: string) {
+        const game = this.games.get(id);
+        if (!game) return;
+        game.clientDisconnected();
+        if (game.hasClients) return;
+        if (game.engine.isOver) return;
+        // A reconnect after the pause keeps the game paused until the user resumes.
+        if (game.isPausedByDisconnect) return;
+
+        this.clearLifecycleTimers(id);
+        const grace = this.options.graceMs === undefined ? DEFAULT_GRACE_MS : this.options.graceMs;
+        this.graceTimers.set(id, this.setTimer(() => this.pauseForDisconnect(id), grace));
+    }
+
+    private pauseForDisconnect(id: string) {
+        const game = this.games.get(id);
+        if (!game || game.hasClients || game.engine.isOver) return;
+        game.pauseForDisconnect();
+
+        const reclaim = this.options.reclaimMs === undefined ? DEFAULT_RECLAIM_MS : this.options.reclaimMs;
+        this.reclaimTimers.set(id, this.setTimer(() => this.reclaim(id, 'DISCONNECT_TIMEOUT'), reclaim));
+    }
+
+    private reclaim(id: string, reason: string) {
+        const game = this.games.get(id);
+        if (!game) return;
+        this.clearLifecycleTimers(id);
+        this.stopDriver(id);
+        this.games.delete(id);
+        if (this.options.onReclaimed) this.options.onReclaimed(game, reason);
+    }
+
+    /** Reclaim finished or never-started games. Safe to call on an interval. */
+    sweep() {
+        const now = this.now();
+        const finishedTtl = this.options.finishedTtlMs === undefined ? DEFAULT_FINISHED_TTL_MS : this.options.finishedTtlMs;
+        const idleTtl = this.options.idleTtlMs === undefined ? DEFAULT_IDLE_TTL_MS : this.options.idleTtlMs;
+
+        for (const game of Array.from(this.games.values())) {
+            if (game.finishedAt !== null && now - game.finishedAt > finishedTtl) {
+                this.reclaim(game.id, 'FINISHED');
+                continue;
+            }
+            if (game.finishedAt === null && !game.hasClients && !game.isPausedByDisconnect
+                && game.state === 'idle' && now - game.createdAt > idleTtl) {
+                this.reclaim(game.id, 'IDLE_TIMEOUT');
+            }
+        }
+    }
+
+    /**
+     * Deployment shutdown (phase D): stop taking new games, freeze the ones in
+     * flight so no further decisions execute, and stop their drivers. The caller
+     * then closes the server; confirmed wave scores are already persisted.
+     */
+    beginMaintenance() {
+        this.accepting = false;
+        this.stopAllDrivers();
+        for (const game of Array.from(this.games.values())) {
+            this.clearLifecycleTimers(game.id);
+            game.interrupt();
+            if (this.options.onMaintenance) this.options.onMaintenance(game);
+        }
+    }
+
     create(username: string, opts: CreateGameOptions = {}): HostedGame {
+        if (!this.accepting) throw new Error('NOT_ACCEPTING');
         const id = this.options.newGameId();
         const game = new HostedGame({
             id,
@@ -55,6 +188,7 @@ export class GameHost {
             seed: opts.seed === undefined ? seedFromId(id) : opts.seed,
             difficulty: opts.difficulty === undefined ? this.options.defaultDifficulty : opts.difficulty,
             agent: this.options.agent,
+            now: this.options.now,
             onWaveReached: this.options.onWaveReached,
             onGameOver: finished => {
                 this.stopDriver(finished.id);
@@ -130,6 +264,9 @@ export class GameHost {
             baseLife: game.engine.map.homeBase.getLife(),
             tick: game.engine.currentTick,
             decisions: game.decisionsMade,
+            connected: game.hasClients,
+            pausedByDisconnect: game.isPausedByDisconnect,
+            interrupted: game.isInterrupted,
             createdAt: game.createdAt,
         };
     }

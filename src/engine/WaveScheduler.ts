@@ -40,6 +40,11 @@ export interface WaveSchedulerDeps {
     interWaveDelayMs: number;
     /** Applies a queued lane change at the boundary, before the planner sees the map. */
     applyPendingSpawnCount: () => boolean;
+    /**
+     * Monotonic counter the host bumps to discard a plan in flight (disconnect
+     * pause, maintenance). Captured before the planner is awaited.
+     */
+    planGeneration: () => number;
     onWaveReached: (wave: number) => void;
     /** Optional: whole-second countdown for a host that renders it. */
     onCountdown?: (seconds: number) => void;
@@ -80,6 +85,8 @@ export class WaveScheduler {
 
     private countdownTicks = 0;
     private countdownSeconds = 0;
+    /** True when a planning round was cancelled and must be re-run on unfreeze. */
+    private pendingPlan = false;
 
     constructor(deps: WaveSchedulerDeps) {
         this.deps = deps;
@@ -164,16 +171,31 @@ export class WaveScheduler {
         this.phase = 'planning';
         this.countdownTicks = 0;
 
-        // holdForPlanning flips the loop to PLANNING (so the host stops ticking)
-        // and back to RUNNING once the planner resolves. A late resolve after a
-        // stop() must not schedule a wave.
+        // Capture the generation BEFORE awaiting: if the host freezes mid-plan
+        // (disconnect pause, maintenance) the counter changes and this result is
+        // dropped, so a late model response neither executes nor opens a wave.
+        const generation = this.deps.planGeneration();
+
         void this.deps.loop.holdForPlanning(this.planner).then(() => {
             if (!this.looping) {
                 this.phase = 'stopped';
                 return;
             }
+            if (this.deps.planGeneration() !== generation) {
+                this.pendingPlan = true;
+                this.phase = 'planning';
+                return;
+            }
+            this.pendingPlan = false;
             this.startWave();
         });
+    }
+
+    /** Re-run a planning round that was cancelled while the game was frozen. */
+    resumeAfterFreeze() {
+        if (!this.looping || !this.pendingPlan) return;
+        this.pendingPlan = false;
+        this.beginPlanning();
     }
 
     private startWave() {
