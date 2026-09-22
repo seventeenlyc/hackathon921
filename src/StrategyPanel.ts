@@ -3,6 +3,7 @@ import {gameLoop} from './agent/GameLoop';
 import {randomStrategy} from './agent/StrategyLibrary';
 import {isStrategyTooLong, strategyLength, STRATEGY_MAX_LENGTH} from './agent/StrategyLimits';
 import {queueStrategy, startRun} from './StrategyQueue';
+import {onLangChange, t} from './i18n';
 
 /**
  * The player's strategy prompt input (docs/USER_STORY.md MVP 用户故事 2 & 4).
@@ -45,6 +46,7 @@ export class StrategyPanel {
         strategyStore.onChange(() => this.render());
         // The primary action changes meaning once the run has started.
         gameLoop.onChange(() => this.render());
+        onLangChange(() => this.render());
         this.render();
     }
 
@@ -59,8 +61,8 @@ export class StrategyPanel {
 
         if (text.length === 0) {
             this.status.textContent = idle
-                ? 'Write a strategy before starting the run.'
-                : 'Write a strategy before applying it.';
+                ? t('strategy.writeBeforeStart')
+                : t('strategy.writeBeforeApply');
             this.status.classList.add('warn');
             return;
         }
@@ -72,8 +74,7 @@ export class StrategyPanel {
     }
 
     private warnOverLimit(length: number) {
-        this.status.textContent =
-            `Strategy is ${length} characters; the limit is ${STRATEGY_MAX_LENGTH}.`;
+        this.status.textContent = t('strategy.tooLong', {length, max: STRATEGY_MAX_LENGTH});
         this.status.classList.add('warn');
     }
 
@@ -87,7 +88,7 @@ export class StrategyPanel {
         this.count.textContent = `${length} / ${STRATEGY_MAX_LENGTH}`;
         this.count.classList.toggle('over', over);
 
-        this.applyButton.textContent = idle ? 'Start run' : 'Apply strategy';
+        this.applyButton.textContent = idle ? t('strategy.start') : t('strategy.apply');
         // No prompt, no run (docs/PRODUCT_CONCEPT.md §5/§6); over the cap, the
         // server would reject it anyway, so do not pretend it was applied.
         this.applyButton.disabled = over || (idle && empty);
@@ -103,21 +104,21 @@ export class StrategyPanel {
         if (idle) {
             this.status.classList.remove('queued');
             this.status.textContent = empty
-                ? 'Write a strategy, or press Random strategy for an example.'
-                : 'Not started — the AI plays from wave 1.';
+                ? t('strategy.hintEmpty')
+                : t('strategy.notStarted');
             return;
         }
 
         const queued = strategyStore.queued();
 
         if (queued) {
-            this.status.textContent = `Queued · effective wave ${queued.fromWave}`;
+            this.status.textContent = t('strategy.queued', {wave: queued.fromWave});
             this.status.classList.add('queued');
             return;
         }
 
         this.status.classList.remove('queued');
-        this.status.textContent = `Active from wave ${strategyStore.active().fromWave}`;
+        this.status.textContent = t('strategy.active', {wave: strategyStore.active().fromWave});
     }
 }
 

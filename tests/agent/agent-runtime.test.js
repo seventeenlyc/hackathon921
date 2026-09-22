@@ -1,5 +1,9 @@
 const assert = require('assert');
 const {AgentRuntime} = require('../../.test-build/agent/AgentRuntime.js');
+const {setLang} = require('../../.test-build/i18n.js');
+
+// Assert against the English wording so the checks do not depend on the default UI language.
+setLang('en');
 const {StrategyStore} = require('../../.test-build/agent/StrategyStore.js');
 
 /**

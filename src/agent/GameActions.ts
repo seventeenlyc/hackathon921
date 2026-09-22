@@ -6,6 +6,7 @@ import {
     TowerOption,
 } from './types';
 import { isTowerType, TowerType, TOWER_TYPES } from '../entities/towers/towerTypes';
+import {t} from '../i18n';
 
 /**
  * The only seam through which an AI is allowed to change the battlefield.
@@ -79,28 +80,28 @@ export class GameActions {
         if (!isTowerType(rawType)) {
             return failure(
                 'UNKNOWN_TOWER_TYPE',
-                `Unknown tower type "${rawType}". Valid types: ${TOWER_TYPES.join(', ')}.`
+                t('action.unknownType', {type: rawType, types: TOWER_TYPES.join(', ')})
             );
         }
 
         if (!Number.isInteger(i) || !Number.isInteger(j)) {
-            return failure('INVALID_COORDINATES', `Coordinates must be integers, got (${i}, ${j}).`);
+            return failure('INVALID_COORDINATES', t('action.invalidCoords', {i, j}));
         }
 
         if (i < 0 || j < 0 || i >= this.battlefield.gridWidth || j >= this.battlefield.gridHeight) {
             return failure(
                 'GRID_OUT_OF_BOUNDS',
-                `Cell (${i}, ${j}) is outside the ${this.battlefield.gridWidth}x${this.battlefield.gridHeight} grid.`
+                t('action.outOfBounds', {i, j, w: this.battlefield.gridWidth, h: this.battlefield.gridHeight})
             );
         }
 
         const option = this.optionFor(rawType);
         if (!option) {
-            return failure('UNKNOWN_TOWER_TYPE', `Tower type "${rawType}" is not available in this game.`);
+            return failure('UNKNOWN_TOWER_TYPE', t('action.typeUnavailable', {type: rawType}));
         }
 
         if (this.battlefield.towerAt(i, j)) {
-            return failure('CELL_OCCUPIED', `Cell (${i}, ${j}) already holds a tower.`);
+            return failure('CELL_OCCUPIED', t('action.cellOccupied', {i, j}));
         }
 
         const placement = this.battlefield.canPlaceAt(i, j);
@@ -108,38 +109,38 @@ export class GameActions {
             const error = placement.error ?? 'BLOCKS_PATH';
             const message =
                 error === 'BLOCKS_PATH'
-                    ? `Placing a tower at (${i}, ${j}) would block the path from a spawn to the base.`
-                    : `Cell (${i}, ${j}) cannot be built on (${error}).`;
+                    ? t('action.blocksPath', {i, j})
+                    : t('action.cellUnbuildable', {i, j, error});
             return failure(error, message);
         }
 
         if (!this.battlefield.canAfford(option.cost)) {
             return failure(
                 'INSUFFICIENT_FUNDS',
-                `A ${rawType} costs ${option.cost} but only ${this.battlefield.cash()} cash is available.`
+                t('action.insufficientBuild', {type: rawType, cost: option.cost, cash: this.battlefield.cash()})
             );
         }
 
         this.battlefield.build(rawType, i, j);
         return success(
             { towerId: towerId(i, j), cost: option.cost },
-            `Built a ${rawType} at (${i}, ${j}) for ${option.cost} cash.`
+            t('action.built', {i, j, type: rawType, cost: option.cost})
         );
     }
 
     upgradeTower(id: string): ActionResult<{ level: number; upgradeCost: number }> {
         const coords = parseTowerId(id);
         if (!coords) {
-            return failure('TOWER_NOT_FOUND', `"${id}" is not a valid tower id. Expected "i:j".`);
+            return failure('TOWER_NOT_FOUND', t('action.badTowerId', {id}));
         }
 
         const tower = this.battlefield.towerAt(coords.i, coords.j);
         if (!tower) {
-            return failure('TOWER_NOT_FOUND', `No tower exists at (${coords.i}, ${coords.j}).`);
+            return failure('TOWER_NOT_FOUND', t('action.noTower', {i: coords.i, j: coords.j}));
         }
 
         if (tower.upgradeCost === null) {
-            return failure('ALREADY_MAX_LEVEL', `Tower ${id} is already at max level ${this.battlefield.maxTowerLevel}.`);
+            return failure('ALREADY_MAX_LEVEL', t('action.maxLevel', {id, level: this.battlefield.maxTowerLevel}));
         }
 
         const upgradeCost = tower.upgradeCost;
@@ -150,17 +151,17 @@ export class GameActions {
         if (!this.battlefield.canAfford(upgradeCost)) {
             return failure(
                 'INSUFFICIENT_FUNDS',
-                `Upgrading tower ${id} costs ${upgradeCost} but only ${this.battlefield.cash()} cash is available.`
+                t('action.insufficientUpgrade', {id, cost: upgradeCost, cash: this.battlefield.cash()})
             );
         }
 
         if (!this.battlefield.upgrade(id)) {
-            return failure('UPGRADE_FAILED', `The engine rejected the upgrade of tower ${id}.`);
+            return failure('UPGRADE_FAILED', t('action.upgradeFailed', {id}));
         }
 
         return success(
             { level: currentLevel + 1, upgradeCost },
-            `Upgraded tower ${id} to level ${currentLevel + 1} for ${upgradeCost} cash.`
+            t('action.upgraded', {id, level: currentLevel + 1, cost: upgradeCost})
         );
     }
 

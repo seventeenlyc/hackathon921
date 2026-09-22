@@ -7,6 +7,7 @@ import {GridRenderable} from "./interfaces/GridRenderable";
 import {interfaceManager} from "./InterfaceManager";
 import {cashManager} from "./CashManager";
 import {canvas} from "./Canvas";
+import {t} from './i18n';
 
 class TowerPlacer extends Renderable {
     public tower: Tower = new CanonTower(0, 0, Map.TILE_SIZE);
@@ -24,7 +25,7 @@ class TowerPlacer extends Renderable {
                     cashManager.withdraw(this.tower.cost)
                     map.addElement(this.i, this.j, <new (...args: any[]) => GridRenderable>this.tower.constructor);
                 } else {
-                    interfaceManager.snackbar.toast('You don\'t have enough money to buy this tower');
+                    interfaceManager.snackbar.toast(t('snackbar.noMoney'));
                 }
             }
         })
