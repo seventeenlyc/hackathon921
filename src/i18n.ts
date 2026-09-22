@@ -90,6 +90,8 @@ const STRINGS: { [key: string]: Entry } = {
     'lb.you': {zh: '你：{name}', en: 'You: {name}'},
     'lb.rank': {zh: ' · 第 {rank} 名', en: ' - #{rank}'},
     'lb.noRun': {zh: '（还没有成绩）', en: ' (no run yet)'},
+    'lb.syncFailed': {zh: '记录未同步', en: 'Run history not synced'},
+    'lb.retrySync': {zh: '重试同步', en: 'Retry sync'},
 
     'gate.welcome': {zh: '欢迎！', en: 'Welcome!'},
     'gate.prompt': {zh: '输入一个昵称，用于排行榜。', en: 'Pick a username for the leaderboard.'},

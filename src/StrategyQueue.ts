@@ -3,6 +3,7 @@ import {effectiveWave, strategyStore, StrategyVersion} from './agent/StrategySto
 import {waveManager} from './WavesManager';
 import {getSessionUsername} from './leaderboard/SessionIdentity';
 import {playMode} from './PlayMode';
+import {runSync} from './leaderboard/RunSync';
 
 /**
  * Glue between the live game and the versioned strategy store.
@@ -39,6 +40,7 @@ export function startRun(): void {
     const text = (pending ? pending.text : strategyStore.active().text).trim();
     if (!text) return;
 
+    if (playMode === 'ai') runSync.prepareRun(getSessionUsername()!);
     gameLoop.start();
     void waveManager.start();
 }

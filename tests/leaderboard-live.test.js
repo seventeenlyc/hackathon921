@@ -165,9 +165,10 @@ async function test(name, fn) {
             './agent/InertBattlefield': { InertBattlefield: class {} },
             './agent/AgentRuntime': { AgentRuntime: class {} },
             './agent/snapshot': { formatSnapshot: () => '' },
-            './agent/StrategyStore': { strategyStore: { lock() {} } },
+            './agent/StrategyStore': { strategyStore: { active: () => ({ version: 0 }), lock: () => ({ version: 0, text: '' }) } },
             './StrategyQueue': { queueStrategy: () => ({}), startRun: () => {} },
             './DecisionLog': { decisionLog: { add() {}, error() {} } },
+            './leaderboard/RunSync': { runSync: { enqueuePrompt() {}, retryPending() {} } },
         }, {
             window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {} },
             setInterval: () => 1,

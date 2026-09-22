@@ -6,8 +6,9 @@ import {
 } from './LeaderboardStore';
 import type { LeaderboardEntry } from './LeaderboardStore';
 import {getSessionUsername, setSessionUsername} from './SessionIdentity';
-import { fetchSharedLeaderboard, syncReachedWave } from './LeaderboardClient';
+import { fetchSharedLeaderboard } from './LeaderboardClient';
 import type { RemoteLeaderboard } from './LeaderboardClient';
+import {runSync} from './RunSync';
 import {onLangChange, t} from '../i18n';
 
 const TOP_N = 10;
@@ -69,10 +70,12 @@ class LeaderboardPanel {
     private listEl: HTMLElement;
     private footerEl: HTMLElement;
     private statusEl: HTMLElement;
+    private retryButton: HTMLButtonElement;
     private username: string | null;
     private remote: RemoteLeaderboard | null = null;
     private remoteFailed = false;
     private pendingRemote = false;
+    private syncFailed = false;
 
     constructor() {
         this.username = getSessionUsername();
@@ -85,12 +88,17 @@ class LeaderboardPanel {
         title.textContent = t('lb.title');
         this.statusEl = document.createElement('div');
         this.statusEl.className = 'leaderboard-status';
+        this.retryButton = document.createElement('button');
+        this.retryButton.type = 'button';
+        this.retryButton.className = 'leaderboard-retry';
+        this.retryButton.addEventListener('click', () => runSync.retryPending());
         this.listEl = document.createElement('ol');
         this.listEl.className = 'leaderboard-list';
         this.footerEl = document.createElement('div');
         this.footerEl.className = 'leaderboard-footer';
         this.root.appendChild(title);
         this.root.appendChild(this.statusEl);
+        this.root.appendChild(this.retryButton);
         this.root.appendChild(this.listEl);
         this.root.appendChild(this.footerEl);
         const slot = document.getElementById('leaderboard-slot');
@@ -100,6 +108,11 @@ class LeaderboardPanel {
             document.getElementById('inert')!.appendChild(this.root);
         }
         this.render();
+        runSync.onStatus(status => {
+            this.syncFailed = status.state === 'failed';
+            this.render();
+        });
+        runSync.onDrained(() => this.refresh());
         // The panel is text-only, so a language switch just re-renders it.
         onLangChange(() => this.render());
         void this.refreshRemote();
@@ -159,7 +172,10 @@ class LeaderboardPanel {
             this.listEl.appendChild(li);
         });
 
-        if (shared) {
+        if (this.syncFailed) {
+            this.statusEl.textContent = t('lb.syncFailed');
+            this.statusEl.classList.add('offline');
+        } else if (shared) {
             this.statusEl.textContent = t('lb.shared');
             this.statusEl.classList.remove('offline');
         } else if (this.remoteFailed) {
@@ -169,6 +185,8 @@ class LeaderboardPanel {
             this.statusEl.textContent = '';
             this.statusEl.classList.remove('offline');
         }
+        this.retryButton.hidden = !this.syncFailed;
+        this.retryButton.textContent = t('lb.retrySync');
 
         if (this.username) {
             // 优先用服务端给出的名次；离线时回退到本地列表里的位置。
@@ -198,6 +216,6 @@ export function submitRunScore(name: string, score: number): number | null {
     writeStoredLeaderboard(entries);
     leaderboardPanel.refresh();
     // 再异步同步到服务端（共享排行榜的真值来源）；同步完成后刷新一次以拿到全局排名。
-    void syncReachedWave(clean, score).then(() => leaderboardPanel.refresh());
+    runSync.enqueueWave(clean, score);
     return rank;
 }

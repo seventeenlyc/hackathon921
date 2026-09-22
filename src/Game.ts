@@ -11,6 +11,7 @@ import {interfaceManager} from "./InterfaceManager";
 import {waveManager} from "./WavesManager";
 import {submitRunScore} from "./leaderboard/LeaderboardUI";
 import {getSessionUsername} from "./leaderboard/SessionIdentity";
+import {runSync} from "./leaderboard/RunSync";
 import {getSessionToken, fetchSharedLeaderboard} from "./leaderboard/LeaderboardClient";
 import {cashManager} from "./CashManager";
 import {Tower} from "./entities/towers/Tower";
@@ -49,7 +50,14 @@ class Game {
         // Entering PLANNING is the moment a queued prompt is locked in: the AI
         // plans the upcoming wave with exactly this version (issue #17).
         gameLoop.onChange(state => {
-            if (state === 'planning') strategyStore.lock();
+            if (state === 'planning') {
+                const before = strategyStore.active().version;
+                const active = strategyStore.lock();
+                const username = getSessionUsername();
+                if (username && active.version !== before && active.text.trim()) {
+                    runSync.enqueuePrompt(username, active);
+                }
+            }
             if (state === 'running' && runStartedAt === null) runStartedAt = Date.now();
         });
 
@@ -112,6 +120,7 @@ class Game {
             const wave = waveManager.waveCounter;
             // 结算时再同步一次，以覆盖停止波次循环的边界时刻。人类模式不入榜。
             if (playMode === 'ai') this.recordReachedWave(wave);
+            runSync.retryPending();
 
             interfaceManager.showGameOver(this.collectStats(wave));
 
