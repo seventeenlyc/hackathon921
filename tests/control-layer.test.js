@@ -55,6 +55,8 @@ assert.match(gameSource, /if \(playMode === 'human'\) towerPlacer\.update\(\)/,
     'the game loop must update the tower preview only in human mode');
 assert.match(gameSource, /if \(playMode === 'human'\) towerPlacer\.draw\(ctx\)/,
     'the game loop must draw the tower preview only in human mode');
+assert.match(gameSource, /camera\.update\(\);\s*if \(!gameLoop\.isStepping\(\)\) return;/s,
+    'camera dragging must keep updating while the simulation is idle or paused');
 assert.match(interfaceSource, /this\.setTowers\(\)/,
     'the interface must initialize the tower palette in both play modes');
 assert.match(stylesSource, /(?:\.controls\.is-hidden|&\.is-hidden)[\s\S]*visibility:\s*hidden/,

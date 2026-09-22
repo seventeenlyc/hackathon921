@@ -28,6 +28,8 @@ assert.match(index, /class="control-card chatbox-panel/, 'the page must expose t
 assert.match(index, /id="controls-collapse"/, 'the page must expose an accessible collapse control');
 assert.match(index, /tabindex="0"/, 'the battlefield must be keyboard focusable');
 assert.match(index, /id="towers-wrapper"/, 'the page must expose the human deployable tower mount');
+assert.match(styles, /\.leaderboard-panel[\s\S]*position:\s*fixed[\s\S]*left:\s*0;/,
+    'the leaderboard must stay pinned to the primary view\'s upper-left corner');
 assert.match(styles, /#inert\.mode-human \.chatbox-panel/, 'the AI strategy panel must stay hidden in human mode');
 assert.match(strategySource, /getControlLayer\(\)\.hide\(\)/,
     'valid strategy submission must hide the control layer after queueing');
