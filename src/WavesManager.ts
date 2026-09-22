@@ -1,7 +1,7 @@
 import {enemyManager} from "./EnemyManager";
 import {BossEnemy} from "./entities/enemies/BossEnemy";
 import {map} from "./Map";
-import {asyncSleep, asyncSleepIntervalSecond, rand} from "./tools/helphers";
+import {rand} from "./tools/helphers";
 import {interfaceManager} from "./InterfaceManager";
 import {Enemy} from "./entities/enemies/Enemy";
 import {Base} from "./entities/terrain/Base";
@@ -9,6 +9,7 @@ import {SimpleEnemy} from "./entities/enemies/SimpleEnemy";
 import {ArmoredEnemy} from "./entities/enemies/ArmoredEnemy";
 import {FastEnemy} from "./entities/enemies/FastEnemy";
 import {HealerEnemy} from "./entities/enemies/HealerEnemy";
+import {gameLoop, Planner} from "./agent/GameLoop";
 
 interface WaveGroup {
     enemyClass: { new(base: Base): Enemy },
@@ -19,12 +20,29 @@ interface WaveGroup {
 
 type Wave = WaveGroup[]
 
+/**
+ * Placeholder planner until the AI runtime is wired in (issue #17). It waits a
+ * short real moment so the PLANNING state is actually visible in the UI and can
+ * be exercised by hand; the LLM runtime replaces this seam later.
+ *
+ * It must use a plain timer, not `gameLoop.sleep`: the loop is frozen while
+ * planning, so a `gameLoop.sleep` here would never elapse.
+ */
+const idlePlanner: Planner = {
+    plan: () => new Promise(resolve => setTimeout(resolve, 500))
+};
+
 class WavesManager {
-    private delayBetweenWaves = 7; //sec
     public waveCounter = 1
     public looping = true;
+    private planner: Planner = idlePlanner;
 
     constructor() {
+    }
+
+    /** The agent runtime plugs in here. */
+    setPlanner(planner: Planner) {
+        this.planner = planner;
     }
 
     async start() {
@@ -43,12 +61,17 @@ class WavesManager {
                         let base = map.enemyBases[k];
                         enemyManager.add(this.enemyFactory(enemyClass, enemySpecsMultiplier, base));
                     }
-                    await asyncSleep(delay)
+                    await gameLoop.sleep(delay)
                 }
             }
             if (!this.looping) break;
-            await asyncSleepIntervalSecond(this.delayBetweenWaves, interfaceManager.setWaveDelay.bind(interfaceManager))
-            interfaceManager.clearWaveDelay();
+
+            // The old fixed inter-wave timer is gone (issue #17): the boundary is
+            // now the AI planning window. Freeze, let the AI think, then the
+            // engine starts the next wave. The player does not intervene here.
+            await gameLoop.holdForPlanning(this.planner);
+            if (!this.looping) break;
+
             interfaceManager.setWave(++this.waveCounter);
         }
     }

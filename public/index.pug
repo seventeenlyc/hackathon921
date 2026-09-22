@@ -50,16 +50,22 @@ html(lang='en')
             tbody
               tr
                 td Wave:
-                td
-                  span#wave.accent 1
-                  |
-                  |
-                  span#delay
+                td.accent
+                  span#wave 1
+              tr
+                td State:
+                td.accent
+                  span#state RUNNING
               tr
                 td Cash:
                 td.accent
                   span#cash 12
                   |  ¢
+        hr
+        .state-controls
+          button#pause Pause
+          button#resume Resume
+          button#speed Speed x1
         hr
         .towers
           #towers-wrapper

@@ -108,6 +108,30 @@ body {
       font-size: 18px;
     }
 
+    .state-controls {
+      display: flex;
+      gap: 8px;
+
+      button {
+        flex: 1;
+        text-transform: uppercase;
+        padding: 8px 6px;
+        background-color: transparent;
+        border: 1px solid #575757;
+        border-radius: 5px;
+        color: #a5a5a5;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 12px;
+        transition: all ease 0.2s;
+
+        &:hover {
+          color: var(--accent);
+          border-color: var(--accent);
+        }
+      }
+    }
+
     table.table5050 {
       width: 100%;
       padding: 0;

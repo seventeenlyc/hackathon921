@@ -9,6 +9,7 @@
   },
   "include": [
     "src/agent/GameActions.ts",
+    "src/agent/GameLoop.ts",
     "src/agent/types.ts",
     "src/entities/towers/towerTypes.ts"
   ]
