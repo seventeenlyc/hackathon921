@@ -56,6 +56,13 @@ class Game {
         try {
             const summary = await gameControl.open();
             interfaceManager.applySummary(summary);
+
+            // Human mode is the original inert experience: it plays as soon as it
+            // loads. AI mode stays in IDLE until the player writes a prompt and
+            // presses Start.
+            if (playMode === 'human') {
+                await gameControl.session.start();
+            }
         } catch (error) {
             decisionLog.error(String((error as Error).message || error));
         }

@@ -68,7 +68,9 @@ export function handleApi(deps: ApiDeps, req: ApiRequest): ApiResponse {
     // 匿名会话（人类模式用）：人类模式没有昵称门禁，但托管对局仍需一个归属凭证。
     // 主体由服务端随机生成，昵称从不作为凭证（docs/PRODUCT_CONCEPT.md §4）。
     if (req.pathname === '/api/sessions/anonymous' && method === 'POST') {
-        const subject = 'anon-' + deps.newRunId();
+        // The subject must pass `verifyToken`'s `sanitizeUsername` check (<=16 chars),
+        // so take a short slice of the random id rather than all of it.
+        const subject = 'anon-' + deps.newRunId().slice(0, 8);
         return json(200, { token: signToken(deps.secret, subject, deps.now()), username: subject });
     }
 

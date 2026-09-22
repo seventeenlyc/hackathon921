@@ -29,7 +29,9 @@ function makeDeps(): ApiDeps {
         store,
         secret: 'test-secret',
         now: () => 1000,
-        newRunId: () => `run-${++counter}`,
+        // Real ids are 32-char hex; the anonymous subject is built from one, so the
+        // test must use a realistic length or it would hide a too-long subject.
+        newRunId: () => (++counter).toString(16).padStart(32, '0'),
         games,
     };
 }
@@ -54,6 +56,7 @@ test('匿名会话可为人类模式开一局（昵称不作凭证）', () => {
     const anon = handleApi(deps, request({ method: 'POST', pathname: '/api/sessions/anonymous' }));
     assert.equal(anon.status, 200);
     assert.match(String(anon.body.username), /^anon-/);
+    assert.ok(String(anon.body.username).length <= 16, 'the subject must satisfy the token validator');
 
     const created = handleApi(deps, request({
         method: 'POST',
