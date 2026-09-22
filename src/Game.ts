@@ -123,7 +123,6 @@ class Game {
      */
     private updateLoop() {
         camera.update();
-        if (playMode === 'human') towerPlacer.update(this.latest);
     }
 
     private drawLoop() {
@@ -132,6 +131,14 @@ class Game {
         camera.process(ctx);
 
         const snapshot = this.interpolatedFrame();
+
+        // Compute the placement ghost HERE, not in the 30 Hz update loop: the
+        // canvas redraws every animation frame, so a ghost computed a tick behind
+        // trails the cursor (visible as "the mouse is above but the marker is still
+        // below"). This also runs after camera.process(), so it uses this frame's
+        // transform rather than the previous frame's.
+        if (playMode === 'human') towerPlacer.update(snapshot);
+
         if (snapshot) {
             drawMapGrid(ctx, snapshot.grid);
             drawMunitions(ctx, snapshot);
