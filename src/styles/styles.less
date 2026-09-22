@@ -662,7 +662,19 @@ body {
   }
 
   .leaderboard-panel {
-    width: 100%;
+    /* Keep the leaderboard on the primary battlefield view in both modes. */
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 2;
+    width: min(240px, calc(100vw - 32px));
+    max-height: min(50vh, 360px);
+    overflow-y: auto;
+    padding: 10px 12px;
+    border: 1px solid rgba(146, 169, 160, 0.18);
+    border-top-right-radius: 0;
+    background: rgba(52, 52, 52, 0.55);
+    box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
     color: var(--muted);
     font-size: 11px;
 
@@ -1046,8 +1058,7 @@ body {
 /* One side controls a run, so the other side's controls are hidden outright:
    tower cards are informational in AI mode and actionable in human mode. */
 #inert.mode-human .strategy,
-#inert.mode-human .decisions,
-#inert.mode-human .leaderboard-panel {
+#inert.mode-human .decisions {
   display: none;
 }
 
