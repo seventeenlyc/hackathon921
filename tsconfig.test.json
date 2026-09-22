@@ -13,6 +13,7 @@
     "sourceMap": false
   },
   "include": [
+    "src/PlayMode.ts",
     "src/agent/AgentRuntime.ts",
     "src/agent/GameActions.ts",
     "src/agent/GameLoop.ts",

@@ -132,6 +132,17 @@ body {
       }
     }
 
+    /* The mode button sits on its own full-width row above pause/resume/speed,
+       so its longer label never wraps. */
+    .mode-control {
+      margin-bottom: 8px;
+
+      button:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+    }
+
     .strategy {
       .strategy-label {
         display: block;
@@ -267,6 +278,49 @@ body {
           &:first-child {
             text-align: right;
           }
+        }
+      }
+    }
+
+    .towers {
+      #towers-wrapper {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+
+        canvas {
+          border: 1px solid #575757;
+          border-right-width: 0;
+          cursor: pointer;
+
+          &:hover {
+            background-color: rgba(52, 52, 52, 0.8);
+          }
+
+          &:first-child {
+            border-top-left-radius: 5px;
+            border-bottom-left-radius: 5px;
+          }
+
+          &:last-child {
+            border-top-right-radius: 5px;
+            border-bottom-right-radius: 5px;
+            border-right-width: 1px;
+          }
+        }
+      }
+
+      #towers-stats {
+        .title {
+          text-align: center;
+          font-size: 18px;
+          margin-top: 10px;
+        }
+
+        .description {
+          text-align: justify;
+          margin: 15px 0;
         }
       }
     }
@@ -458,4 +512,17 @@ body {
       }
     }
   }
+}
+
+/* One side controls a run, so the other side's UI is hidden outright: the tower
+   palette and the leaderboard belong to human play's original inert feel, while
+   the prompt box and the AI decision log belong to AI play. */
+#inert.mode-ai .towers {
+  display: none;
+}
+
+#inert.mode-human .strategy,
+#inert.mode-human .decisions,
+#inert.mode-human .leaderboard-panel {
+  display: none;
 }

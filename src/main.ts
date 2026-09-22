@@ -6,6 +6,7 @@ import { strategyPanel } from "./StrategyPanel";
 import { UsernameGate, leaderboardPanel } from './leaderboard/LeaderboardUI';
 import { readUsernameCookie } from './leaderboard/LeaderboardStore';
 import { ensureSessionToken } from './leaderboard/LeaderboardClient';
+import { playMode } from './PlayMode';
 
 // Instantiated for its side effects (DOM binding) — see StrategyPanel.ts.
 void strategyPanel;
@@ -19,7 +20,8 @@ const gate = new UsernameGate((name) => {
     leaderboardPanel.refresh();
 });
 
-if (!readUsernameCookie()) {
+// 人类模式不写排行榜，也就不需要昵称；直接开始上游 inert 的玩法。
+if (playMode === 'ai' && !readUsernameCookie()) {
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => gate.show());
     } else {
