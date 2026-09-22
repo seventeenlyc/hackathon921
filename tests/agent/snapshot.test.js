@@ -58,7 +58,7 @@ function baseInput(over = {}) {
         enemies: [],
         towers: [],
         towerOptions: [{type: 'canon', name: 'Canon', description: '', cost: 50, aimRadius: 100, dps: 62.5}],
-        route: null,
+        routes: [],
         isFree: () => true,
         isBuildable: () => true,
         ...over,
@@ -110,31 +110,31 @@ test('no enemies means no threat', () => {
     assert.deepStrictEqual(snapshot.enemies.groups, []);
 });
 
-test('route is compressed to its turns and measured in tiles', () => {
+test('each lane route is compressed to its turns and measured in tiles', () => {
     const straight = buildSnapshot(baseInput({
-        route: [{i: 0, j: 0}, {i: 1, j: 0}, {i: 2, j: 0}, {i: 3, j: 0}],
+        routes: [{spawn: {i: 0, j: 0}, cells: [{i: 0, j: 0}, {i: 1, j: 0}, {i: 2, j: 0}, {i: 3, j: 0}]}],
     }));
-    assert.deepStrictEqual(straight.path, {waypoints: [{i: 0, j: 0}, {i: 3, j: 0}], length: 3});
+    assert.deepStrictEqual(straight.lanes[0].path, {waypoints: [{i: 0, j: 0}, {i: 3, j: 0}], length: 3});
 
     const elbow = buildSnapshot(baseInput({
-        route: [{i: 0, j: 0}, {i: 1, j: 0}, {i: 2, j: 0}, {i: 2, j: 1}, {i: 2, j: 2}],
+        routes: [{spawn: {i: 0, j: 0}, cells: [{i: 0, j: 0}, {i: 1, j: 0}, {i: 2, j: 0}, {i: 2, j: 1}, {i: 2, j: 2}]}],
     }));
-    assert.deepStrictEqual(elbow.path, {
+    assert.deepStrictEqual(elbow.lanes[0].path, {
         waypoints: [{i: 0, j: 0}, {i: 2, j: 0}, {i: 2, j: 2}],
         length: 4,
     });
 });
 
-test('no route means no path and no candidates', () => {
+test('no route means no lane and no candidates', () => {
     const snapshot = buildSnapshot(baseInput());
-    assert.strictEqual(snapshot.path, null);
+    assert.deepStrictEqual(snapshot.lanes, []);
     assert.deepStrictEqual(snapshot.buildCandidates, []);
 });
 
 test('build candidates are off-route, free, legal, and ranked by coverage', () => {
-    const route = [{i: 0, j: 0}, {i: 1, j: 0}, {i: 2, j: 0}, {i: 3, j: 0}, {i: 4, j: 0}];
+    const cells = [{i: 0, j: 0}, {i: 1, j: 0}, {i: 2, j: 0}, {i: 3, j: 0}, {i: 4, j: 0}];
     const snapshot = buildSnapshot(baseInput({
-        route,
+        routes: [{spawn: {i: 0, j: 0}, cells}],
         isFree: (i, j) => !(i === 1 && j === 1),
         isBuildable: (i, j) => !(i === 3 && j === 1),
     }));
@@ -162,17 +162,37 @@ test('build candidates are off-route, free, legal, and ranked by coverage', () =
     }
 
     // (2,1) sees route cells 1..3 (coverage 3) and is the deepest such cell.
-    assert.deepStrictEqual(candidates[0], {i: 2, j: 1, coverage: 3, distanceToBase: 1});
+    assert.deepStrictEqual(candidates[0], {i: 2, j: 1, lane: 0, coverage: 3, distanceToBase: 1});
+});
+
+test('build candidates cover every lane, not just the longest', () => {
+    const longLane = [];
+    for (let i = 0; i < 30; ++i) longLane.push({i, j: 0});
+    const shortLane = [{i: 0, j: 2}, {i: 1, j: 2}, {i: 2, j: 2}];
+
+    const snapshot = buildSnapshot(baseInput({
+        gridWidth: 40,
+        gridHeight: 4,
+        spawns: [{i: 0, j: 0}, {i: 0, j: 2}],
+        routes: [
+            {spawn: {i: 0, j: 0}, cells: longLane},
+            {spawn: {i: 0, j: 2}, cells: shortLane},
+        ],
+    }));
+
+    assert.strictEqual(snapshot.lanes.length, 2);
+    const lanes = [...new Set(snapshot.buildCandidates.map(c => c.lane))].sort();
+    assert.deepStrictEqual(lanes, [0, 1], 'a shorter lane must still get build candidates');
 });
 
 test('build candidates are capped', () => {
-    const route = [];
-    for (let i = 0; i < 40; ++i) route.push({i: i % 40, j: 0});
+    const cells = [];
+    for (let i = 0; i < 40; ++i) cells.push({i: i % 40, j: 0});
 
     const snapshot = buildSnapshot(baseInput({
         gridWidth: 60,
         gridHeight: 3,
-        route,
+        routes: [{spawn: {i: 0, j: 0}, cells}],
     }));
 
     assert.ok(snapshot.buildCandidates.length <= MAX_BUILD_CANDIDATES);
@@ -200,16 +220,20 @@ test('a busy battlefield still fits the token budget', () => {
     const towers = [];
     for (let index = 0; index < 80; ++index) towers.push(tower(index % 60, index % 30, 3));
 
-    const route = [];
-    for (let i = 0; i < 120; ++i) route.push({i: i % 60, j: Math.floor(i / 60)});
+    const routes = [];
+    for (let lane = 0; lane < 4; ++lane) {
+        const cells = [];
+        for (let i = 0; i < 30; ++i) cells.push({i, j: lane * 8});
+        routes.push({spawn: {i: 0, j: lane * 8}, cells});
+    }
 
     const snapshot = buildSnapshot(baseInput({
         gridWidth: 61,
         gridHeight: 31,
         enemies,
         towers,
-        route,
-        spawns: [{i: 0, j: 0}, {i: 0, j: 30}, {i: 60, j: 0}, {i: 60, j: 30}],
+        routes,
+        spawns: [{i: 0, j: 0}, {i: 0, j: 8}, {i: 0, j: 16}, {i: 0, j: 24}],
     }));
 
     const size = JSON.stringify(snapshot).length;
@@ -220,7 +244,7 @@ test('formatSnapshot renders the facts the model saw', () => {
     const snapshot = buildSnapshot(baseInput({
         enemies: [enemy('fast', {etaSeconds: 3})],
         towers: [{...tower(2, 1, 2), targetInRange: true}],
-        route: [{i: 0, j: 0}, {i: 1, j: 0}, {i: 2, j: 0}],
+        routes: [{spawn: {i: 0, j: 0}, cells: [{i: 0, j: 0}, {i: 1, j: 0}, {i: 2, j: 0}]}],
     }));
 
     const text = formatSnapshot(snapshot);
@@ -228,7 +252,8 @@ test('formatSnapshot renders the facts the model saw', () => {
     assert.ok(text.includes('fast x1'));
     assert.ok(text.includes('ETA 3s'));
     assert.ok(text.includes('canon L2@(2,1)*'));
-    assert.ok(text.includes('2 waypoints'));
+    assert.ok(text.includes('Lanes (1)'), 'all lanes are listed');
+    assert.ok(text.includes('2wp'), 'lane waypoint count is shown');
     assert.ok(text.includes('Build candidates'));
 });
 
