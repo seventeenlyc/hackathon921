@@ -22,12 +22,16 @@ export interface StrategyVersion {
 }
 
 /**
- * Wave a submission made now will become active at. A submission during
- * `RUNNING` lands on the next boundary; a submission during `PLANNING` is too
- * late for the wave being planned and defers one more (docs/PRODUCT_CONCEPT.md §7).
+ * Wave a submission made now will become active at.
+ *
+ * PLANNING precedes each wave (docs/PRODUCT_CONCEPT.md §7), so `currentWave`
+ * already names the wave being planned/running and the next boundary is always
+ * `currentWave + 1` — whether the player edits while RUNNING or while PLANNING.
+ * While IDLE there is no wave in flight and the first boundary is wave 1 itself,
+ * so the prompt the player writes before starting takes effect immediately.
  */
-export function effectiveWave(currentWave: number, isPlanning: boolean): number {
-    return currentWave + (isPlanning ? 2 : 1);
+export function effectiveWave(currentWave: number, isIdle: boolean): number {
+    return isIdle ? currentWave : currentWave + 1;
 }
 
 export type StrategyListener = (store: StrategyStore) => void;

@@ -94,8 +94,9 @@ export class AgentRuntime implements Planner {
             return;
         }
 
-        // The wave that spawns right after this planning round.
-        const wave = state.wave + 1;
+        // PLANNING now precedes the wave it governs (docs/PRODUCT_CONCEPT.md §7),
+        // so the snapshot's wave counter already names the wave about to spawn.
+        const wave = state.wave;
 
         if (!strategy.trim()) {
             this.onError('No strategy set; the AI will not act this wave.');

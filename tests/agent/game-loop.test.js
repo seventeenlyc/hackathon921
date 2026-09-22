@@ -1,11 +1,12 @@
 const assert = require('assert');
-const {GameLoop} = require('../../.test-build/agent/GameLoop.js');
+const {GameLoop, nextSpeed} = require('../../.test-build/agent/GameLoop.js');
 
 /**
  * DOM-free tests for the decision cadence (issue #17).
  *
- * GameLoop is the seam where PAUSED / PLANNING / speed / focus decide whether
- * the deterministic simulation and the wave spawner are allowed to advance.
+ * GameLoop is the seam where IDLE / PAUSED / PLANNING / speed decide whether the
+ * deterministic simulation and the wave spawner are allowed to advance. Window
+ * focus deliberately does not: a run continues while the player looks elsewhere.
  * Keeping it dependency-free is what makes it verifiable here.
  */
 
@@ -26,15 +27,39 @@ async function test(name, fn) {
 (async () => {
     console.log('GameLoop');
 
-    await test('starts running and stepping', () => {
+    await test('starts idle and frozen until the player starts', () => {
         const loop = new GameLoop();
-        assert.strictEqual(loop.state, 'running');
-        assert.strictEqual(loop.isStepping(), true);
+        assert.strictEqual(loop.state, 'idle');
+        assert.strictEqual(loop.isIdle(), true);
+        assert.strictEqual(loop.isStepping(), false);
         assert.strictEqual(loop.speed, 1);
+    });
+
+    await test('start leaves idle once and is a no-op afterwards', () => {
+        const loop = new GameLoop();
+        const seen = [];
+        loop.onChange(state => seen.push(state));
+
+        loop.start();
+        assert.strictEqual(loop.state, 'running');
+        assert.strictEqual(loop.isIdle(), false);
+        assert.strictEqual(loop.isStepping(), true);
+
+        loop.start();
+        assert.deepStrictEqual(seen, ['running'], 'a second start must not re-notify');
+    });
+
+    await test('pause and resume are no-ops while idle', () => {
+        const loop = new GameLoop();
+        loop.pause();
+        assert.strictEqual(loop.state, 'idle');
+        loop.resume();
+        assert.strictEqual(loop.state, 'idle');
     });
 
     await test('pause is sticky and only an explicit resume clears it', () => {
         const loop = new GameLoop();
+        loop.start();
         loop.pause();
         assert.strictEqual(loop.state, 'paused');
         assert.strictEqual(loop.isStepping(), false);
@@ -44,6 +69,7 @@ async function test(name, fn) {
 
     await test('resume is a no-op while running, pause is a no-op while paused', () => {
         const loop = new GameLoop();
+        loop.start();
         loop.resume();
         assert.strictEqual(loop.state, 'running');
         loop.pause();
@@ -51,12 +77,16 @@ async function test(name, fn) {
         assert.strictEqual(loop.state, 'paused');
     });
 
-    await test('losing focus freezes stepping without entering PAUSED', () => {
+    await test('a run is not stopped by losing window focus', () => {
         const loop = new GameLoop();
-        loop.setFocused(false);
-        assert.strictEqual(loop.state, 'running');
+        loop.start();
+        assert.strictEqual(loop.isStepping(), true);
+
+        // Only PAUSED and the IDLE/PLANNING states stop the simulation; the run
+        // keeps going (and can still lose) while the player looks elsewhere.
+        loop.pause();
         assert.strictEqual(loop.isStepping(), false);
-        loop.setFocused(true);
+        loop.resume();
         assert.strictEqual(loop.isStepping(), true);
     });
 
@@ -64,13 +94,15 @@ async function test(name, fn) {
         const loop = new GameLoop();
         const seen = [];
         loop.onChange(state => seen.push(state));
+        loop.start();
         loop.pause();
         loop.resume();
-        assert.deepStrictEqual(seen, ['paused', 'running']);
+        assert.deepStrictEqual(seen, ['running', 'paused', 'running']);
     });
 
     await test('holdForPlanning freezes, runs the planner, then returns to running', async () => {
         const loop = new GameLoop();
+        loop.start();
         const seen = [];
         let ran = false;
         loop.onChange(state => seen.push(state));
@@ -90,6 +122,7 @@ async function test(name, fn) {
 
     await test('a throwing planner still returns the loop to running', async () => {
         const loop = new GameLoop();
+        loop.start();
         await assert.rejects(loop.holdForPlanning({
             plan: async () => {
                 throw new Error('boom');
@@ -98,8 +131,24 @@ async function test(name, fn) {
         assert.strictEqual(loop.state, 'running');
     });
 
+    await test('sleep does not elapse while idle, then completes after start', async () => {
+        const loop = new GameLoop();
+        let resolved = false;
+        const sleeping = loop.sleep(30).then(() => {
+            resolved = true;
+        });
+
+        await delay(120);
+        assert.strictEqual(resolved, false, 'sleep must not resolve before the run starts');
+
+        loop.start();
+        await sleeping;
+        assert.strictEqual(resolved, true);
+    });
+
     await test('sleep does not elapse while paused, then completes after resume', async () => {
         const loop = new GameLoop();
+        loop.start();
         let resolved = false;
         const sleeping = loop.sleep(30).then(() => {
             resolved = true;
@@ -116,6 +165,7 @@ async function test(name, fn) {
 
     await test('sleep does not elapse while planning', async () => {
         const loop = new GameLoop();
+        loop.start();
         let resolved = false;
         const sleeping = loop.sleep(30).then(() => {
             resolved = true;
@@ -132,9 +182,18 @@ async function test(name, fn) {
         assert.strictEqual(resolved, true);
     });
 
+    await test('speed cycles normal -> x2 -> x4 -> x8 -> normal', () => {
+        assert.strictEqual(nextSpeed(1), 2);
+        assert.strictEqual(nextSpeed(2), 4);
+        assert.strictEqual(nextSpeed(4), 8);
+        assert.strictEqual(nextSpeed(8), 1);
+    });
+
     await test('fast mode makes sleep elapse roughly twice as fast', async () => {
         const slow = new GameLoop();
         const fast = new GameLoop();
+        slow.start();
+        fast.start();
         fast.setSpeed(2);
 
         const slowStart = Date.now();

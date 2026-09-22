@@ -10,6 +10,7 @@ import {ArmoredEnemy} from "./entities/enemies/ArmoredEnemy";
 import {FastEnemy} from "./entities/enemies/FastEnemy";
 import {HealerEnemy} from "./entities/enemies/HealerEnemy";
 import {gameLoop, Planner} from "./agent/GameLoop";
+import {applyPendingSpawnCount} from "./SpawnQueue";
 
 interface WaveGroup {
     enemyClass: { new(base: Base): Enemy },
@@ -21,9 +22,8 @@ interface WaveGroup {
 type Wave = WaveGroup[]
 
 /**
- * Placeholder planner until the AI runtime is wired in (issue #17). It waits a
- * short real moment so the PLANNING state is actually visible in the UI and can
- * be exercised by hand; the LLM runtime replaces this seam later.
+ * Fallback planner, used only until the agent runtime plugs in via setPlanner.
+ * It waits a short real moment so the PLANNING state is visible in the UI.
  *
  * It must use a plain timer, not `gameLoop.sleep`: the loop is frozen while
  * planning, so a `gameLoop.sleep` here would never elapse.
@@ -32,11 +32,22 @@ const idlePlanner: Planner = {
     plan: () => new Promise(resolve => setTimeout(resolve, 500))
 };
 
+/**
+ * Human mode: nobody plans, so the boundary resolves immediately. The pause
+ * between waves is handled by `interWaveDelayMs`, not by a fake "thinking" time.
+ */
+export const humanPlanner: Planner = {
+    plan: () => Promise.resolve()
+};
+
 class WavesManager {
     public waveCounter = 1
     public looping = true;
     public onWaveReached: ((wave: number) => void) | null = null;
     private planner: Planner = idlePlanner;
+    private started = false;
+    /** Breathing room between waves in human mode; 0 in AI mode. */
+    private interWaveDelayMs = 0;
 
     constructor() {
     }
@@ -46,12 +57,55 @@ class WavesManager {
         this.planner = planner;
     }
 
-    async start() {
-        if (this.onWaveReached) this.onWaveReached(this.waveCounter);
-        while (this.looping) {
-            const wave = this.generateWave()
+    /**
+     * In human mode there is no AI latency to separate waves, so the caller gives
+     * the player a fixed pause instead (the old `delayBetweenWaves`).
+     */
+    setInterWaveDelay(ms: number) {
+        this.interWaveDelayMs = Math.max(0, ms);
+    }
 
+    /**
+     * Drives the run. Called only when the player starts (docs/PRODUCT_CONCEPT.md
+     * §7 IDLE); the guard makes a double start harmless.
+     *
+     * Every wave begins with a PLANNING window, including wave 1 — that is what
+     * lets the AI act from the first wave instead of only from wave 2 onwards.
+     */
+    async start() {
+        if (this.started) return;
+        this.started = true;
+
+        while (this.looping) {
+            // A lane change queued during the previous wave (issue #40) becomes real
+            // here, before the AI plans, so the new route is part of its snapshot.
+            applyPendingSpawnCount();
+
+            // Human mode: a fixed pause between waves, since there is no AI think
+            // time to create one. It elapses only while stepping, so PAUSE freezes
+            // it like everything else. The countdown mirrors the original inert
+            // `delayBetweenWaves` display.
+            if (this.interWaveDelayMs > 0 && this.waveCounter > 1) {
+                let remaining = Math.ceil(this.interWaveDelayMs / 1000);
+                interfaceManager.setWaveDelay(remaining);
+
+                while (remaining > 0 && this.looping) {
+                    await gameLoop.sleep(1000);
+                    if (!this.looping) break;
+                    remaining -= 1;
+                    if (remaining > 0) interfaceManager.setWaveDelay(remaining);
+                }
+
+                interfaceManager.clearWaveDelay();
+                if (!this.looping) break;
+            }
+
+            // Freeze and let the planner issue orders for `waveCounter` before its
+            // enemies exist. A wave boundary is the only place the AI may act.
+            await gameLoop.holdForPlanning(this.planner);
             if (!this.looping) break;
+
+            const wave = this.generateWave()
             for (let i = 0; i < wave.length; ++i) {
                 if (!this.looping) break;
                 let {enemyClass, enemySpecsMultiplier, quantity, delay} = wave[i];
@@ -68,14 +122,12 @@ class WavesManager {
             }
             if (!this.looping) break;
 
-            // The old fixed inter-wave timer is gone (issue #17): the boundary is
-            // now the AI planning window. Freeze, let the AI think, then the
-            // engine starts the next wave. The player does not intervene here.
-            await gameLoop.holdForPlanning(this.planner);
-            if (!this.looping) break;
-
-            interfaceManager.setWave(++this.waveCounter);
+            // The wave has begun spawning: count it, then advance to the next wave
+            // so the UI shows the wave the following PLANNING window is preparing.
+            // A stop (game over / shutdown) must not report a wave it never reached.
             if (this.onWaveReached) this.onWaveReached(this.waveCounter);
+            if (!this.looping) break;
+            interfaceManager.setWave(++this.waveCounter);
         }
     }
 

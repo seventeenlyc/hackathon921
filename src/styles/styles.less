@@ -268,6 +268,17 @@ body {
       }
     }
 
+    /* The mode button sits on its own full-width row above pause/resume/speed,
+       so its longer label never wraps. */
+    .mode-control {
+      margin-bottom: 8px;
+
+      button:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+    }
+
     .strategy {
       .strategy-label,
       .decisions-label {
@@ -328,6 +339,31 @@ body {
           border-color: var(--accent);
           background: var(--accent-soft);
           color: var(--accent);
+        }
+      }
+
+      .strategy-actions button {
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+
+        &:hover:not(:disabled) {
+          border-color: var(--accent);
+          background: var(--accent-soft);
+          color: var(--accent);
+        }
+
+        &:disabled {
+          opacity: 0.45;
+          cursor: not-allowed;
         }
       }
 
@@ -467,6 +503,15 @@ body {
       border-radius: 5px;
       color: var(--accent);
       text-decoration: none;
+      padding: 2px 5px;
+      border-radius: 4px;
+      /* Rendered as a button so a lane change does not reload the page (#40). */
+      background: transparent;
+      border: 0;
+      font-family: inherit;
+      font-size: inherit;
+      line-height: inherit;
+      cursor: pointer;
 
       &:hover, &.active {
         background: var(--accent);
@@ -620,6 +665,13 @@ body {
       opacity: 1;
       transform: translate(-50%, 0);
     }
+
+    .spawner-status {
+      margin-top: 4px;
+      font-size: 11px;
+      color: #8b8b8b;
+      min-height: 14px;
+    }
   }
 
   #snackbar {
@@ -747,7 +799,69 @@ body {
       font-size: 45px;
     }
 
+    .result {
+      width: min(560px, 90vw);
+      margin-bottom: 30px;
+      color: #d5d5d5;
+
+      .result-primary {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 22px;
+
+        .result-primary-label {
+          text-transform: uppercase;
+          font-size: 12px;
+          letter-spacing: 2px;
+          color: #a5a5a5;
+        }
+
+        .result-primary-value {
+          font-size: 56px;
+          font-weight: 700;
+          line-height: 1.1;
+          color: var(--accent);
+        }
+      }
+
+      .result-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px 24px;
+
+        .result-cell {
+          min-width: 110px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+
+          .result-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8b8b8b;
+          }
+
+          strong {
+            font-size: 20px;
+            color: #e6e6e6;
+          }
+        }
+      }
+
+      .result-breakdown {
+        margin-top: 16px;
+        text-align: center;
+        font-size: 13px;
+        color: #9a9a9a;
+        min-height: 18px;
+      }
+    }
+
     button {
+      text-transform: uppercase;
       padding: 10px 20px;
       border: 1px solid var(--muted);
       border-radius: 999px;
@@ -825,4 +939,13 @@ body {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* One side controls a run, so the other side's UI is hidden outright: the tower
+   palette and the leaderboard belong to human play's original inert feel, while
+   the prompt box and the AI decision log belong to AI play. */
+#inert.mode-human .strategy,
+#inert.mode-human .decisions,
+#inert.mode-human .leaderboard-panel {
+  display: none;
 }
