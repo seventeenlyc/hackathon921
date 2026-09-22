@@ -85,10 +85,10 @@ class TowerPlacer {
         void this.session.workerBuild(type, this.i, this.j)
             .then(result => {
                 interfaceManager.snackbar.toast(result && result.message ? result.message : '');
-                if (result && result.ok) {
-                    this.placing = false;
-                    this.shouldBeDrawn = false;
-                }
+                // Stay in placement mode after a successful build, so the player can
+                // drop several of the same tower in a row. ESC (or picking another
+                // card) leaves the mode; a rejected build also keeps it, so the
+                // player can retry on a different cell.
             })
             .catch(error => interfaceManager.snackbar.toast(String((error && error.message) || error)));
     }
