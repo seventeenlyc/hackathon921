@@ -1,113 +1,94 @@
-import {canvas} from './Canvas';
-import {controls} from './Controls';
-import {interfaceManager} from './InterfaceManager';
-import type {GameSession} from './net/session';
-import {drawTowerPreview} from './view/render';
-import type {RenderSnapshot} from './engine/RenderSnapshot';
-import type {TowerType} from './entities/towers/towerTypes';
-import {playMode} from './PlayMode';
+import {Tower} from "./entities/towers/Tower";
+import {CanonTower} from "./entities/towers/CanonTower";
+import {map, Map} from "./Map";
+import {Renderable} from "./interfaces/Renderable";
+import {controls} from "./Controls";
+import {interfaceManager} from "./InterfaceManager";
+import {canvas} from "./Canvas";
+import {GameActions} from "./agent/GameActions";
+import {playMode} from "./PlayMode";
 
-/**
- * Human-mode placement (docs/PRODUCT_CONCEPT.md §2).
- *
- * The browser only previews: it draws a ghost at the cursor and, on click, asks
- * the server to build. Legality (occupancy, funds, path blocking) is decided
- * server-side by `GameActions`, and the result message is shown as a toast. The
- * preview never claims a cell is legal beyond "no tower is visibly there".
- */
-class TowerPlacer {
-    private session: GameSession | null = null;
-    private selectedType: TowerType | null = null;
-    private selectedAimRadius = 0;
-    private placing = false;
-    private i = 0;
+class TowerPlacer extends Renderable {
+    public tower: Tower = new CanonTower(0, 0, Map.TILE_SIZE);
+    public placing = false;
     private j = 0;
-    private pointer = {x: 0, y: 0};
+    private i = 0;
     private shouldBeDrawn = false;
-    private latest: RenderSnapshot | null = null;
+    private actions: GameActions | null = null;
 
     constructor() {
+        super();
+
         if (playMode !== 'human') return;
 
         controls.on('click', () => this.handleClick());
+
         controls.on('keydown:ESCAPE', () => {
             if (this.placing) this.placing = false;
         });
     }
 
-    bind(session: GameSession) {
-        this.session = session;
+    setActions(actions: GameActions) {
+        this.actions = actions;
     }
 
-    /** Choose a tower type from the palette and enter placement mode. */
-    place(type: TowerType, aimRadius: number) {
-        this.placing = true;
-        this.selectedType = type;
-        this.selectedAimRadius = aimRadius;
-        this.shouldBeDrawn = false;
+    private handleClick() {
+        if (!this.placing || !this.canBePlaced() || !this.actions) return;
+
+        const result = this.actions.buildTower(this.tower.towerType, this.i, this.j);
+        interfaceManager.snackbar.toast(result.message);
+        if (result.ok) {
+            this.placing = false;
+            this.shouldBeDrawn = false;
+        }
     }
 
-    update(snapshot: RenderSnapshot | null): void {
-        this.latest = snapshot;
+    draw(ctx: CanvasRenderingContext2D): void {
+        if (this.placing && this.shouldBeDrawn) {
+            this.tower.draw(ctx);
+            this.tower.drawAimingRadius(ctx);
+
+            if (!this.canBePlaced()) {
+                ctx.strokeStyle = 'red';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(this.x + Map.TILE_SIZE / 2 - 10, this.y + Map.TILE_SIZE / 2 - 10);
+                ctx.lineTo(this.x + Map.TILE_SIZE / 2 + 10, this.y + Map.TILE_SIZE / 2 + 10);
+                ctx.moveTo(this.x + Map.TILE_SIZE / 2 + 10, this.y + Map.TILE_SIZE / 2 - 10);
+                ctx.lineTo(this.x + Map.TILE_SIZE / 2 - 10, this.y + Map.TILE_SIZE / 2 + 10);
+                ctx.stroke();
+            }
+        }
+    }
+
+    update(): void {
         if (!this.placing) return;
 
         this.shouldBeDrawn = false;
-        if (!snapshot || !canvas.transformMatrix) return;
-
         const mouse = canvas.transformMatrix!.inverse().transformPoint(controls.mouse);
-        this.pointer = mouse;
-        const tile = snapshot.grid.tileSize;
-        this.i = Math.floor(mouse.x / tile);
-        this.j = Math.floor(mouse.y / tile);
+        this.i = Math.floor(mouse.x / Map.TILE_SIZE);
+        this.j = Math.floor(mouse.y / Map.TILE_SIZE);
 
-        if (this.isMouseOverGrid(snapshot)) {
+        if (this.isMouseOverGrid()) {
+            this.x = this.i * Map.TILE_SIZE;
+            this.y = this.j * Map.TILE_SIZE;
+            this.tower.setCoordinates(this.x, this.y);
             this.shouldBeDrawn = true;
         }
     }
 
-    draw(ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot | null): void {
-        if (!this.placing || !this.shouldBeDrawn || !this.selectedType || !snapshot) return;
-
-        const tile = snapshot.grid.tileSize;
-        drawTowerPreview(ctx, {
-            type: this.selectedType,
-            x: this.pointer.x - tile / 2,
-            y: this.pointer.y - tile / 2,
-            tileSize: tile,
-            aimRadius: this.selectedAimRadius,
-            valid: this.canBePlaced(snapshot),
-        });
+    private isMouseOverGrid() {
+        return controls.mouseInCanvas && this.i >= 0 && this.i < map.grid.length && this.j >= 0 && this.j < map.grid[0].length;
     }
 
-    private handleClick() {
-        if (!this.placing || !this.session || !this.selectedType || !this.latest) return;
-        // A mouseup can arrive before the next animation frame.
-        this.update(this.latest);
-        if (!this.shouldBeDrawn) return;
-        if (!this.canBePlaced(this.latest)) return;
-
-        const type = this.selectedType;
-        void this.session.workerBuild(type, this.i, this.j)
-            .then(result => {
-                interfaceManager.snackbar.toast(result && result.message ? result.message : '');
-                // Stay in placement mode after a successful build, so the player can
-                // drop several of the same tower in a row. ESC (or picking another
-                // card) leaves the mode; a rejected build also keeps it, so the
-                // player can retry on a different cell.
-            })
-            .catch(error => interfaceManager.snackbar.toast(String((error && error.message) || error)));
+    private canBePlaced() {
+        return this.isMouseOverGrid() && map.canBePlaced(this.i, this.j);
     }
 
-    private isMouseOverGrid(snapshot: RenderSnapshot): boolean {
-        return controls.mouseInCanvas
-            && this.i >= 0 && this.i < snapshot.grid.width
-            && this.j >= 0 && this.j < snapshot.grid.height;
-    }
-
-    /** Visual hint only: the server is the authority on placement legality. */
-    private canBePlaced(snapshot: RenderSnapshot): boolean {
-        return this.isMouseOverGrid(snapshot)
-            && !snapshot.towers.some(tower => tower.i === this.i && tower.j === this.j);
+    place(TowerClass: new (...args: any[]) => Tower) {
+        this.shouldBeDrawn = false;
+        this.placing = true;
+        this.tower = new TowerClass(0, 0, Map.TILE_SIZE);
     }
 }
 

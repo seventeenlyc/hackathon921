@@ -1,10 +1,10 @@
-import {GRID_H, GRID_W, TILE_SIZE} from "./engine/constants";
+import {Map} from "./Map";
 import {canvas} from "./Canvas";
 import {controls} from "./Controls";
 
 export class Camera {
-    x: number = TILE_SIZE * GRID_W / 2;
-    y: number = TILE_SIZE * GRID_H / 2;
+    x: number = Map.TILE_SIZE * Map.GRID_W / 2;
+    y: number = Map.TILE_SIZE * Map.GRID_H / 2;
     scaleRatio: number = 0.82;
     static DELTA_MOVE: number = 100;
     static SCALE_FACTOR: number = 0.1;
@@ -52,8 +52,8 @@ export class Camera {
     }
 
     private move(dx: number, dy: number) {
-        this.x = Math.min(Math.max(this.x + dx, 0), TILE_SIZE * GRID_W);
-        this.y = Math.min(Math.max(this.y + dy, 0), TILE_SIZE * GRID_H);
+        this.x = Math.min(Math.max(this.x + dx, 0), Map.TILE_SIZE * Map.GRID_W);
+        this.y = Math.min(Math.max(this.y + dy, 0), Map.TILE_SIZE * Map.GRID_H);
     }
 
     private scale(factor: number) {

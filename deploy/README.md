@@ -27,11 +27,10 @@ push 到 main
 ├── releases/
 │   ├── <commit-sha>/
 │   │   ├── index.html …   前端构建产物（nginx root）
-│   │   ├── server/src/    后端编译产物（JS，systemd 运行入口 main.js）
-│   │   └── src/           后端共享的无头引擎与动作层（main.js 相对引用）
+│   │   └── server/        后端编译产物（JS，systemd 运行）
 │   └── ...                每次部署一个目录，保留最近 5 个
 ├── current         -> releases/<commit-sha>            nginx root
-├── current-server  -> releases/<commit-sha>/server/src  后端运行目录
+├── current-server  -> releases/<commit-sha>/server     后端运行目录
 └── data/           leaderboard.sqlite3、session_secret  属 pd-leaderboard
 ```
 
