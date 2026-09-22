@@ -14,6 +14,12 @@ build/Release/
 dev/
 .persistence/
 .test-build/
+server-dist/
+
+# Local leaderboard database (server runtime data, never committed)
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
 
 # Environment variables and local secrets
 .env

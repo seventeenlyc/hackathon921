@@ -423,6 +423,12 @@ body {
     box-shadow: 0 2px 1px -1px rgba(0,0,0,0.2), 0 1px 1px 0 rgba(0,0,0,0.14), 0 1px 3px 0 rgba(0,0,0,0.12);
     font-size: 13px; padding: 10px 12px;
     .leaderboard-title { text-transform: uppercase; text-align: center; font-size: 14px; color: var(--accent); margin-bottom: 8px; }
+    // 共享 / 离线状态行：让玩家分清这是全局排名还是本机降级数据
+    .leaderboard-status {
+      text-align: center; font-size: 11px; color: #7f8c8d; margin-bottom: 6px; min-height: 13px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      &.offline { color: #e0a03c; }
+    }
     ol.leaderboard-list {
       list-style: none; padding: 0; margin: 0 0 6px 0; max-height: 240px; overflow-y: auto;
       li {

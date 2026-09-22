@@ -33,6 +33,11 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
+      # 后端编译 + API 测试（Node 内置 test runner，零额外依赖）。
+      # 需要 Node >= 22.13（node:sqlite 免 --experimental-sqlite），上面的 '22' 满足。
+      - name: Build and test backend
+        run: npm run test:server
+
       # deploy.yml 不再在 PR 上触发，改动它将得不到任何验证。actionlint 补上这一层，
       # 而且查得比「YAML 能否解析」多：无效的 needs / if 表达式、不存在的 context、
       # 以及对内嵌 run 块跑 shellcheck。
