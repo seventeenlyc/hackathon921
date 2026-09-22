@@ -6,7 +6,6 @@ import {camera} from "./Camera";
 import {enemyManager} from "./EnemyManager";
 import {munitionManager} from "./MunitionManager";
 import {controls} from "./Controls";
-import {towerPlacer} from "./TowerPlacer";
 import './InterfaceManager';
 import {interfaceManager} from "./InterfaceManager";
 import {waveManager} from "./WavesManager";
@@ -71,7 +70,6 @@ class Game {
             map.update();
             munitionManager.update()
             enemyManager.update()
-            towerPlacer.update()
         }
     }
 
@@ -84,7 +82,6 @@ class Game {
         munitionManager.draw(ctx);
         enemyManager.draw(ctx);
         map.draw(ctx);
-        towerPlacer.draw(ctx);
         ctx.restore();
 
         if (this.looping) {

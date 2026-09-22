@@ -1,7 +1,6 @@
 import {Map} from "./Map";
 import {canvas} from "./Canvas";
 import {controls} from "./Controls";
-import {towerPlacer} from "./TowerPlacer";
 
 export class Camera {
     x: number = Map.TILE_SIZE * Map.GRID_W / 2;
@@ -25,10 +24,8 @@ export class Camera {
         controls.on('wheel:up', () => this.scale(1 + Camera.SCALE_FACTOR))
         controls.on('wheel:down', () => this.scale(1 - Camera.SCALE_FACTOR))
         controls.on('mousedown', () => {
-            if (!towerPlacer.placing) {
-                this.dragging = true;
-                this.dragStartCoordinates = controls.mouse;
-            }
+            this.dragging = true;
+            this.dragStartCoordinates = controls.mouse;
         })
         controls.on('mouseup', () => {
             this.dragging = false;

@@ -76,7 +76,10 @@
             spellcheck="false"
             placeholder="Tell your AI how to play…"
           ></textarea>
-          <button id="strategy-apply" class="strategy-apply" type="button">Apply strategy</button>
+          <div class="strategy-actions">
+            <button id="strategy-apply" class="strategy-apply" type="button">Apply strategy</button>
+            <button id="strategy-random" class="strategy-random" type="button">Random strategy</button>
+          </div>
           <div id="strategy-status" class="strategy-status"></div>
         </div>
         <hr />
@@ -90,11 +93,6 @@
           <button id="pause">Pause</button>
           <button id="resume">Resume</button>
           <button id="speed">Speed x1</button>
-        </div>
-        <hr />
-        <div class="towers">
-          <div id="towers-wrapper"></div>
-          <div id="towers-stats"></div>
         </div>
         <hr />
         <table class="table5050">
@@ -114,7 +112,7 @@
         <footer>
           <div>
             Inert
-            <span id="version" class="accent">v0.1.7</span>
+            <span id="version" class="accent">v0.1.8</span>
           </div>
           <div class="code">
             <span>Source code:</span>

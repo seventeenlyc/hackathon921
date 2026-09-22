@@ -16,6 +16,7 @@
     "src/agent/AgentRuntime.ts",
     "src/agent/GameActions.ts",
     "src/agent/GameLoop.ts",
+    "src/agent/StrategyLibrary.ts",
     "src/agent/StrategyStore.ts",
     "src/agent/snapshot.ts",
     "src/agent/types.ts",

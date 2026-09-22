@@ -165,23 +165,35 @@ body {
         }
       }
 
-      .strategy-apply {
-        width: 100%;
+      .strategy-actions {
+        display: flex;
+        gap: 8px;
         margin-top: 8px;
-        text-transform: uppercase;
-        padding: 8px 6px;
-        background-color: transparent;
-        border: 1px solid #575757;
-        border-radius: 5px;
-        color: #a5a5a5;
-        cursor: pointer;
-        font-family: inherit;
-        font-size: 12px;
-        transition: all ease 0.2s;
 
-        &:hover {
-          color: var(--accent);
-          border-color: var(--accent);
+        button {
+          flex: 1;
+          text-transform: uppercase;
+          padding: 8px 6px;
+          background-color: transparent;
+          border: 1px solid #575757;
+          border-radius: 5px;
+          color: #a5a5a5;
+          cursor: pointer;
+          font-family: inherit;
+          font-size: 12px;
+          transition: all ease 0.2s;
+
+          &:hover:not(:disabled) {
+            color: var(--accent);
+            border-color: var(--accent);
+          }
+
+          /* A run cannot start without a prompt, so the start button tells the
+             player why it is inert instead of failing silently on click. */
+          &:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+          }
         }
       }
 
@@ -255,49 +267,6 @@ body {
           &:first-child {
             text-align: right;
           }
-        }
-      }
-    }
-
-    .towers {
-      #towers-wrapper {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
-
-        canvas {
-          border: 1px solid #575757;
-          border-right-width: 0;
-          cursor: pointer;
-
-          &:hover {
-            background-color: rgba(52, 52, 52, 0.8);
-          }
-
-          &:first-child {
-            border-top-left-radius: 5px;
-            border-bottom-left-radius: 5px;
-          }
-
-          &:last-child {
-            border-top-right-radius: 5px;
-            border-bottom-right-radius: 5px;
-            border-right-width: 1px;
-          }
-        }
-      }
-
-      #towers-stats {
-        .title {
-          text-align: center;
-          font-size: 18px;
-          margin-top: 10px;
-        }
-
-        .description {
-          text-align: justify;
-          margin: 15px 0;
         }
       }
     }

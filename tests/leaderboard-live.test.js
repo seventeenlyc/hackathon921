@@ -114,7 +114,6 @@ async function test(name, fn) {
             './Camera': { camera: {} },
             './EnemyManager': { enemyManager: {} },
             './MunitionManager': { munitionManager: {} },
-            './TowerPlacer': { towerPlacer: {} },
             './InterfaceManager': { interfaceManager: { showGameOver() {} } },
             './WavesManager': { waveManager },
             './leaderboard/LeaderboardUI': { submitRunScore: (name, wave) => submissions.push([name, wave]) },
