@@ -90,7 +90,7 @@
 
 ## 前端版本号
 
-- 页脚版本号的来源是 `package.json` 的 `version` 字段：`src/InterfaceManager.ts` 在运行时把它渲染成 `v<version>`。`index.html` 中 `#version` 的静态文本只是脚本加载前的占位，**必须与 `package.json` 保持一致**，否则首屏与最终显示会不一致。
+- 页脚版本号的来源是 `package.json` 的 `version` 字段：`src/InterfaceManager.ts` 在运行时把它渲染成 `v<version>`。`index.html` 中 `#version` 的静态文本只是脚本加载前的占位，**必须与 `package.json` 保持一致**，否则首屏与最终显示会不一致。`package-lock.json` 根部的 `version`（两处）也同步更新。
 - **每个 PR 都必须递增前端版本号**，纯文档改动也不例外；版本号随本次改动一起提交，不要留到后续 PR 补。
 - 默认只自增第三段（如 `0.1.3` → `0.1.4`），前两段保持不变。
 - **大版本由人类明确给出后再改**，不要自行决定第一段或第二段的跃迁。
