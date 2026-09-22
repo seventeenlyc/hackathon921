@@ -71,12 +71,14 @@ class Game {
     }
 
     updateLoop() {
+        // Camera input remains live while the simulation is idle or paused, so
+        // players can inspect the whole map before starting a run.
+        camera.update();
         if (!gameLoop.isStepping()) return;
 
         // Fast mode advances the deterministic simulation more times per real
         // frame instead of changing the tick rate, so entity maths is untouched.
         for (let step = 0; step < gameLoop.speed; ++step) {
-            camera.update();
             map.update();
             munitionManager.update()
             enemyManager.update()

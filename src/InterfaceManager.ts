@@ -130,7 +130,8 @@ class InterfaceManager {
     setState(state: GameState) {
         // `idle` is the not-started state shown before the player presses Start.
         this.stateElement.textContent = t(`state.${state}`);
-        this.pauseButton.hidden = state !== 'running';
+        this.pauseButton.hidden = state === 'paused';
+        this.pauseButton.disabled = state === 'idle' || state === 'planning';
         this.resumeButton.hidden = state !== 'paused';
     }
 

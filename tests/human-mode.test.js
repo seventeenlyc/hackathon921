@@ -36,5 +36,9 @@ assert.doesNotMatch(towerPlacer, /cashManager\.withdraw|map\.addElement/, 'human
 assert.match(battlefield, /cashManager\.withdraw\(tower\.cost\)/, 'validated tower builds must deduct their cost');
 assert.match(game, /playMode === 'ai' \? agentRuntime : humanPlanner/, 'human mode must disable the AI planner');
 assert.match(game, /if \(playMode === 'human'\) towerPlacer\.update\(\)/, 'human mode must update placement preview');
+assert.match(interfaceSource, /pauseButton\.hidden = state === 'paused'/,
+    'the pause control must remain in the upper-right control group outside paused state');
+assert.match(interfaceSource, /pauseButton\.disabled = state === 'idle' \|\| state === 'planning'/,
+    'the pause control must be disabled until a run can be paused');
 
 console.log('Human mode and random strategy UI assertions passed.');

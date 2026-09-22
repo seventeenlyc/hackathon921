@@ -25,9 +25,16 @@ assert.doesNotMatch(uiSource, /No scores yet[\s\S]{0,180}return;/,
 assert.match(index, /id="control-layer"/, 'the page must expose a stable control-layer root');
 assert.match(index, /class="control-card status-panel/, 'the page must expose the lower-left status region');
 assert.match(index, /class="control-card chatbox-panel/, 'the page must expose the lower-right Chatbox region');
+const statusStart = index.indexOf('class="control-card status-panel"');
+const statusClose = index.indexOf('</section>', statusStart);
+const towerPanel = index.indexOf('class="tower-panel"');
+assert.ok(statusStart >= 0 && statusClose >= 0 && towerPanel > statusClose,
+    'the tower panel must not obscure the left-side wave status card');
 assert.match(index, /id="controls-collapse"/, 'the page must expose an accessible collapse control');
 assert.match(index, /tabindex="0"/, 'the battlefield must be keyboard focusable');
 assert.match(index, /id="towers-wrapper"/, 'the page must expose the human deployable tower mount');
+assert.match(styles, /\.leaderboard-panel[\s\S]*position:\s*fixed[\s\S]*left:\s*0;/,
+    'the leaderboard must stay pinned to the primary view\'s upper-left corner');
 assert.match(styles, /#inert\.mode-human \.chatbox-panel/, 'the AI strategy panel must stay hidden in human mode');
 assert.match(strategySource, /getControlLayer\(\)\.hide\(\)/,
     'valid strategy submission must hide the control layer after queueing');
