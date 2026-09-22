@@ -74,9 +74,11 @@ class LeaderboardPanel {
 
     constructor() {
         this.username = readUsernameCookie();
-        this.root = document.createElement('div');
+        this.root = document.createElement('section');
         this.root.className = 'leaderboard-panel';
-        const title = document.createElement('div');
+        this.root.setAttribute('aria-labelledby', 'leaderboard-title');
+        const title = document.createElement('h2');
+        title.id = 'leaderboard-title';
         title.className = 'leaderboard-title';
         title.textContent = t('lb.title');
         this.statusEl = document.createElement('div');
@@ -89,7 +91,12 @@ class LeaderboardPanel {
         this.root.appendChild(this.statusEl);
         this.root.appendChild(this.listEl);
         this.root.appendChild(this.footerEl);
-        document.getElementById('inert')!.appendChild(this.root);
+        const slot = document.getElementById('leaderboard-slot');
+        if (slot) {
+            slot.appendChild(this.root);
+        } else {
+            document.getElementById('inert')!.appendChild(this.root);
+        }
         this.render();
         // The panel is text-only, so a language switch just re-renders it.
         onLangChange(() => this.render());

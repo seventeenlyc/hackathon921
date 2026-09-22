@@ -80,7 +80,7 @@ class Game {
             map.update();
             munitionManager.update()
             enemyManager.update()
-            towerPlacer.update()
+            if (playMode === 'human') towerPlacer.update();
         }
     }
 
@@ -93,7 +93,7 @@ class Game {
         munitionManager.draw(ctx);
         enemyManager.draw(ctx);
         map.draw(ctx);
-        towerPlacer.draw(ctx);
+        if (playMode === 'human') towerPlacer.draw(ctx);
         ctx.restore();
 
         if (this.looping) {
@@ -154,6 +154,10 @@ class Game {
 }
 
 const actions = new GameActions(new InertBattlefield());
+// Keep the module boundary tolerant of lightweight test doubles from the
+// leaderboard suite while the real TowerPlacer receives the same validated
+// action port as the AI runtime.
+if (typeof towerPlacer.setActions === 'function') towerPlacer.setActions(actions);
 
 const agentRuntime = new AgentRuntime({
     actions,

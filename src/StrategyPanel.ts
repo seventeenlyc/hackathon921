@@ -3,6 +3,7 @@ import {gameLoop} from './agent/GameLoop';
 import {randomStrategy} from './agent/StrategyLibrary';
 import {isStrategyTooLong, strategyLength, STRATEGY_MAX_LENGTH} from './agent/StrategyLimits';
 import {queueStrategy, startRun} from './StrategyQueue';
+import {getControlLayer} from './ControlLayer';
 import {onLangChange, t} from './i18n';
 
 /**
@@ -12,9 +13,9 @@ import {onLangChange, t} from './i18n';
  * take effect. The versioning rules live in `StrategyStore` and the AI runtime
  * reads the active version while the loop is in PLANNING.
  *
- * Tower placement is not part of this UI: the human only writes the strategy and
- * the AI builds (docs/PRODUCT_CONCEPT.md §5). A run cannot start without a
- * prompt, so before the run exists the button is disabled until the box has text.
+ * A run cannot start without a prompt, so before the run exists the button is
+ * disabled until the box has text. Human tower placement lives in the tower
+ * catalogue, not in this strategy console.
  */
 export class StrategyPanel {
     private readonly input: HTMLTextAreaElement;
@@ -40,6 +41,12 @@ export class StrategyPanel {
             this.render();
         });
         this.input.addEventListener('input', () => this.render());
+
+        if (strategyStore.active().text.trim()) {
+            getControlLayer().hide();
+        } else {
+            getControlLayer().show();
+        }
 
         // PLANNING locks the queue (wired in Game), which clears the "queued"
         // indicator; re-render on every transition so the status stays truthful.
@@ -71,6 +78,9 @@ export class StrategyPanel {
         queueStrategy(text);
         if (idle) startRun();
         this.render();
+        const controlLayer = getControlLayer();
+        controlLayer.hide();
+        controlLayer.showHint();
     }
 
     private warnOverLimit(length: number) {
@@ -84,13 +94,9 @@ export class StrategyPanel {
         const empty = length === 0;
         const over = isStrategyTooLong(this.input.value);
 
-        // Live counter so the limit is visible before a doomed request is sent.
         this.count.textContent = `${length} / ${STRATEGY_MAX_LENGTH}`;
         this.count.classList.toggle('over', over);
-
         this.applyButton.textContent = idle ? t('strategy.start') : t('strategy.apply');
-        // No prompt, no run (docs/PRODUCT_CONCEPT.md §5/§6); over the cap, the
-        // server would reject it anyway, so do not pretend it was applied.
         this.applyButton.disabled = over || (idle && empty);
 
         if (over) {
@@ -98,8 +104,6 @@ export class StrategyPanel {
             this.warnOverLimit(length);
             return;
         }
-
-        this.status.classList.remove('warn');
 
         if (idle) {
             this.status.classList.remove('queued');

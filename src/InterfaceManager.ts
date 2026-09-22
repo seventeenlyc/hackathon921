@@ -1,10 +1,4 @@
 import {version} from './../package.json'
-import {CanonTower} from "./entities/towers/CanonTower";
-import {GatlingTower} from "./entities/towers/GatlingTower";
-import {Tower} from "./entities/towers/Tower";
-import {SniperTower} from "./entities/towers/SniperTower";
-import {Map} from "./Map";
-import {towerPlacer} from "./TowerPlacer";
 import {Snackbar} from "./tools/Snackbar";
 import {LaserTower} from "./entities/towers/LaserTower";
 import {SlowTower} from "./entities/towers/SlowTower";
@@ -12,7 +6,14 @@ import {textureManager} from "./tools/TextureManager";
 import {gameLoop, GameState, nextSpeed} from "./agent/GameLoop";
 import {otherMode, playMode, switchPlayMode} from "./PlayMode";
 import {requestSpawnCount, spawnSettings} from "./SpawnQueue";
-import {applyStaticTranslations, onLangChange, t, toggleLang} from "./i18n";
+import {CanonTower} from "./entities/towers/CanonTower";
+import {GatlingTower} from "./entities/towers/GatlingTower";
+import {SniperTower} from "./entities/towers/SniperTower";
+import {Tower} from "./entities/towers/Tower";
+import {Map} from "./Map";
+import {towerPlacer} from "./TowerPlacer";
+import {getControlLayer} from "./ControlLayer";
+import {applyStaticTranslations, onLangChange, t, toggleLang} from './i18n';
 
 /** Summary shown on the settlement screen after the base falls. */
 export interface RunStats {
@@ -46,9 +47,11 @@ class InterfaceManager {
     private stateElement = document.getElementById('state')!;
     private speedElement = document.getElementById('speed')!;
     private gameOverElement = document.getElementById('game-over')!;
-    public snackbar = new Snackbar();
-    /** Kept so the tower stat rows can be re-rendered when the language changes. */
+    private pauseButton = document.getElementById('pause') as HTMLButtonElement;
+    private resumeButton = document.getElementById('resume') as HTMLButtonElement;
+    private controlLayer = getControlLayer();
     private lastTower: Tower | null = null;
+    public snackbar = new Snackbar();
 
     constructor() {
         this.versionElement.textContent = 'v' + version;
@@ -62,17 +65,20 @@ class InterfaceManager {
             };
         });
 
-        document.getElementById('pause')!.onclick = () => gameLoop.pause();
-        document.getElementById('resume')!.onclick = () => gameLoop.resume();
-        // Language toggle: static markup is re-filled, dynamic text re-rendered.
-        document.getElementById('lang')!.onclick = () => {
-            toggleLang();
-            applyStaticTranslations();
+        this.pauseButton.onclick = () => gameLoop.pause();
+        this.resumeButton.onclick = () => {
+            gameLoop.resume();
+            this.controlLayer.hide();
         };
         this.speedElement.onclick = () => {
             gameLoop.setSpeed(nextSpeed(gameLoop.speed));
             this.updateSpeedLabel();
         };
+        const langButton = document.getElementById('lang') as HTMLButtonElement | null;
+        langButton?.addEventListener('click', () => {
+            toggleLang();
+            applyStaticTranslations();
+        });
 
         gameLoop.onChange(state => {
             this.setState(state);
@@ -85,11 +91,10 @@ class InterfaceManager {
 
         // The class scopes which half of the UI is visible (see styles.less).
         document.getElementById('inert')!.classList.add('mode-' + playMode);
-        // The tower palette exists only where the human is the player; in AI mode
-        // it is hidden and never populated (docs/PRODUCT_CONCEPT.md §5).
-        if (playMode === 'human') this.setTowers();
+        // Both modes can inspect the same tower catalogue. Only human mode turns
+        // a card click into placement; AI mode keeps the cards informational.
+        this.setTowers();
         this.setupModeButton();
-
         onLangChange(() => {
             this.setState(gameLoop.state);
             this.updateSpeedLabel();
@@ -123,7 +128,10 @@ class InterfaceManager {
     }
 
     setState(state: GameState) {
-        this.stateElement.textContent = t('state.' + state);
+        // `idle` is the not-started state shown before the player presses Start.
+        this.stateElement.textContent = t(`state.${state}`);
+        this.pauseButton.hidden = state !== 'running';
+        this.resumeButton.hidden = state !== 'paused';
     }
 
     updateSpeedLabel() {
@@ -155,22 +163,51 @@ class InterfaceManager {
         ];
         const pad = Map.TILE_SIZE * 0.5;
         const canvasSize = Map.TILE_SIZE + pad;
+        let selectedCard: HTMLButtonElement | null = null;
 
         towers.forEach(TowerClass => {
+            const tower = new TowerClass(0, 0, Map.TILE_SIZE);
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.className = 'tower-card';
+            card.setAttribute('aria-label', `${tower.name}, costs ${tower.cost} cash`);
+            card.title = playMode === 'human'
+                ? `${tower.name} · ${tower.cost} cash · click to place`
+                : `${tower.name} · ${tower.cost} cash · click to view details`;
+
             const canvas = document.createElement('canvas');
             canvas.width = canvasSize;
             canvas.height = canvasSize;
-            this.towersWrapperElement.insertAdjacentElement("beforeend", canvas);
+            canvas.setAttribute('aria-hidden', 'true');
+            card.appendChild(canvas);
+
+            const label = document.createElement('span');
+            label.className = 'tower-card-label';
+            label.textContent = tower.name;
+            const cost = document.createElement('span');
+            cost.className = 'tower-card-cost';
+            cost.textContent = `${tower.cost} ¢`;
+            card.append(label, cost);
+            this.towersWrapperElement.appendChild(card);
 
             const ctx = canvas.getContext('2d')!;
-            const tower = new TowerClass(0, 0, Map.TILE_SIZE);
             tower.setCoordinates(pad / 2, pad / 2);
             tower.draw(ctx);
             textureManager.onLoaded(tower.texturePath, () => tower.draw(ctx));
 
-            canvas.onclick = () => {
-                towerPlacer.place(TowerClass);
+            const selectTower = () => {
+                selectedCard?.classList.remove('selected');
+                selectedCard = card;
+                card.classList.add('selected');
+                if (playMode === 'human') towerPlacer.place(TowerClass);
                 this.showTowerStats(tower);
+            };
+            card.onclick = selectTower;
+            card.onkeydown = event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    selectTower();
+                }
             };
         })
     }
@@ -187,21 +224,27 @@ class InterfaceManager {
             `${(tower.damage.min / reloadDuration).toFixed(0)} - ${(tower.damage.max / reloadDuration).toFixed(0)}` :
             tower.damage / reloadDuration;
 
-        // `damage` is either a number or a {min,max} range. The typeof guard keeps
-        // the range-damage case (laser) from showing nonsense rows.
+        const hasDamage = typeof tower.damage === 'number'
+            ? tower.damage > 0
+            : tower.damage.max > 0;
+
         this.towersStatsElement.innerHTML = `
             <div class="title">${tower.name}</div>
             <div class="description">${tower.description}</div>
             <table class="table5050">
-                <tr><td>${t('tower.cost')}</td><td class="accent">${tower.cost} ¢</td></tr>
+                <tr><td>${t('tower.cost')} </td><td class="accent">${tower.cost} ¢</td></tr>
                 <tr><td>${t('tower.aimRadius')}</td><td class="accent">${tower.aimRadius}</td></tr>
-                ${typeof tower.damage === 'number' && tower.damage > 0 ? `
+                ${hasDamage ? `
                     <tr><td>${t('tower.damage')}</td><td class="accent">${damage}</td></tr>
                     <tr><td>${t('tower.reload')}</td><td class="accent">${reloadDuration.toFixed(3)} s</td></tr>
                     <tr><td title="Damage Per Second">${t('tower.dps')}</td><td class="accent">${dps}</td></tr>
                 ` : ''}
             </table>
         `
+        // AI mode keeps the catalogue compact on small screens; bring the
+        // selected tower's description into view instead of hiding it below
+        // the scroll boundary.
+        this.towersStatsElement.scrollIntoView({block: 'nearest'});
     }
 
     /** Settlement screen: the run's numbers plus the rank, once known. */

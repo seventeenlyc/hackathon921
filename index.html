@@ -1,171 +1,126 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
   <head>
     <meta charset="UTF-8" />
-    <title>Inert — 极简塔防</title>
-
+    <title data-i18n="app.title">Inert - Minimalistic tower defense in the browser</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
     <meta itemprop="name" content="Inert" />
     <meta property="og:title" content="Inert" />
     <meta name="twitter:title" content="Inert" />
-    <meta name="description" content="极简塔防" />
-    <meta itemprop="description" content="极简塔防" />
-    <meta property="og:description" content="极简塔防" />
-    <meta name="twitter:description" content="极简塔防" />
+    <meta name="description" content="Minimalistic tower defense in the browser" />
+    <meta itemprop="description" content="Minimalistic tower defense in the browser" />
+    <meta property="og:description" content="Minimalistic tower defense in the browser" />
+    <meta name="twitter:description" content="Minimalistic tower defense in the browser" />
     <meta itemprop="image" content="/img/banner.png" />
     <meta property="og:image" content="/img/banner.png" />
     <meta name="twitter:image" content="/img/banner.png" />
     <link rel="author" href="/humans.txt" />
-
-    <link rel="apple-touch-icon" sizes="57x57" href="/img/icons/apple-icon-57x57.png" />
-    <link rel="apple-touch-icon" sizes="60x60" href="/img/icons/apple-icon-60x60.png" />
-    <link rel="apple-touch-icon" sizes="72x72" href="/img/icons/apple-icon-72x72.png" />
-    <link rel="apple-touch-icon" sizes="76x76" href="/img/icons/apple-icon-76x76.png" />
-    <link rel="apple-touch-icon" sizes="114x114" href="/img/icons/apple-icon-114x114.png" />
-    <link rel="apple-touch-icon" sizes="120x120" href="/img/icons/apple-icon-120x120.png" />
-    <link rel="apple-touch-icon" sizes="144x144" href="/img/icons/apple-icon-144x144.png" />
-    <link rel="apple-touch-icon" sizes="152x152" href="/img/icons/apple-icon-152x152.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/img/icons/apple-icon-180x180.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/img/icons/android-icon-192x192.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/img/icons/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="96x96" href="/img/icons/favicon-96x96.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/img/icons/favicon-16x16.png" />
+    <link rel="icon" type="image/png" href="/img/icons/favicon-32x32.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="msapplication-TileColor" content="#ffffff" />
-    <meta name="msapplication-TileImage" content="/img/icons/ms-icon-144x144.png" />
     <meta name="theme-color" content="#ffffff" />
-
-    <link
-      href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="inert">
-      <canvas id="canvas"></canvas>
-      <div class="controls">
-        <h1>Inert</h1>
-        <div class="subtitle" data-i18n="header.subtitle">极简塔防</div>
-        <hr />
-        <div class="info">
-          <table class="table5050">
-            <tbody>
-              <tr>
-                <td data-i18n="label.wave">波次：</td>
-                <td class="accent"><span id="wave">1</span> <span id="delay"></span></td>
-              </tr>
-              <tr>
-                <td data-i18n="label.state">状态：</td>
-                <td class="accent"><span id="state">未开始</span></td>
-              </tr>
-              <tr>
-                <td data-i18n="label.cash">金币：</td>
-                <td class="accent"><span id="cash">12</span> ¢</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <hr />
-        <div class="strategy">
-          <label class="strategy-label" for="strategy-input"><span data-i18n="strategy.label">你的策略</span> <span id="strategy-count" class="strategy-count"></span></label>
-          <textarea
-            id="strategy-input"
-            class="strategy-input"
-            rows="6"
-            spellcheck="false"
-            data-i18n-placeholder="strategy.placeholder" placeholder="告诉 AI 该怎么打…"
-          ></textarea>
-          <div class="strategy-actions">
-            <button id="strategy-apply" class="strategy-apply" type="button" data-i18n="strategy.apply">应用策略</button>
-            <button id="strategy-random" class="strategy-random" type="button" data-i18n="strategy.random">随机示例</button>
+      <canvas id="canvas" tabindex="0" aria-label="Tower defense battlefield. Double-click to show controls."></canvas>
+      <div id="control-layer" class="controls is-visible" aria-label="Battlefield controls">
+        <section class="control-card status-panel" aria-labelledby="status-heading">
+          <div class="brand-lockup">
+            <div class="eyebrow">Prompt Defense</div>
+            <h1 id="status-heading">Inert</h1>
+            <div class="subtitle" data-i18n="header.subtitle">Minimalistic Tower Defense</div>
           </div>
-          <div id="strategy-status" class="strategy-status"></div>
-        </div>
-        <hr />
-        <div class="decisions">
-          <div class="decisions-label" data-i18n="decisions.label">AI 决策</div>
-          <ul id="decision-log" class="decision-log"></ul>
-          <div id="decision-empty" class="decision-empty" data-i18n="decisions.empty">暂无决策。</div>
-        </div>
-        <hr />
-        <div class="state-controls mode-control">
-          <button id="mode" type="button" data-i18n="mode.button">切换模式</button>
-        </div>
-        <div class="state-controls">
-          <button id="pause" data-i18n="control.pause">暂停</button>
-          <button id="resume" data-i18n="control.resume">继续</button>
-          <button id="speed">速度 x1</button>
-          <button id="lang" type="button" data-i18n="control.lang" data-i18n-title="control.langTitle">EN</button>
-        </div>
-        <div class="towers">
-          <hr />
-          <div id="towers-wrapper"></div>
-          <div id="towers-stats"></div>
-        </div>
-        <hr />
-        <table class="table5050">
-          <tbody>
-            <tr>
-              <td data-i18n="label.spawners">出生点：</td>
-              <td>
-                <button class="spawner" data-count="1" type="button">1</button>
-                <button class="spawner" data-count="2" type="button">2</button>
-                <button class="spawner" data-count="3" type="button">3</button>
-                <button class="spawner" data-count="4" type="button">4</button>
-                <div id="spawner-status" class="spawner-status"></div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <hr />
-        <footer>
-          <div>
-            Inert
-            <span id="version" class="accent">v0.1.11</span>
+          <div class="status-grid" aria-label="Battlefield status">
+            <div class="status-metric"><span data-i18n="label.wave">Wave</span><strong><span id="wave">1</span> <span id="delay"></span></strong></div>
+            <div class="status-metric"><span data-i18n="label.state">State</span><strong id="state">NOT STARTED</strong></div>
+            <div class="status-metric"><span data-i18n="label.cash">Cash</span><strong><span id="cash">12</span> ¢</strong></div>
           </div>
-          <div class="code">
-            <span data-i18n="footer.source">源代码：</span>
-            <a
-              href="//github.com/CorentinTh/inert"
-              target="_blank"
-              aria-label="Github repository"
-              rel="noopener"
-            >
-              <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"
-                />
-              </svg>
-            </a>
+          <div id="leaderboard-slot" class="leaderboard-slot"></div>
+          <section class="tower-panel" aria-labelledby="towers-heading">
+            <h2 id="towers-heading" class="tower-panel-title">Deployable towers</h2>
+            <div id="towers-wrapper" class="tower-palette" aria-label="Deployable towers"></div>
+            <div id="towers-stats" class="tower-stats" aria-live="polite">Select a tower to see its deployment stats.</div>
+          </section>
+        </section>
+
+        <section class="control-card chatbox-panel" aria-labelledby="chatbox-heading">
+          <div class="panel-heading">
+            <div>
+              <div class="eyebrow">Strategy console</div>
+              <h2 id="chatbox-heading">AI Chatbox</h2>
+            </div>
+            <button id="controls-collapse" class="icon-button" type="button" aria-label="Hide battlefield controls" title="Hide controls">×</button>
           </div>
-          <div>
-            <span data-i18n="footer.madeByPrefix">用</span> <span class="accent">♥</span> <span data-i18n="footer.madeBySuffix">制作，作者：</span>
-            <a href="//github.com/CorentinTh" target="_blank" rel="noopener">Corentin Thomasset</a>
+          <div class="strategy">
+            <label class="strategy-label" for="strategy-input"><span data-i18n="strategy.label">Your strategy</span><span id="strategy-count" class="strategy-count"></span></label>
+            <textarea id="strategy-input" class="strategy-input" rows="5" spellcheck="false" data-i18n-placeholder="strategy.placeholder" placeholder="Tell your AI how to play…"></textarea>
+            <div class="strategy-actions">
+              <div id="strategy-status" class="strategy-status" aria-live="polite"></div>
+              <button id="strategy-apply" class="strategy-apply" type="button" disabled data-i18n="strategy.start">Start run</button>
+              <button id="strategy-random" class="strategy-random" type="button" data-i18n="strategy.random">Random strategy</button>
+            </div>
           </div>
-        </footer>
+          <div class="decisions">
+            <div class="decisions-label" data-i18n="decisions.label">AI decisions</div>
+            <ul id="decision-log" class="decision-log"></ul>
+            <div id="decision-empty" class="decision-empty" data-i18n="decisions.empty">No decisions yet.</div>
+          </div>
+        </section>
+
+        <aside class="control-card operations-panel" aria-label="Game controls">
+          <div class="state-controls mode-control">
+            <button id="mode" type="button" data-i18n="mode.button">Switch play mode</button>
+          </div>
+          <div class="state-controls">
+            <button id="pause" type="button" data-i18n="control.pause">Pause</button>
+            <button id="resume" type="button" data-i18n="control.resume">Resume</button>
+            <button id="speed" type="button">Speed x1</button>
+            <button id="lang" type="button" data-i18n="control.lang" data-i18n-title="control.langTitle" title="Switch language (EN / 中文)">EN</button>
+          </div>
+          <details class="settings-panel">
+            <summary>Settings</summary>
+            <p class="settings-note">Changing the spawner count starts a new run.</p>
+            <div class="spawner-setting">
+              <span data-i18n="label.spawners">Spawners</span>
+              <span>
+                <button id="spawner1" class="spawner" data-count="1" type="button">1</button>
+                <button id="spawner2" class="spawner" data-count="2" type="button">2</button>
+                <button id="spawner3" class="spawner" data-count="3" type="button">3</button>
+                <button id="spawner4" class="spawner" data-count="4" type="button">4</button>
+              </span>
+            </div>
+            <div id="spawner-status" class="spawner-status" aria-live="polite"></div>
+            <footer>
+              <div>Inert <span id="version" class="accent">v0.1.12</span></div>
+              <div class="code">
+                <span data-i18n="footer.source">Source code:</span>
+                <a href="//github.com/CorentinTh/inert" target="_blank" aria-label="Github repository" rel="noopener">
+                  <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22 0 0 1.005-.322 3.3 1.23 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" /></svg>
+                </a>
+              </div>
+              <div>Made with <span class="accent">♥</span> by <a href="//github.com/CorentinTh" target="_blank" rel="noopener">Corentin Thomasset</a></div>
+            </footer>
+          </details>
+        </aside>
       </div>
+      <div id="controls-hint" class="controls-hint" role="status" aria-live="polite">Double-click the battlefield to show controls.</div>
       <div id="snackbar"></div>
       <div id="game-over">
-        <div class="description" data-i18n="result.gameOver">游戏结束</div>
+        <div class="description" data-i18n="result.gameOver">Game Over</div>
         <div class="result">
-          <div class="result-primary">
-            <span class="result-primary-label" data-i18n="result.wave">到达波次</span>
-            <span class="result-primary-value" id="result-wave">0</span>
-          </div>
+          <div class="result-primary"><span class="result-primary-label" data-i18n="result.wave">Wave reached</span><span class="result-primary-value" id="result-wave">0</span></div>
           <div class="result-grid">
-            <div class="result-cell"><span class="result-label" data-i18n="result.rank">名次</span><strong id="result-rank">—</strong></div>
-            <div class="result-cell"><span class="result-label" data-i18n="result.towers">部署塔数</span><strong id="result-towers">0</strong></div>
-            <div class="result-cell"><span class="result-label" data-i18n="result.decisions">AI 决策次数</span><strong id="result-decisions">0</strong></div>
-            <div class="result-cell"><span class="result-label" data-i18n="result.cash">剩余金币</span><strong id="result-cash">0</strong></div>
-            <div class="result-cell"><span class="result-label" data-i18n="result.duration">用时</span><strong id="result-duration">0:00</strong></div>
+            <div class="result-cell"><span class="result-label" data-i18n="result.towers">Towers deployed</span><strong id="result-towers">0</strong></div>
+            <div class="result-cell"><span class="result-label" data-i18n="result.decisions">AI decisions</span><strong id="result-decisions">0</strong></div>
+            <div class="result-cell"><span class="result-label" data-i18n="result.cash">Cash left</span><strong id="result-cash">0</strong></div>
+            <div class="result-cell"><span class="result-label" data-i18n="result.duration">Duration</span><strong id="result-duration">0:00</strong></div>
+            <div class="result-cell"><span class="result-label" data-i18n="result.rank">Rank</span><strong id="result-rank">—</strong></div>
           </div>
           <div class="result-breakdown" id="result-breakdown"></div>
         </div>
-        <button onclick="location.reload()" data-i18n="control.restart">重新开始</button>
+        <button onclick="location.reload()" data-i18n="control.restart">Restart</button>
       </div>
     </div>
-
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
