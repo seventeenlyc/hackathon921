@@ -128,6 +128,23 @@ else
     echo "已生成 ${SECRET_FILE}"
 fi
 
+step "检查 LLM provider 密钥（data/deepseek_key，供 /api/agent/decide 使用）"
+# provider key 由人放置：脚本不生成（也无法本地生成）、不打印、更不写进 unit ——
+# unit 是 644 全局可读，写进去等于公开；unit 里只放路径。
+# 缺 key 不是致命错误：后端照常启动，只有 /api/agent/decide 返回 503
+# PROVIDER_NOT_CONFIGURED（server/src/main.ts 的设计），所以这里只提示、不 die。
+DEEPSEEK_KEY_FILE="${APP_DIR}/data/deepseek_key"
+if [ -f "$DEEPSEEK_KEY_FILE" ]; then
+    # 属主/权限不对会让服务读不到 key，症状是「服务正常但代理报未配置」，最难排查；
+    # 因此与 session_secret 一样直接校正。
+    chown "${LEADERBOARD_USER}:${LEADERBOARD_USER}" "$DEEPSEEK_KEY_FILE"
+    chmod 600 "$DEEPSEEK_KEY_FILE"
+    echo "已存在，权限已校正为 600 ${LEADERBOARD_USER}:${LEADERBOARD_USER}"
+else
+    echo "尚未配置：/api/agent/decide 将返回 503 PROVIDER_NOT_CONFIGURED（排行榜不受影响）" >&2
+    echo "放置步骤见 deploy/README.md §5「放置 LLM provider 密钥」；放好后：systemctl restart pd-leaderboard" >&2
+fi
+
 step "放置占位后端（等待首次部署）"
 if [ -e "${APP_DIR}/current-server" ]; then
     echo "current-server 已存在，保持不动"
@@ -181,6 +198,7 @@ Group=${LEADERBOARD_USER}
 WorkingDirectory=${APP_DIR}/current-server
 Environment=PD_DB_PATH=${APP_DIR}/data/leaderboard.sqlite3
 Environment=PD_SESSION_SECRET_FILE=${APP_DIR}/data/session_secret
+Environment=DEEPSEEK_API_KEY_FILE=${APP_DIR}/data/deepseek_key
 Environment=PD_CURRENT_LINK=${APP_DIR}/current-server
 Environment=PD_PORT=${PD_PORT}
 ExecStart=${NODE_BIN} ${APP_DIR}/current-server/main.js

@@ -77,6 +77,7 @@ SSL_KEY=/绝对路径/privkey.pem \
 ```
 
 脚本会：创建无 sudo 的系统用户 → 安装公钥 → 建应用目录 → 放一个占位页面 →
+检查 Node 与后端数据目录/签名密钥（provider 密钥缺失时只提示，见 §5）→
 渲染并安装 nginx 配置 → `nginx -t` → reload。
 
 **`nginx -t` 失败时脚本会自动回滚自己的配置文件并退出**，不会让一个坏配置把
@@ -99,6 +100,8 @@ SSL_KEY=/绝对路径/privkey.pem \
 - **LLM provider 密钥 `<APP_DIR>/data/deepseek_key`**：DeepSeek API key，权限 600、
   属 `pd-leaderboard`，**绝不进仓库**。供 `/api/agent/decide` 使用（issue #22）；
   缺失时后端照常启动，只是该端点返回 503 `PROVIDER_NOT_CONFIGURED`，排行榜不受影响。
+  脚本不生成它（无法本地生成），只在缺失时提示、在存在时校正属主与权限 —— 放置步骤见
+  下方「放置 LLM provider 密钥」。
 - **systemd unit** `/etc/systemd/system/pd-leaderboard.service`：
 
   ```ini
@@ -116,7 +119,8 @@ SSL_KEY=/绝对路径/privkey.pem \
   Environment=DEEPSEEK_API_KEY_FILE=/srv/apps/prompt-defense.crowntime.cn/data/deepseek_key
   Environment=PD_CURRENT_LINK=/srv/apps/prompt-defense.crowntime.cn/current-server
   Environment=PD_PORT=8781
-  ExecStart=/usr/bin/node /srv/apps/prompt-defense.crowntime.cn/current-server/main.js
+  # node 路径不是固定值：脚本用 command -v node 解析后写入（本机为 /usr/local/bin/node）。
+  ExecStart=/usr/local/bin/node /srv/apps/prompt-defense.crowntime.cn/current-server/main.js
   Restart=always
   RestartSec=2
   # §14 要求的进程内存上限。排行榜是轻量 I/O 服务，256M 有充足余量。
@@ -134,6 +138,31 @@ SSL_KEY=/绝对路径/privkey.pem \
   是同一个思路。
 - **nginx 反代与限流**：见 `nginx/<域名>.conf.template` 的 `/api/` location，`limit_req`
   按 §14 要求配置。
+
+#### 放置 LLM provider 密钥（root，一次性）
+
+provider key 由人放置：脚本不会生成它（无法本地生成）、不打印它，缺 key 时只提示不失败。
+**不要把它写进 unit 或任何环境文件** —— unit 是 `644 root:root`，任何用户都能读到；
+unit 里只放**路径**，密钥本身留在 `pd-leaderboard` 专属的文件里。
+
+```sh
+read -rs -p 'DEEPSEEK_API_KEY: ' K; echo                       # 不回显，也不进 shell history
+( umask 077; printf '%s' "$K" > /srv/apps/prompt-defense.crowntime.cn/data/deepseek_key )
+chmod 600 /srv/apps/prompt-defense.crowntime.cn/data/deepseek_key
+chown pd-leaderboard:pd-leaderboard /srv/apps/prompt-defense.crowntime.cn/data/deepseek_key
+unset K
+systemctl restart pd-leaderboard
+journalctl -u pd-leaderboard -n 5 --no-pager                   # 期望出现「LLM 代理已配置」
+```
+
+验证（不回显密钥）：`curl -s http://127.0.0.1:8781/api/health` 应含 `"providerConfigured":true`。
+
+缺 key 或属主/权限不对时，服务照常启动，只有 `/api/agent/decide` 返回 503
+`PROVIDER_NOT_CONFIGURED` —— 排行榜不受影响。脚本每次运行都会把该文件的属主与权限校正为
+`600 pd-leaderboard`，因为「服务起来了但代理报未配置」是最难排查的一类症状。
+
+轮换：用同样方式覆盖该文件 → `systemctl restart pd-leaderboard`。密钥只应存在一份，
+换掉后确认旧副本（含其它路径下的历史文件）都已清理。
 
 ### 6. 配置 GitHub Secrets
 
