@@ -7,7 +7,7 @@
     "dev": "parcel public/index.pug public/*.txt public/*.xml -d ./dev",
     "build": "parcel build public/index.pug public/*.txt public/*.xml -d ./dist",
     "test": "npm run build && node tests/texture-assets.test.js && npm run test:agent",
-    "test:agent": "tsc -p tsconfig.test.json && node tests/agent/game-actions.test.js"
+    "test:agent": "tsc -p tsconfig.test.json && node tests/agent/game-actions.test.js && node tests/agent/game-loop.test.js"
   },
   "repository": {
     "type": "git",
