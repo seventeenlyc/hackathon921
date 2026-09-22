@@ -15,12 +15,14 @@ const textureFiles = [
   'src/assets/entities/towers/slow.png',
   'src/assets/entities/towers/sniper.png',
   'src/assets/entities/towers/laser.png',
+  'src/assets/entities/home/home.png',
   'src/assets/entities/terrain/rock.png'
 ];
 
 const renderers = [
   'src/entities/enemies/Enemy.ts',
   'src/entities/towers/Tower.ts',
+  'src/entities/terrain/Base.ts',
   'src/entities/terrain/Rock.ts'
 ];
 
