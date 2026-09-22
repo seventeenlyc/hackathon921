@@ -322,7 +322,12 @@ DeepSeek 走国内 CDN 线路，实测 TLS 握手 25–80ms、请求总计约 10
 - 升级塔在 `GameActions` 中检查了余额，但 `InertBattlefield.upgrade` 未扣费，导致升级实际免费；引擎按契约扣费。前端切换到引擎时随之修正。
 - `canBePlaced()` 探测会临时占用格子，浏览器实现会借机把敌人路径写进路径缓存，使「探测」改变后续寻路；引擎让该探测对缓存无副作用，保证观测不改变模拟。
 
-阶段 A 只新增引擎与其测试，不改动浏览器运行路径；阶段 B（服务端托管单局）与 C（前端接入）另行记录。
+阶段 A 只新增引擎与其测试，不改动浏览器运行路径。阶段 B（服务端托管单局，2026-09-22）已交付：
+
+- 服务端 `GameHost` / `HostedGame`（`server/src/game/`）把引擎、动作端口、Prompt 版本与 AI planner 组装成**一局可脱离浏览器运行的对局**：宿主用真实时间定时器按约 30Hz 调用 `engine.tick()`（倍速即每帧多调几次），AI 在 PLANNING 窗口内调用 provider 并经 `GameActions` 执行动作，失败 fail closed。
+- **权威波次事件。** 波次到达由引擎事件触发并可直接写入排行榜 store（`recordWave`），不再依赖客户端上报；旧的客户端上报入口仍在，正式下线随阶段 C/D 处理。
+- **编译范围与产物布局调整**（§14 预告的「复用引擎时同步调整编译范围与产物路径」）。`tsconfig.server.json` 的 `rootDir` 改为仓库根，`server-dist` 同时产出 `server/src/**` 与共享的 `src/engine/**`（含纯动作层）；`current-server` 指向 `releases/<sha>/server/src`，`deploy.yml` 与 `deploy/README.md` 同步更新。
+- 阶段 B 只交付托管模块与测试，尚未新增 HTTP/SSE 入口；前端接入（阶段 C）另行记录。
 
 # 未决问题 / 遗留决策
 

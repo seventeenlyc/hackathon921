@@ -49,12 +49,16 @@ jobs:
       - name: Build and test backend
         run: npm run test:server
 
+      # 后端产物自阶段 B 起编译共享引擎，产物保留 `server/src` + `src` 的相对结构，
+      # 这样 main.js 在 release 内仍能按源码同样的相对路径解析到 src/engine。
+      # current-server 因此指向 releases/<sha>/server/src（见下方切换步骤）。
       - name: Bundle backend into dist/server
         run: |
           set -euo pipefail
-          mkdir -p dist/server
-          cp -R server-dist/src/. dist/server/
-          test -f dist/server/main.js
+          mkdir -p dist/server/src dist/src
+          cp -R server-dist/server/src/. dist/server/src/
+          cp -R server-dist/src/. dist/src/
+          test -f dist/server/src/main.js
 
       # 线上可用 curl /version.txt 确认当前跑的是哪个 commit。
       - name: Stamp build with commit sha
@@ -167,8 +171,8 @@ jobs:
           # 服务进程自检 current-server 变化后主动退出，systemd 以 Restart=always 拉起新代码，
           # 因此这里同样不需要 sudo（详见 deploy/README.md §5）。
           if [ -d "releases/$SHA/server" ]; then
-              [ -f "releases/$SHA/server/main.js" ] || { echo "产物 server/ 缺少 main.js" >&2; exit 1; }
-              ln -sfn "releases/$SHA/server" current-server.tmp
+              [ -f "releases/$SHA/server/src/main.js" ] || { echo "产物 server/ 缺少 main.js" >&2; exit 1; }
+              ln -sfn "releases/$SHA/server/src" current-server.tmp
               mv -Tf current-server.tmp current-server
               echo "已切换后端到 $SHA"
           else

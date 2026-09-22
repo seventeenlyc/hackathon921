@@ -1,13 +1,26 @@
 {
   "compilerOptions": {
     /* 后端与前端共用 TypeScript，但编译目标不同：前端由 Vite/esbuild 打包，
-       后端编译成 CommonJS 供 Node 直接运行。 */
+       后端编译成 CommonJS 供 Node 直接运行。
+       Since phase B the backend also compiles the shared headless engine and the
+       pure action layer under `src/`, so `rootDir` is the repository root and the
+       emitted tree mirrors it (`server-dist/server/src/**` + `server-dist/src/**`).
+       `main.js` reaches the engine through the same relative path in the release. */
     "target": "ES2022",
     "module": "commonjs",
     "moduleResolution": "node",
-    "lib": ["ES2022"],
+    /* Match the root tsconfig's classic field semantics. ES2022 flips the default
+       to `true`, which would change run-time class-field initialisation for the
+       shared engine between the browser, the Node tests and the server. */
+    "useDefineForClassFields": false,
+    /* DOM is required because the shared action layer (GameActions -> i18n) refers
+       to browser globals only inside guarded branches. Server code must still not
+       touch them; the Node surface stays declared by server/src/node-shims.d.ts. */
+    "lib": ["ES2022", "DOM"],
     "outDir": "server-dist",
-    "rootDir": "server",
+    "rootDir": ".",
+    /* The shared engine reads fps/initialBalance from src/config.json. */
+    "resolveJsonModule": true,
     "strict": true,
     "noEmit": false,
     "declaration": false,
@@ -20,5 +33,9 @@
        误用 Node 全局。后端需要的极少数 Node API 由 server/src/node-shims.d.ts 本地声明。 */
     "types": []
   },
-  "include": ["server/src/**/*.ts", "server/tests/**/*.ts"]
+  "include": [
+    "server/src/**/*.ts",
+    "server/tests/**/*.ts",
+    "src/engine/**/*.ts"
+  ]
 }

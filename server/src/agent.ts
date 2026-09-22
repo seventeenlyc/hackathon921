@@ -292,6 +292,26 @@ async function callProvider(
 }
 
 /**
+ * One decision round against the configured provider: compose the messages, call
+ * the provider, normalise the tool calls.
+ *
+ * Shared by the client-facing `/api/agent/decide` and the server-hosted game
+ * (phase B) so both use the identical system prompt, tool schema and error
+ * mapping. Pure enough to test without a network by injecting `fetchImpl`.
+ */
+export async function decideWithProvider(
+    config: AgentConfig,
+    strategy: string,
+    state: unknown
+): Promise<{ ok: true; actions: AgentAction[] } | { ok: false; error: string; message: string }> {
+    const result = await callProvider(config, composeAgentMessages(strategy, state));
+    if (!result.ok) {
+        return {ok: false, error: result.error, message: result.message};
+    }
+    return {ok: true, actions: extractAgentActions(result.payload)};
+}
+
+/**
  * `POST /api/agent/decide` 的处理：需要有效会话 token，失败一律结构化返回，
  * 由前端运行时 fail closed（不下动作、下一波照常开始）。
  */
