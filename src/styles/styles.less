@@ -677,6 +677,7 @@ body {
     top: 0;
     left: 0;
     z-index: 2;
+    pointer-events: auto;
     width: min(240px, calc(100vw - 32px));
     max-height: min(50vh, 360px);
     overflow-y: auto;
@@ -1076,14 +1077,37 @@ body {
   display: none;
 }
 
-/* Keep the status card and catalogue independent so the wave information stays
-   readable on the left instead of being covered by the tower cards. */
-#inert.mode-ai .tower-panel {
+/* Keep the shared leaderboard and tower catalogue in one flowing rail. The
+   control layer is click-through, so the rail opts its two interactive panels
+   back in while allowing the catalogue to follow the leaderboard's real height. */
+#inert.mode-ai .left-rail {
   position: fixed;
-  top: clamp(128px, 16vh, 150px);
+  top: clamp(16px, 2.2vw, 32px);
   left: clamp(16px, 2.2vw, 32px);
   z-index: 3;
+  display: flex;
   width: min(330px, calc(100vw - 32px));
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+
+#inert.mode-ai .left-rail > * {
+  pointer-events: auto;
+}
+
+#inert.mode-ai .leaderboard-slot {
+  margin: 0;
+}
+
+#inert.mode-ai .leaderboard-panel {
+  position: static;
+  width: 100%;
+}
+
+#inert.mode-ai .left-rail .tower-panel {
+  position: static;
+  width: 100%;
   margin: 0;
   padding: 14px;
   border: 1px solid var(--line);
@@ -1226,11 +1250,19 @@ body {
 }
 
 @media (max-width: 760px) {
-  #inert.mode-ai .tower-panel {
-    top: 282px;
+  #inert.mode-ai .left-rail {
+    top: 12px;
     right: 12px;
     left: 12px;
     width: auto;
+    gap: 8px;
+  }
+
+  #inert.mode-ai .leaderboard-panel {
+    max-height: 240px;
+  }
+
+  #inert.mode-ai .left-rail .tower-panel {
     max-height: 110px;
     overflow-y: auto;
   }

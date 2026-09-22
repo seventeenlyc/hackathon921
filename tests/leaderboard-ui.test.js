@@ -35,6 +35,14 @@ assert.match(index, /tabindex="0"/, 'the battlefield must be keyboard focusable'
 assert.match(index, /id="towers-wrapper"/, 'the page must expose the human deployable tower mount');
 assert.match(styles, /\.leaderboard-panel[\s\S]*position:\s*fixed[\s\S]*left:\s*0;/,
     'the leaderboard must stay pinned to the primary view\'s upper-left corner');
+assert.match(styles, /\.leaderboard-panel[\s\S]*pointer-events:\s*auto;/,
+    'the leaderboard must opt back into pointer events inside the click-through control layer');
+assert.match(index, /class="left-rail"[\s\S]*id="leaderboard-slot"[\s\S]*class="tower-panel"[\s\S]*<\/div>/,
+    'the leaderboard and tower catalogue must share a left rail in leaderboard-first order');
+assert.match(styles, /#inert\.mode-ai \.left-rail[\s\S]*display:\s*flex[\s\S]*flex-direction:\s*column;/,
+    'the AI left rail must lay its panels out vertically');
+assert.match(styles, /#inert\.mode-ai \.left-rail \.tower-panel[\s\S]*position:\s*static;/,
+    'the AI tower catalogue must flow directly below the leaderboard instead of overlaying it');
 assert.match(styles, /#inert\.mode-human \.chatbox-panel/, 'the AI strategy panel must stay hidden in human mode');
 assert.match(strategySource, /getControlLayer\(\)\.hide\(\)/,
     'valid strategy submission must hide the control layer after queueing');
