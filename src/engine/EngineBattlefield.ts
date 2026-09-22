@@ -152,7 +152,31 @@ export class EngineBattlefield implements Battlefield {
             routes: this.allRoutes(),
             isFree: (i, j) => Boolean(engine.map.grid[i]) && engine.map.grid[i][j] === 0,
             isBuildable: (i, j) => engine.map.canBePlaced(i, j),
+            routeLengthAfterBuilding: (lane, i, j) => this.routeLengthAfterBuilding(lane, i, j),
         });
+    }
+
+    /**
+     * Hypothetical probe for a path-shaping (maze / detour) placement: how many
+     * tiles would lane `lane`'s route be if a tower stood at (i, j)? Read-only:
+     * the cell is restored and the path cache dropped before returning, so a
+     * probe can never leave a phantom detour in the live engine.
+     *
+     * Mirrors the browser adapter's implementation (see issue #52); returns null
+     * when the placement would seal any spawn off.
+     */
+    private routeLengthAfterBuilding(lane: number, i: number, j: number): number | null {
+        const map = this.engine.map;
+        const base = map.enemyBases[lane];
+        if (!base || !map.grid[i] || map.grid[i][j] !== 0) return null;
+
+        map.grid[i][j] = 1;
+        const everySpawnReaches = map.enemyBases.every(spawn => map.pathFind(spawn.i, spawn.j));
+        const lanePath = everySpawnReaches ? map.pathFind(base.i, base.j) : null;
+        map.grid[i][j] = 0;
+        map.invalidatePathsCache();
+
+        return lanePath ? lanePath.length - 1 : null;
     }
 
     private infoFor(tower: Tower): TowerInfo {

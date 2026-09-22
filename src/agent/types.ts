@@ -109,6 +109,21 @@ export interface BuildCandidate {
     distanceToBase: number;
 }
 
+/**
+ * A route cell a tower could stand on to make enemies walk farther (a maze,
+ * spiral, snake or choke point). Unlike `BuildCandidate` these sit ON the
+ * current route: building there reroutes enemies instead of only covering them.
+ * The engine has already verified the placement leaves at least one path open.
+ */
+export interface PathShapingCandidate {
+    i: number;
+    j: number;
+    /** 0-based index into `lanes`: which spawn lane's route this cell blocks. */
+    lane: number;
+    /** Extra route tiles this single placement adds to that lane. */
+    addedTiles: number;
+}
+
 /** The enemy route, compressed to its turns instead of every traversed cell. */
 export interface PathInfo {
     waypoints: Array<{ i: number; j: number }>;
@@ -140,4 +155,9 @@ export interface GameSnapshot {
     towers: TowerInfo[];
     towerOptions: TowerOption[];
     buildCandidates: BuildCandidate[];
+    /**
+     * Cells whose placement lengthens the route, for path-shaping strategies.
+     * Empty when the engine cannot answer the hypothetical (see snapshot.ts).
+     */
+    pathShapingCandidates: PathShapingCandidate[];
 }
