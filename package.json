@@ -1,13 +1,13 @@
 {
   "name": "inert",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "",
   "main": "index.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "npm run build && node tests/texture-assets.test.js && node tests/leaderboard-store.test.js && node tests/leaderboard-ui.test.js && npm run test:agent",
+    "test": "npm run build && node tests/texture-assets.test.js && node tests/leaderboard-store.test.js && node tests/leaderboard-ui.test.js && node tests/control-layer.test.js && npm run test:agent",
     "test:agent": "tsc -p tsconfig.test.json && node tests/agent/game-actions.test.js && node tests/agent/game-loop.test.js && node tests/agent/strategy-store.test.js && node tests/agent/agent-runtime.test.js && node tests/agent/snapshot.test.js",
     "build:server": "tsc -p tsconfig.server.json",
     "test:server": "npm run build:server && node --test \"server-dist/tests/*.test.js\""

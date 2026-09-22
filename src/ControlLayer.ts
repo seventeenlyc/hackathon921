@@ -15,12 +15,14 @@ export function toggleVisibility(visibility: ControlLayerVisibility): ControlLay
 
 export class ControlLayer {
     private visibility: ControlLayerVisibility;
+    private hintTimer: number | null = null;
 
     constructor(
         private readonly root: HTMLElement,
         private readonly battlefield: HTMLCanvasElement,
         collapseButton: HTMLButtonElement,
         eventSource: ControlEvents,
+        private readonly hint: HTMLElement | null = null,
     ) {
         this.visibility = root.classList.contains('is-visible') ? 'visible' : 'hidden';
         this.syncDom();
@@ -60,6 +62,17 @@ export class ControlLayer {
         return this.visibility === 'visible';
     }
 
+    showHint() {
+        if (!this.hint) return;
+
+        if (this.hintTimer !== null) window.clearTimeout(this.hintTimer);
+        this.hint.classList.add('is-visible');
+        this.hintTimer = window.setTimeout(() => {
+            this.hint!.classList.remove('is-visible');
+            this.hintTimer = null;
+        }, 3200);
+    }
+
     private syncDom() {
         const visible = this.isVisible();
         this.root.classList.toggle('is-visible', visible);
@@ -77,10 +90,11 @@ export function getControlLayer(): ControlLayer {
     const root = document.getElementById('control-layer');
     const battlefield = document.getElementById('canvas');
     const collapseButton = document.getElementById('controls-collapse');
+    const hint = document.getElementById('controls-hint');
     if (!(root instanceof HTMLElement) || !(battlefield instanceof HTMLCanvasElement) || !(collapseButton instanceof HTMLButtonElement)) {
         throw new Error('Control layer markup is incomplete');
     }
 
-    singleton = new ControlLayer(root, battlefield, collapseButton, controls);
+    singleton = new ControlLayer(root, battlefield, collapseButton, controls, hint);
     return singleton;
 }

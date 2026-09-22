@@ -46,7 +46,9 @@ export class StrategyPanel {
         this.status.classList.remove('warn');
         queueStrategy(text);
         this.render();
-        getControlLayer().hide();
+        const controlLayer = getControlLayer();
+        controlLayer.hide();
+        controlLayer.showHint();
     }
 
     private render() {

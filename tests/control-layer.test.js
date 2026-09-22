@@ -40,6 +40,7 @@ const controlsSource = fs.readFileSync(path.join(projectRoot, 'src', 'Controls.t
 const gameSource = fs.readFileSync(path.join(projectRoot, 'src', 'Game.ts'), 'utf8');
 const interfaceSource = fs.readFileSync(path.join(projectRoot, 'src', 'InterfaceManager.ts'), 'utf8');
 const stylesSource = fs.readFileSync(path.join(projectRoot, 'src', 'styles', 'styles.less'), 'utf8');
+const controlLayerSource = fs.readFileSync(path.join(projectRoot, 'src', 'ControlLayer.ts'), 'utf8');
 
 assert.doesNotMatch(controlsSource, /window\.addEventListener\(['"]click['"]/,
     'global clicks must not be forwarded to the game input bus');
@@ -62,5 +63,7 @@ assert.match(stylesSource, /prefers-reduced-motion/,
     'control-layer transitions must respect reduced-motion preferences');
 assert.match(stylesSource, /@media\s*\(max-width:\s*760px\)/,
     'the control layer must define a narrow-screen layout');
+assert.match(controlLayerSource, /showHint\(\)/,
+    'the first-view hint must be controlled by the same visibility controller');
 
 console.log('Control layer input-boundary assertions passed.');

@@ -615,6 +615,11 @@ body {
     pointer-events: none;
     transform: translate(-50%, 8px);
     transition: opacity 180ms ease, transform 180ms ease;
+
+    &.is-visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
   }
 
   #snackbar {

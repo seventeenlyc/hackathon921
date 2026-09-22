@@ -28,5 +28,7 @@ assert.match(index, /tabindex="0"/, 'the battlefield must be keyboard focusable'
 assert.doesNotMatch(index, /towers-wrapper|towers-stats/, 'the page must not expose human tower placement mounts');
 assert.match(strategySource, /getControlLayer\(\)\.hide\(\)/,
     'valid strategy submission must hide the control layer after queueing');
+assert.match(strategySource, /showHint\(\)/,
+    'valid strategy submission must reveal the first-view gesture hint');
 
 console.log('Validated leaderboard UI mount points and empty-state footer flow.');
