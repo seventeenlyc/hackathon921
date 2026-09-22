@@ -11,6 +11,7 @@ import { randomBytes } from 'node:crypto';
 import { openDatabase } from './db';
 import { createApiServer } from './server';
 import { LeaderboardStore } from './store';
+import { GameHost } from './game/host';
 import { DEFAULT_PROVIDER_BASE_URL, DEFAULT_PROVIDER_MODEL } from './agent';
 
 const VERSION_CHECK_INTERVAL_MS = 3000;
@@ -72,6 +73,19 @@ function main(): void {
     const store = new LeaderboardStore(openDatabase(dbPath));
     store.migrate();
 
+    // 托管对局（阶段 B/C）：服务端持有完整对局并以引擎事件作为波次真值。
+    // 打开一局就登记一条 run，波次到达直接写 store —— 成绩不再依赖客户端上报。
+    const games = new GameHost({
+        newGameId: () => randomBytes(16).toString('hex'),
+        agent: { apiKey: deepseekApiKey, baseUrl: providerBaseUrl, model: providerModel },
+        onCreated: game => store.createRun(game.id, game.username, Date.now()),
+        onWaveReached: (game, wave) => {
+            // 人类模式对局不入榜（docs/PRODUCT_CONCEPT.md §9）：只有 AI 策略局可比。
+            if (game.mode !== 'ai') return;
+            store.recordWave(game.id, game.username, wave, Date.now());
+        },
+    });
+
     const startedVersion = resolveVersion(currentLink);
     const server = createApiServer({
         store,
@@ -79,7 +93,11 @@ function main(): void {
         now: () => Date.now(),
         newRunId: () => randomBytes(16).toString('hex'),
         agent: { apiKey: deepseekApiKey, baseUrl: providerBaseUrl, model: providerModel },
+        games,
     });
+
+    // 周期性回收过期实例（未开始 / 已结束 / 断线超时），避免资源泄漏（§4/§5）。
+    setInterval(() => games.sweep(), 60_000).unref?.();
 
     server.listen(port, '127.0.0.1', () => {
         console.log(`排行榜 API 监听 127.0.0.1:${port}`);
@@ -95,6 +113,9 @@ function main(): void {
                 console.log(
                     `检测到版本变化（${startedVersion} -> ${current}），退出以让 systemd 拉起新代码`
                 );
+                // 维护退出（阶段 D）：停止接收新局、冻结在途对局（不再执行决策），
+                // 已确认的波次成绩此前已逐波写库，然后关闭服务由 systemd 拉起新代码。
+                games.beginMaintenance();
                 server.close(() => process.exit(0));
                 // 兜底：仍有长连接没断开时强制退出，避免一直跑旧代码。
                 setTimeout(() => process.exit(0), FORCE_EXIT_MS);

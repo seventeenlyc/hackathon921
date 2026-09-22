@@ -11,7 +11,7 @@ const interfaceSource = read('src/InterfaceManager.ts');
 const controls = read('src/Controls.ts');
 const towerPlacer = read('src/TowerPlacer.ts');
 const game = read('src/Game.ts');
-const battlefield = read('src/agent/InertBattlefield.ts');
+const battlefield = read('src/engine/EngineBattlefield.ts');
 const leaderboard = read('src/leaderboard/LeaderboardUI.ts');
 
 assert.match(index, /id="strategy-random"/, 'the strategy console must expose a random strategy button');
@@ -22,7 +22,7 @@ assert.doesNotMatch(index, /<details class="tower-panel">/, 'tower information m
 assert.doesNotMatch(leaderboard, /createElement\('details'\)/, 'leaderboard information must be visible on the primary page');
 assert.match(strategy, /randomStrategy()/, 'the random strategy button must use the strategy library');
 assert.match(interfaceSource, /playMode === ['"]human['"]/, 'the tower palette must be scoped to human mode');
-assert.match(interfaceSource, /if \(playMode === 'human'\) towerPlacer\.place\(TowerClass\)/,
+assert.match(interfaceSource, /if \(playMode === 'human'\) towerPlacer\.place\(/,
     'AI tower cards must be read-only while human cards enter placement');
 assert.doesNotMatch(interfaceSource, /if \(playMode === 'human'\) this\.setTowers\(\)/,
     'the tower palette must be mounted in both play modes');
@@ -30,12 +30,12 @@ assert.match(interfaceSource, /aria-label/, 'tower choices must be keyboard and 
 assert.match(interfaceSource, /tower\.aimRadius/, 'tower stats must show deployment range');
 assert.match(interfaceSource, /tower\.dps/, 'tower stats must show damage per second when applicable');
 assert.match(controls, /emit\(['"]click['"]/, 'Canvas clicks must be forwarded through the input boundary');
-assert.match(towerPlacer, /GameActions/, 'human placement must use the validated GameActions port');
-assert.match(towerPlacer, /buildTower\(/, 'human placement must execute through buildTower');
-assert.doesNotMatch(towerPlacer, /cashManager\.withdraw|map\.addElement/, 'human placement must not bypass GameActions');
-assert.match(battlefield, /cashManager\.withdraw\(tower\.cost\)/, 'validated tower builds must deduct their cost');
-assert.match(game, /playMode === 'ai' \? agentRuntime : humanPlanner/, 'human mode must disable the AI planner');
-assert.match(game, /if \(playMode === 'human'\) towerPlacer\.update\(\)/, 'human mode must update placement preview');
+assert.match(towerPlacer, /workerBuild\(/, 'human placement must go through the server action port');
+assert.doesNotMatch(towerPlacer, /cashManager|withdraw|map\.addElement/, 'human placement must not bypass the engine');
+assert.match(battlefield, /cash\.withdraw\(tower\.cost\)/, 'validated tower builds must deduct their cost');
+assert.match(game, /gameControl/, 'the browser must drive the server-hosted game');
+assert.doesNotMatch(game, /AgentRuntime|humanPlanner/, 'the browser must no longer run a planner');
+assert.match(game, /if \(playMode === 'human'\) towerPlacer\.update\(/, 'human mode must update placement preview');
 assert.match(interfaceSource, /pauseButton\.hidden = state === 'paused'/,
     'the pause control must remain in the upper-right control group outside paused state');
 assert.match(interfaceSource, /pauseButton\.disabled = state === 'idle' \|\| state === 'planning'/,

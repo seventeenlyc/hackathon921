@@ -1,16 +1,16 @@
 import {version} from './../package.json'
 import {Snackbar} from "./tools/Snackbar";
-import {LaserTower} from "./entities/towers/LaserTower";
-import {SlowTower} from "./entities/towers/SlowTower";
 import {textureManager} from "./tools/TextureManager";
 import {gameLoop, GameState, nextSpeed} from "./agent/GameLoop";
 import {otherMode, playMode, switchPlayMode} from "./PlayMode";
-import {requestSpawnCount, spawnSettings} from "./SpawnQueue";
-import {CanonTower} from "./entities/towers/CanonTower";
-import {GatlingTower} from "./entities/towers/GatlingTower";
-import {SniperTower} from "./entities/towers/SniperTower";
-import {Tower} from "./entities/towers/Tower";
-import {Map} from "./Map";
+import {gameControl} from "./net/gameControl";
+import type {GameSummary} from "./net/GameClient";
+import {TILE_SIZE} from "./engine/constants";
+import {TOWER_CATALOG, TOWER_ORDER} from "./engine/entities/towerCatalog";
+import {Tower} from "./engine/entities/Tower";
+import {UNUSED_WORLD} from "./engine/unusedWorld";
+import type {RenderSnapshot} from "./engine/RenderSnapshot";
+import {drawTowerIcon, towerTexture} from "./view/render";
 import {towerPlacer} from "./TowerPlacer";
 import {getControlLayer} from "./ControlLayer";
 import {applyStaticTranslations, onLangChange, t, toggleLang} from './i18n';
@@ -60,19 +60,25 @@ class InterfaceManager {
         // boundary so the AI's PLANNING round actually sees the new route (#40).
         document.querySelectorAll<HTMLButtonElement>('button.spawner').forEach(button => {
             button.onclick = () => {
-                requestSpawnCount(Number(button.dataset.count));
-                this.renderSpawners();
+                void gameControl.session.requestLanes(Number(button.dataset.count))
+                    .then(() => this.renderSpawners())
+                    .catch(() => undefined);
             };
         });
 
-        this.pauseButton.onclick = () => gameLoop.pause();
+        this.pauseButton.onclick = () => {
+            void gameControl.session.pause().then(() => this.setState(gameLoop.state)).catch(() => undefined);
+        };
         this.resumeButton.onclick = () => {
-            gameLoop.resume();
-            this.controlLayer.hide();
+            void gameControl.session.resume().then(() => {
+                this.setState(gameLoop.state);
+                this.controlLayer.hide();
+            }).catch(() => undefined);
         };
         this.speedElement.onclick = () => {
-            gameLoop.setSpeed(nextSpeed(gameLoop.speed));
-            this.updateSpeedLabel();
+            void gameControl.session.setSpeed(nextSpeed(gameLoop.speed))
+                .then(() => this.updateSpeedLabel())
+                .catch(() => undefined);
         };
         const langButton = document.getElementById('lang') as HTMLButtonElement | null;
         langButton?.addEventListener('click', () => {
@@ -130,8 +136,8 @@ class InterfaceManager {
     setState(state: GameState) {
         // `idle` is the not-started state shown before the player presses Start.
         this.stateElement.textContent = t(`state.${state}`);
-        this.pauseButton.hidden = state === 'paused';
-        this.pauseButton.disabled = state === 'idle' || state === 'planning';
+        this.pauseButton.hidden = state === 'paused' || state === 'over';
+        this.pauseButton.disabled = state === 'idle' || state === 'planning' || state === 'over';
         this.resumeButton.hidden = state !== 'paused';
     }
 
@@ -140,14 +146,27 @@ class InterfaceManager {
     }
 
     renderSpawners() {
-        const requested = spawnSettings.requested;
+        const requested = gameControl.session.requestedLaneCount;
         document.querySelectorAll<HTMLButtonElement>('button.spawner').forEach(button => {
             button.classList.toggle('active', Number(button.dataset.count) === requested);
         });
 
-        setText('spawner-status', spawnSettings.isPending
-            ? t('spawner.pending', {applied: spawnSettings.applied, requested: spawnSettings.requested})
+        setText('spawner-status', gameControl.session.isLaneChangePending
+            ? t('spawner.pending', {applied: gameControl.session.appliedLaneCount, requested})
             : '');
+    }
+
+    /** Server-driven state: wave, cash and lane badges follow the stream. */
+    applySummary(summary: GameSummary) {
+        this.setWave(summary.wave);
+        this.setCash(summary.cash);
+        this.updateSpeedLabel();
+        this.renderSpawners();
+    }
+
+    applySnapshot(frame: RenderSnapshot) {
+        this.setWave(frame.wave);
+        this.setCash(frame.cash);
     }
 
     setCash(cash: number) {
@@ -155,19 +174,12 @@ class InterfaceManager {
     }
 
     private setTowers() {
-        const towers = [
-            CanonTower,
-            GatlingTower,
-            SlowTower,
-            SniperTower,
-            LaserTower
-        ];
-        const pad = Map.TILE_SIZE * 0.5;
-        const canvasSize = Map.TILE_SIZE + pad;
+        const pad = TILE_SIZE * 0.5;
+        const canvasSize = TILE_SIZE + pad;
         let selectedCard: HTMLButtonElement | null = null;
 
-        towers.forEach(TowerClass => {
-            const tower = new TowerClass(0, 0, Map.TILE_SIZE);
+        TOWER_ORDER.forEach(type => {
+            const tower = new TOWER_CATALOG[type](0, 0, TILE_SIZE, UNUSED_WORLD);
             const card = document.createElement('button');
             card.type = 'button';
             card.className = 'tower-card';
@@ -192,15 +204,15 @@ class InterfaceManager {
             this.towersWrapperElement.appendChild(card);
 
             const ctx = canvas.getContext('2d')!;
-            tower.setCoordinates(pad / 2, pad / 2);
-            tower.draw(ctx);
-            textureManager.onLoaded(tower.texturePath, () => tower.draw(ctx));
+            const iconCenter = pad / 2 + TILE_SIZE / 2;
+            drawTowerIcon(ctx, type, iconCenter, iconCenter, TILE_SIZE);
+            textureManager.onLoaded(towerTexture(type), () => drawTowerIcon(ctx, type, iconCenter, iconCenter, TILE_SIZE));
 
             const selectTower = () => {
                 selectedCard?.classList.remove('selected');
                 selectedCard = card;
                 card.classList.add('selected');
-                if (playMode === 'human') towerPlacer.place(TowerClass);
+                if (playMode === 'human') towerPlacer.place(type, tower.aimRadius);
                 this.showTowerStats(tower);
             };
             card.onclick = selectTower;

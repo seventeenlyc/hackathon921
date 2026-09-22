@@ -24,6 +24,8 @@
     "src/agent/StrategyStore.ts",
     "src/agent/snapshot.ts",
     "src/agent/types.ts",
-    "src/entities/towers/towerTypes.ts"
+    "src/entities/towers/towerTypes.ts",
+    "src/engine/**/*.ts",
+    "src/net/**/*.ts"
   ]
 }

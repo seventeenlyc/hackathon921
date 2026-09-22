@@ -13,7 +13,8 @@
  * LLM runtime can later be attached as the planner without touching the engine.
  */
 
-export type GameState = 'idle' | 'running' | 'paused' | 'planning';
+/** `over` is set by a host that owns the state (phase C: the server). */
+export type GameState = 'idle' | 'running' | 'paused' | 'planning' | 'over';
 export type GameSpeed = 1 | 2 | 4 | 8;
 
 /** Speed steps the UI button cycles through, in order. */
@@ -72,6 +73,15 @@ export class GameLoop {
 
     onChange(listener: StateListener) {
         this.listeners.push(listener);
+    }
+
+    /**
+     * Mirror a state owned somewhere else (in phase C, the server) into this
+     * loop, so UI code can keep reading `state`/`isIdle()`/`onChange` unchanged
+     * while the browser no longer owns the simulation.
+     */
+    syncState(state: GameState) {
+        this.setState(state);
     }
 
     setSpeed(speed: GameSpeed) {
