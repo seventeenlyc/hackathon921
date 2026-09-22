@@ -5,6 +5,7 @@ const {
     MAX_SNAPSHOT_CHARS,
     MAX_TOWERS_IN_SNAPSHOT,
     MAX_BUILD_CANDIDATES,
+    MAX_PATH_SHAPING_CANDIDATES,
 } = require('../../.test-build/agent/snapshot.js');
 
 /**
@@ -234,8 +235,12 @@ test('a busy battlefield still fits the token budget', () => {
         towers,
         routes,
         spawns: [{i: 0, j: 0}, {i: 0, j: 8}, {i: 0, j: 16}, {i: 0, j: 24}],
+        // Include the path-shaping candidates too: they are the newest part of
+        // the payload and must fit the same budget alongside everything else.
+        routeLengthAfterBuilding: (lane, i, j) => 60,
     }));
 
+    assert.ok(snapshot.pathShapingCandidates.length > 0, 'path-shaping candidates are present');
     const size = JSON.stringify(snapshot).length;
     assert.ok(size <= MAX_SNAPSHOT_CHARS, `snapshot is ${size} chars, budget is ${MAX_SNAPSHOT_CHARS}`);
 });
@@ -255,6 +260,74 @@ test('formatSnapshot renders the facts the model saw', () => {
     assert.ok(text.includes('Lanes (1)'), 'all lanes are listed');
     assert.ok(text.includes('2wp'), 'lane waypoint count is shown');
     assert.ok(text.includes('Build candidates'));
+    assert.ok(text.includes('Path-shaping cells'));
+});
+
+// Path-shaping candidates (maze / snake strategies). `buildCandidates` excludes
+// route cells entirely, so these are the only placements the model can see that
+// make enemies walk farther.
+test('path-shaping candidates are empty until the engine can measure a detour', () => {
+    const cells = [{i: 0, j: 0}, {i: 1, j: 0}, {i: 2, j: 0}, {i: 3, j: 0}];
+    const snapshot = buildSnapshot(baseInput({
+        routes: [{spawn: {i: 0, j: 0}, cells}],
+    }));
+
+    assert.deepStrictEqual(snapshot.pathShapingCandidates, []);
+});
+
+test('path-shaping candidates are on-route and ranked by tiles added', () => {
+    const cells = [{i: 0, j: 0}, {i: 1, j: 0}, {i: 2, j: 0}, {i: 3, j: 0}, {i: 4, j: 0}];
+    // (1,0) adds 2 tiles, (3,0) adds 4; (2,0) adds none; (4,0) is rejected.
+    const added = {'1:0': 2, '2:0': 0, '3:0': 4};
+    const snapshot = buildSnapshot(baseInput({
+        routes: [{spawn: {i: 0, j: 0}, cells}],
+        routeLengthAfterBuilding: (lane, i, j) => {
+            const extra = added[`${i}:${j}`];
+            return extra === undefined ? null : cells.length - 1 + extra;
+        },
+    }));
+
+    assert.deepStrictEqual(snapshot.pathShapingCandidates, [
+        {i: 3, j: 0, lane: 0, addedTiles: 4},
+        {i: 1, j: 0, lane: 0, addedTiles: 2},
+    ]);
+});
+
+test('path-shaping candidates cover every lane and skip cells the engine rejects', () => {
+    const longLane = [];
+    for (let i = 0; i < 20; ++i) longLane.push({i, j: 0});
+    const shortLane = [{i: 0, j: 2}, {i: 1, j: 2}];
+
+    const snapshot = buildSnapshot(baseInput({
+        gridWidth: 30,
+        gridHeight: 4,
+        spawns: [{i: 0, j: 0}, {i: 0, j: 2}],
+        routes: [
+            {spawn: {i: 0, j: 0}, cells: longLane},
+            {spawn: {i: 0, j: 2}, cells: shortLane},
+        ],
+        // The engine rejects lane 0's first cell; everything else is a +2 detour.
+        routeLengthAfterBuilding: (lane, i, j) => (lane === 0 && i === 0 ? null : (lane === 0 ? longLane.length - 1 : shortLane.length - 1) + 2),
+    }));
+
+    const lanes = [...new Set(snapshot.pathShapingCandidates.map(c => c.lane))].sort();
+    assert.deepStrictEqual(lanes, [0, 1], 'both lanes offer a path-shaping cell');
+    assert.ok(snapshot.pathShapingCandidates.every(c => c.addedTiles === 2));
+    assert.ok(!snapshot.pathShapingCandidates.some(c => c.i === 0 && c.j === 0 && c.lane === 0));
+});
+
+test('path-shaping candidates are capped', () => {
+    const cells = [];
+    for (let i = 0; i < 40; ++i) cells.push({i, j: 0});
+
+    const snapshot = buildSnapshot(baseInput({
+        gridWidth: 60,
+        gridHeight: 3,
+        routes: [{spawn: {i: 0, j: 0}, cells}],
+        routeLengthAfterBuilding: (lane, i, j) => cells.length - 1 + 1,
+    }));
+
+    assert.ok(snapshot.pathShapingCandidates.length <= MAX_PATH_SHAPING_CANDIDATES);
 });
 
 console.log('All snapshot tests passed.');
