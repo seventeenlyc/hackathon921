@@ -35,6 +35,7 @@ const idlePlanner: Planner = {
 class WavesManager {
     public waveCounter = 1
     public looping = true;
+    public onWaveReached: ((wave: number) => void) | null = null;
     private planner: Planner = idlePlanner;
 
     constructor() {
@@ -46,6 +47,7 @@ class WavesManager {
     }
 
     async start() {
+        if (this.onWaveReached) this.onWaveReached(this.waveCounter);
         while (this.looping) {
             const wave = this.generateWave()
 
@@ -73,6 +75,7 @@ class WavesManager {
             if (!this.looping) break;
 
             interfaceManager.setWave(++this.waveCounter);
+            if (this.onWaveReached) this.onWaveReached(this.waveCounter);
         }
     }
 

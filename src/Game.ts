@@ -10,6 +10,8 @@ import {towerPlacer} from "./TowerPlacer";
 import './InterfaceManager';
 import {interfaceManager} from "./InterfaceManager";
 import {waveManager} from "./WavesManager";
+import {submitRunScore} from "./leaderboard/LeaderboardUI";
+import {readUsernameCookie} from "./leaderboard/LeaderboardStore";
 import {gameLoop, GameSpeed} from "./agent/GameLoop";
 import {GameActions} from "./agent/GameActions";
 import {InertBattlefield} from "./agent/InertBattlefield";
@@ -22,6 +24,7 @@ class Game {
         map.on('added', () => {
             enemyManager.updatePaths()
         });
+        waveManager.onWaveReached = wave => this.recordReachedWave(wave);
 
         // Focus is a gate separate from the player's PAUSED state; losing focus
         // freezes the sim and spawning, regaining it continues (issue #17).
@@ -30,6 +33,11 @@ class Game {
         gameLoop.setFocused(controls.tabHasFocus());
 
         this.start()
+    }
+
+    recordReachedWave(wave: number = waveManager.waveCounter) {
+        const username = readUsernameCookie();
+        if (username) submitRunScore(username, wave);
     }
 
     start() {
@@ -75,6 +83,8 @@ class Game {
             this.looping = false;
             interfaceManager.showGameOver();
             waveManager.looping = false;
+            // 结算时再同步一次，以覆盖输入用户名或停止波次循环的边界时刻。
+            this.recordReachedWave();
         }, 100)
     }
 }
