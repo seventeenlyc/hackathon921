@@ -8,10 +8,10 @@ import {towerPlacer} from "./TowerPlacer";
 import {Snackbar} from "./tools/Snackbar";
 import {LaserTower} from "./entities/towers/LaserTower";
 import {SlowTower} from "./entities/towers/SlowTower";
-import {queryParamsManager} from "./QueryParamsManager";
 import {textureManager} from "./tools/TextureManager";
 import {gameLoop, GameState, nextSpeed} from "./agent/GameLoop";
 import {otherMode, playMode, switchPlayMode} from "./PlayMode";
+import {requestSpawnCount, spawnSettings} from "./SpawnQueue";
 
 /** Summary shown on the settlement screen after the base falls. */
 export interface RunStats {
@@ -50,7 +50,14 @@ class InterfaceManager {
     constructor() {
         this.versionElement.textContent = 'v' + version;
 
-        document.getElementById('spawner' + queryParamsManager.getDifficulty())!.classList.add('active')
+        // Lane count is queued, not applied here: the change lands at the next wave
+        // boundary so the AI's PLANNING round actually sees the new route (#40).
+        document.querySelectorAll<HTMLButtonElement>('button.spawner').forEach(button => {
+            button.onclick = () => {
+                requestSpawnCount(Number(button.dataset.count));
+                this.renderSpawners();
+            };
+        });
 
         document.getElementById('pause')!.onclick = () => gameLoop.pause();
         document.getElementById('resume')!.onclick = () => gameLoop.resume();
@@ -59,9 +66,14 @@ class InterfaceManager {
             this.updateSpeedLabel();
         };
 
-        gameLoop.onChange(state => this.setState(state));
+        gameLoop.onChange(state => {
+            this.setState(state);
+            // A queued lane change is applied at the boundary; refresh the badge.
+            this.renderSpawners();
+        });
         this.setState(gameLoop.state);
         this.updateSpeedLabel();
+        this.renderSpawners();
 
         // The class scopes which half of the UI is visible (see styles.less).
         document.getElementById('inert')!.classList.add('mode-' + playMode);
@@ -100,6 +112,17 @@ class InterfaceManager {
 
     updateSpeedLabel() {
         this.speedElement.textContent = `Speed x${gameLoop.speed}`;
+    }
+
+    renderSpawners() {
+        const requested = spawnSettings.requested;
+        document.querySelectorAll<HTMLButtonElement>('button.spawner').forEach(button => {
+            button.classList.toggle('active', Number(button.dataset.count) === requested);
+        });
+
+        setText('spawner-status', spawnSettings.isPending
+            ? `${spawnSettings.applied} → ${spawnSettings.requested} at next wave`
+            : '');
     }
 
     setCash(cash: number) {

@@ -10,6 +10,7 @@ import {ArmoredEnemy} from "./entities/enemies/ArmoredEnemy";
 import {FastEnemy} from "./entities/enemies/FastEnemy";
 import {HealerEnemy} from "./entities/enemies/HealerEnemy";
 import {gameLoop, Planner} from "./agent/GameLoop";
+import {applyPendingSpawnCount} from "./SpawnQueue";
 
 interface WaveGroup {
     enemyClass: { new(base: Base): Enemy },
@@ -76,6 +77,10 @@ class WavesManager {
         this.started = true;
 
         while (this.looping) {
+            // A lane change queued during the previous wave (issue #40) becomes real
+            // here, before the AI plans, so the new route is part of its snapshot.
+            applyPendingSpawnCount();
+
             // Human mode: a fixed pause between waves, since there is no AI think
             // time to create one. It elapses only while stepping, so PAUSE freezes
             // it like everything else. The countdown mirrors the original inert
