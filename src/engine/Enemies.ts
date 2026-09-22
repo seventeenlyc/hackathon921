@@ -14,6 +14,7 @@ function euclideanDistanceSquared(x1: number, y1: number, x2: number, y2: number
  */
 export class Enemies {
     private readonly entities: Enemy[] = [];
+    private nextId = 0;
 
     /** Read-only view for systems that observe without mutating the list. */
     all(): ReadonlyArray<Enemy> {
@@ -21,6 +22,7 @@ export class Enemies {
     }
 
     add(enemy: Enemy) {
+        enemy.id = ++this.nextId;
         this.entities.push(enemy);
     }
 

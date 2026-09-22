@@ -13,6 +13,7 @@ import {GameActions} from '../../../src/agent/GameActions';
 import {StrategyStore} from '../../../src/agent/StrategyStore';
 import type {GameSnapshot} from '../../../src/agent/types';
 import type {GameSpeed, Planner} from '../../../src/agent/GameLoop';
+import type {RenderSnapshot} from '../../../src/engine/RenderSnapshot';
 import type {AgentAction, AgentConfig} from '../agent';
 import {decideWithProvider} from '../agent';
 
@@ -251,6 +252,11 @@ export class HostedGame {
     /** The compressed observation, as the AI sees it. */
     snapshot(): GameSnapshot {
         return this.actions.getState();
+    }
+
+    /** One render frame for the frontend (send over SSE in phase C). */
+    renderSnapshot(): RenderSnapshot {
+        return this.engine.renderSnapshot();
     }
 
     /** Advance one base simulation step. The host's real-time driver calls this. */

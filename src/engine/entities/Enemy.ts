@@ -24,6 +24,8 @@ export abstract class Enemy {
     protected damage: number = 10;
     public damageTaken = 0;
     public alive = true;
+    /** Stable id assigned by the enemy manager, so a renderer can interpolate across frames. */
+    public id = 0;
     public x: number;
     public y: number;
 

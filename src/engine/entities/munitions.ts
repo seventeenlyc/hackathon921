@@ -1,16 +1,22 @@
 import {TICK_MS} from '../clock';
 import type {Enemy} from './Enemy';
 import {Munition} from './Munition';
+import type {MunitionKind} from './Munition';
 import type {Tower} from './Tower';
 
 /** A homing bullet. Damage is applied the tick its pre-move position is within `speed` of the target. */
 export class BasicBulletMunition extends Munition {
+    public readonly kind: MunitionKind = 'bullet';
     public speed = 6;
     protected radius = 5;
     protected angle = 0;
 
     constructor(target: Enemy, emitter: Tower) {
         super(target, emitter);
+    }
+
+    visual(): { angle: number; charge: number } {
+        return {angle: this.angle, charge: 0};
     }
 
     update() {
@@ -40,6 +46,7 @@ export class BasicBulletMunition extends Munition {
 
 /** Hitscan: resolves two ticks after firing, wherever the target has moved to. */
 export class SniperBulletMunition extends BasicBulletMunition {
+    public readonly kind: MunitionKind = 'sniper';
     private counter = 2;
 
     constructor(target: Enemy, emitter: Tower) {
@@ -56,6 +63,7 @@ export class SniperBulletMunition extends BasicBulletMunition {
 
 /** A beam that ramps up while the emitter keeps its target in range. */
 export class LaserMunition extends Munition {
+    public readonly kind: MunitionKind = 'laser';
     public charge = 0;
 
     constructor(target: Enemy, emitter: Tower) {
@@ -66,6 +74,10 @@ export class LaserMunition extends Munition {
         const {max, min} = <{ min: number, max: number }>this.emitter.damage;
 
         return ((max - min) * ratio + min) / (this.emitter.reloadDurationMs / TICK_MS);
+    }
+
+    visual(): { angle: number; charge: number } {
+        return {angle: 0, charge: this.charge};
     }
 
     update(): void {

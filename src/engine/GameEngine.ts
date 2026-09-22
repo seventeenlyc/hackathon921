@@ -9,6 +9,8 @@ import {GameLoop} from '../agent/GameLoop';
 import type {GameSpeed, GameState, Planner, StateListener} from '../agent/GameLoop';
 import {SpawnSettings} from '../agent/SpawnSettings';
 import {WaveScheduler} from './WaveScheduler';
+import {buildRenderSnapshot} from './RenderSnapshot';
+import type {RenderSnapshot} from './RenderSnapshot';
 
 /** The loop's states plus the terminal `over` state the engine adds itself. */
 export type EngineState = GameState | 'over';
@@ -190,6 +192,14 @@ export class GameEngine {
         this.munitions.update();
         this.enemies.update();
         this.scheduler.onTick(this.tickCount);
+    }
+
+    /**
+     * One frame for a frontend to draw. Plain data only, so a renderer never has
+     * to run simulation logic itself.
+     */
+    renderSnapshot(): RenderSnapshot {
+        return buildRenderSnapshot(this);
     }
 
     private endGame() {

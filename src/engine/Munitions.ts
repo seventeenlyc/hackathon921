@@ -11,12 +11,14 @@ import type {Munition} from './entities/Munition';
  */
 export class Munitions {
     private readonly entities: Munition[] = [];
+    private nextId = 0;
 
     all(): ReadonlyArray<Munition> {
         return this.entities;
     }
 
     add(munition: Munition) {
+        munition.id = ++this.nextId;
         this.entities.push(munition);
     }
 
