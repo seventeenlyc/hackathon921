@@ -76,8 +76,19 @@ SSL_KEY=/绝对路径/privkey.pem \
   ./bootstrap-server.sh "$(cat deploy_key.pub)"
 ```
 
+要换成其它 OpenAI 兼容端点时，把端点与模型一起传（不是密钥，会写进 unit；**重跑 bootstrap
+时必须再传一次**，否则 unit 回到默认的 `api.deepseek.com` / `deepseek-chat`）：
+
+```sh
+DEEPSEEK_BASE_URL=https://<host>/openai/v1 \
+DEEPSEEK_MODEL=<model-name> \
+SSL_CERT=/绝对路径/fullchain.pem SSL_KEY=/绝对路径/privkey.pem \
+  ./bootstrap-server.sh "$(cat deploy_key.pub)"
+```
+
 脚本会：创建无 sudo 的系统用户 → 安装公钥 → 建应用目录 → 放一个占位页面 →
 检查 Node 与后端数据目录/签名密钥（provider 密钥缺失时只提示，见 §5）→
+写入 provider 端点/模型（可选，见 §5）→
 渲染并安装 nginx 配置 → `nginx -t` → reload。
 
 **`nginx -t` 失败时脚本会自动回滚自己的配置文件并退出**，不会让一个坏配置把
@@ -163,6 +174,32 @@ journalctl -u pd-leaderboard -n 5 --no-pager                   # 期望出现「
 
 轮换：用同样方式覆盖该文件 → `systemctl restart pd-leaderboard`。密钥只应存在一份，
 换掉后确认旧副本（含其它路径下的历史文件）都已清理。
+
+#### 换成其它 OpenAI 兼容端点（可选）
+
+provider 的**端点**与**模型名**不是密钥，因此走 unit 的 `Environment=`；密钥仍然只放在
+`data/deepseek_key` 里。两者留空时用代码内置默认值（`api.deepseek.com` / `deepseek-chat`）。
+
+```ini
+# /etc/systemd/system/pd-leaderboard.service —— 由 bootstrap 按传入的变量生成
+Environment=DEEPSEEK_BASE_URL=https://<host>/openai/v1
+Environment=DEEPSEEK_MODEL=<model-name>
+```
+
+`DEEPSEEK_BASE_URL` 填到 OpenAI 兼容前缀为止（`https://api.deepseek.com` 或
+`https://<host>/openai/v1`），`/chat/completions` 由服务端拼接，末尾多余的斜杠会被归一。
+
+生效的是哪个 provider，看这两处就知道：
+
+```sh
+systemctl show pd-leaderboard -p Environment --no-pager
+journalctl -u pd-leaderboard -n 5 --no-pager   # LLM 代理已配置（<端点> / <模型>）
+```
+
+**换 provider 前先确认对方支持 function calling。** 前端只发策略与状态，动作靠 `tools`
+回传（`server/src/agent.ts`）。协议兼容不等于工具调用行为一致：实测有的 OpenAI 兼容端点
+接受 `tools` 参数、HTTP 200，但返回纯文本而不是 `tool_calls` —— 这种情况下
+`extractAgentActions` 拿到空动作，AI 会整波不动（不崩，但不动）。
 
 ### 6. 配置 GitHub Secrets
 

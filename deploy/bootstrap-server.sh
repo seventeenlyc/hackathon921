@@ -12,6 +12,12 @@
 #   SSL_KEY=/绝对路径/privkey.pem \
 #     ./bootstrap-server.sh 'ssh-ed25519 AAAA... deploy@prompt-defense'
 #
+# 可选：覆盖 provider 的 OpenAI 兼容端点与模型名（不是密钥，会写进 unit；不传则用代码
+# 内置默认值 api.deepseek.com / deepseek-chat）。注意重跑 bootstrap 时必须再传一次，
+# 否则 unit 会回到默认端点。
+#   DEEPSEEK_BASE_URL=https://<host>/openai/v1 DEEPSEEK_MODEL=<model> \
+#     ./bootstrap-server.sh 'ssh-ed25519 AAAA... deploy@prompt-defense'
+#
 # 本脚本幂等，可安全重复执行。
 
 set -euo pipefail
@@ -184,7 +190,23 @@ PLACEHOLDER_JS
     echo "已创建"
 fi
 
+# provider 端点与模型：非密钥，因此可以进 unit（密钥必须留在文件里）。拼成若干
+# Environment= 行；一个都不传时为空。
+# 注意：PROVIDER_ENV 在 heredoc 里必须独占一行 —— 命令替换会吃掉末尾换行，写成
+# `${PROVIDER_ENV}Environment=PD_CURRENT_LINK=...` 会让两行粘成一行，PD_CURRENT_LINK
+# 静默消失、版本自检重启失效。下面的渲染自检就是为了钉住这一点。
+provider_env_lines() {
+    if [ -n "${DEEPSEEK_BASE_URL:-}" ]; then
+        printf 'Environment=DEEPSEEK_BASE_URL=%s\n' "$DEEPSEEK_BASE_URL"
+    fi
+    if [ -n "${DEEPSEEK_MODEL:-}" ]; then
+        printf 'Environment=DEEPSEEK_MODEL=%s\n' "$DEEPSEEK_MODEL"
+    fi
+}
+PROVIDER_ENV="$(provider_env_lines)"
+
 step "安装后端 systemd 服务 pd-leaderboard.service"
+echo "provider 端点：${DEEPSEEK_BASE_URL:-<代码默认>}  模型：${DEEPSEEK_MODEL:-<代码默认>}"
 UNIT_PATH="/etc/systemd/system/pd-leaderboard.service"
 cat > "$UNIT_PATH" <<UNIT
 [Unit]
@@ -199,6 +221,7 @@ WorkingDirectory=${APP_DIR}/current-server
 Environment=PD_DB_PATH=${APP_DIR}/data/leaderboard.sqlite3
 Environment=PD_SESSION_SECRET_FILE=${APP_DIR}/data/session_secret
 Environment=DEEPSEEK_API_KEY_FILE=${APP_DIR}/data/deepseek_key
+${PROVIDER_ENV}
 Environment=PD_CURRENT_LINK=${APP_DIR}/current-server
 Environment=PD_PORT=${PD_PORT}
 ExecStart=${NODE_BIN} ${APP_DIR}/current-server/main.js
@@ -213,6 +236,11 @@ PrivateTmp=yes
 WantedBy=multi-user.target
 UNIT
 chmod 644 "$UNIT_PATH"
+# 渲染自检：拼串出错时宁可在这里失败，也不要把坏 unit 装上机（历史上踩过一次：
+# provider 变量与下一行粘在一起，PD_CURRENT_LINK 丢失导致部署不再触发重启）。
+for required in 'Environment=PD_CURRENT_LINK=' 'Environment=PD_DB_PATH=' 'Environment=DEEPSEEK_API_KEY_FILE=' 'ExecStart='; do
+    grep -q "^${required}" "$UNIT_PATH" || die "渲染出的 unit 缺少 ${required}（模板拼串有问题，未安装）"
+done
 systemctl daemon-reload
 systemctl enable pd-leaderboard.service >/dev/null
 systemctl restart pd-leaderboard.service

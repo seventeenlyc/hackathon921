@@ -11,6 +11,7 @@ import { LeaderboardStore } from '../src/store';
 import { signToken } from '../src/token';
 import {
     AGENT_SYSTEM_PROMPT,
+    DEEPSEEK_URL,
     MAX_STRATEGY_LENGTH,
     composeAgentMessages,
     extractAgentActions,
@@ -213,4 +214,42 @@ test('provider 网络失败映射成 502 PROVIDER_UNAVAILABLE', async () => {
     const res = await handleAgentDecide(deps, request());
     assert.equal(res.status, 502);
     assert.equal(res.body.error, 'PROVIDER_UNAVAILABLE');
+});
+
+test('provider 端点与模型可由配置覆盖，baseUrl 末尾斜杠被归一', async () => {
+    let sent: any;
+    const deps = makeDeps({
+        agent: {
+            apiKey: 'test-key',
+            baseUrl: 'https://relay.example.test/openai/v1/',
+            model: 'Deepseek-v4-flash',
+            fetchImpl: (async (url: string, init: any) => {
+                sent = { url, body: JSON.parse(init.body) };
+                return providerResponse(200, { choices: [{ message: { tool_calls: [] } }] });
+            }) as any,
+        },
+    });
+
+    const res = await handleAgentDecide(deps, request());
+
+    assert.equal(res.status, 200);
+    assert.equal(sent.url, 'https://relay.example.test/openai/v1/chat/completions');
+    assert.equal(sent.body.model, 'Deepseek-v4-flash');
+});
+
+test('未配置端点与模型时仍走内置默认值', async () => {
+    let sent: any;
+    const deps = makeDeps({
+        agent: {
+            apiKey: 'test-key',
+            fetchImpl: (async (url: string) => {
+                sent = { url };
+                return providerResponse(200, { choices: [{ message: { tool_calls: [] } }] });
+            }) as any,
+        },
+    });
+
+    await handleAgentDecide(deps, request());
+
+    assert.equal(sent.url, DEEPSEEK_URL);
 });

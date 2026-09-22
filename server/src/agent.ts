@@ -12,8 +12,26 @@
 import type { ApiDeps, ApiRequest, ApiResponse } from './http';
 import { verifyToken } from './token';
 
-export const DEEPSEEK_URL = 'https://api.deepseek.com/chat/completions';
-export const DEEPSEEK_MODEL = 'deepseek-chat';
+/**
+ * Provider 端点是可配置的：默认仍是 DeepSeek 官方端点，但可以整体换成任何 OpenAI
+ * 兼容端点（例如国内中转）而不改代码 —— 这类端点只有基址和模型名不同，协议面一致。
+ *
+ * 约定：baseUrl 填到 OpenAI 兼容前缀为止（`https://api.deepseek.com` 或
+ * `https://<host>/openai/v1`），请求路径由本模块拼 COMPLETIONS_PATH，因此不会出现
+ * 「填了完整 completions URL 又被拼一次」的问题。
+ */
+export const DEFAULT_PROVIDER_BASE_URL = 'https://api.deepseek.com';
+export const DEFAULT_PROVIDER_MODEL = 'deepseek-chat';
+export const COMPLETIONS_PATH = '/chat/completions';
+
+/** 保留原常量名：语义 = 默认端点的完整 completions URL（测试与日志仍在用）。 */
+export const DEEPSEEK_URL = `${DEFAULT_PROVIDER_BASE_URL}${COMPLETIONS_PATH}`;
+export const DEEPSEEK_MODEL = DEFAULT_PROVIDER_MODEL;
+
+/** 拼出 completions URL；容忍 baseUrl 末尾多余的斜杠（`…/v1/`）。 */
+export function completionsUrl(baseUrl: string): string {
+    return `${String(baseUrl).trim().replace(/\/+$/, '')}${COMPLETIONS_PATH}`;
+}
 /**
  * Player-strategy character cap. Raised from 2000 to 5000 (2026-09-22): real
  * multi-rule strategies routinely exceeded the old limit. This is the
@@ -45,6 +63,10 @@ export interface FetchLike {
 export interface AgentConfig {
     /** 为空表示未配置：接口返回 503 而不是崩溃。 */
     apiKey: string;
+    /** OpenAI 兼容端点前缀；缺省用 DEFAULT_PROVIDER_BASE_URL。 */
+    baseUrl?: string;
+    /** 模型名；缺省用 DEFAULT_PROVIDER_MODEL。 */
+    model?: string;
     /** 仅测试注入；生产走全局 fetch。 */
     fetchImpl?: FetchLike;
     timeoutMs?: number;
@@ -225,14 +247,14 @@ async function callProvider(
 
     let response: ProviderResponse;
     try {
-        response = await fetchImpl(DEEPSEEK_URL, {
+        response = await fetchImpl(completionsUrl(config.baseUrl || DEFAULT_PROVIDER_BASE_URL), {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
                 authorization: `Bearer ${config.apiKey}`,
             },
             body: JSON.stringify({
-                model: DEEPSEEK_MODEL,
+                model: config.model || DEFAULT_PROVIDER_MODEL,
                 messages,
                 tools: AGENT_TOOLS,
                 tool_choice: 'auto',
