@@ -285,16 +285,16 @@ DeepSeek 走国内 CDN 线路，实测 TLS 握手 25–80ms、请求总计约 10
 
 排行榜需要**服务端共享存储**——这是「不同设备看到同一个排行榜」的前提。选型如下：
 
-- **后端技术栈：Python 3 + uvicorn + FastAPI（ASGI）。** 依据：目标机既有服务的形态就是「uvicorn 监听 127.0.0.1 高位端口 + nginx `proxy_pass` 反代」（`deploy/README.md`），新服务照此即可，运维摩擦最小；未来 LLM 代理同样需要服务端，同栈可复用（`httpx` 调 DeepSeek）。
+- **后端技术栈：Node.js 22 内置模块**（`node:http` 提供 HTTP、`node:sqlite` 提供数据库、`node:crypto` 提供会话签名），**零运行时 npm 依赖**。依据：目标机已装 Node 22（≥22.13，`node:sqlite` 免 `--experimental-sqlite` flag）；服务器上不需要 Python，也不需要安装任何包管理器依赖；与前端共用同一条 TypeScript 工具链，编译在 CI 完成。Express / Fastify / better-sqlite3 等框架级依赖**刻意不使用**——`node:http` 与 `node:sqlite` 对这点 API 面已足够，多一个依赖就多一份服务器侧风险（`better-sqlite3` 之类的原生编译正是旧 `engines: >=14 <18` 约束的来源）。
 - **数据库：SQLite（WAL 模式），独立数据库文件。** 依据：黑客松规模数据量小、写入者少；零运维、单文件、易隔离、易备份。不引入 PostgreSQL / MySQL 的运维负担。
 - **身份：仅昵称 + 服务端签发的签名会话 token，无账号体系。** 昵称沿用既有的 `sanitizeUsername` 校验与渲染转义规则（`AGENTS.md`「不可信输入」）。
 - **成绩校验**：见 §9「反作弊 / 对局校验」。
 
 §14 上文的四条隔离要求按如下落地：**独立系统用户**（不复用静态站的 `deploy-prompt-defense` 账号）、**独立 SQLite 文件**、systemd `MemoryMax=` 进程内存上限、nginx `limit_req` 反向代理限流。unit、端口、路径与部署流程见 `deploy/README.md`。
 
-**「不在服务器上构建」仍然成立**（§14 硬约束）：后端是 Python 源码，CI 只同步文件、不安装依赖、不执行构建；Python 虚拟环境由一次性初始化（root）建立。
+**「不在服务器上构建」仍然成立**（§14 硬约束）：后端 TypeScript 在 CI 编译成 JavaScript，服务器只接收编译产物并运行，既不执行构建、也不安装依赖。
 
-**后端随前端版本一起版本化**：源码落在 `releases/<sha>/server/`，`current-server` 符号链接原子切换，回滚方式与静态产物一致。服务重启不依赖部署用户的任何特权——systemd unit 用 `Restart=always`，进程检测到版本变化后自行退出、由 systemd 拉起（见 `deploy/README.md`）。
+**后端随前端版本一起版本化**：编译产物落在 `releases/<sha>/server/`，`current-server` 符号链接原子切换，回滚方式与静态产物一致。服务重启不依赖部署用户的任何特权——systemd unit 用 `Restart=always`，进程检测到版本变化后自行退出、由 systemd 拉起（见 `deploy/README.md`）。
 
 **本次部署引入排行榜后端服务**；LLM 代理仍未实现，待后续单独处理。
 
@@ -347,7 +347,7 @@ DeepSeek 走国内 CDN 线路，实测 TLS 握手 25–80ms、请求总计约 10
 - ~~仅昵称还是账号~~ —— 已决定：MVP 仅昵称，无账号体系。
 - ~~持久化机制~~ —— 已决定：服务端 SQLite 持久化，替换此前的纯前端本地存储（§9、§14）。
 - ~~数据库选择~~ —— 已决定：SQLite（WAL 模式），独立数据库文件（§14）。
-- ~~后端技术栈~~ —— 已决定：Python 3 + uvicorn + FastAPI（ASGI，§14）。
+- ~~后端技术栈~~ —— 已决定：Node.js 22 内置模块（`node:http` / `node:sqlite` / `node:crypto`，零运行时 npm 依赖，§14）。
 - 移动端 / 桌面端 UI 细节。
 
 ### 未来范围 — 目前不属于 MVP

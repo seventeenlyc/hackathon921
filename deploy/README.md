@@ -10,15 +10,15 @@
 
 ```
 push 到 main
-  └─ GitHub Actions: npm ci → npm run test → tsc --noEmit → 后端测试
-       └─ rsync dist/ 与 server/ 到 服务器:<APP_DIR>/releases/<commit-sha>/
+  └─ GitHub Actions: npm ci → 前端构建/测试 → tsc → 后端编译/测试
+       └─ rsync dist/（含编译后的 server/）到 服务器:<APP_DIR>/releases/<commit-sha>/
             ├─ 原子切换 current 符号链接 → 校验 https://<域名>/version.txt
             └─ 原子切换 current-server 符号链接 → 后端进程自检版本后由 systemd 拉起
 ```
 
 **构建只在 CI 发生，服务器不参与构建。** 这是 `docs/PRODUCT_CONCEPT.md` §14 的硬约束：
-目标机是已承载其他生产业务的共享服务器，构建峰值会挤压既有服务。这也是服务器上
-没有也不需要 node 的原因。后端是 Python 源码，CI 同样只同步文件，不在服务器上安装依赖。
+目标机是已承载其他生产业务的共享服务器，构建峰值会挤压既有服务。服务器需要 Node 22
+来**运行**后端（见 §5），但同样不在上面构建、也不安装依赖——后端 TypeScript 在 CI 编译成 JS。
 
 服务器上的目录布局：
 
@@ -27,12 +27,11 @@ push 到 main
 ├── releases/
 │   ├── <commit-sha>/
 │   │   ├── index.html …   前端构建产物（nginx root）
-│   │   └── server/        后端源码（Python，systemd 运行）
+│   │   └── server/        后端编译产物（JS，systemd 运行）
 │   └── ...                每次部署一个目录，保留最近 5 个
 ├── current         -> releases/<commit-sha>            nginx root
 ├── current-server  -> releases/<commit-sha>/server     后端运行目录
-├── data/           leaderboard.sqlite3、session_secret  属 pd-leaderboard
-└── venv/           Python 虚拟环境（一次性安装）
+└── data/           leaderboard.sqlite3、session_secret  属 pd-leaderboard
 ```
 
 nginx 的 `root` 指向 `current`。nginx 在**每次请求时**才解析符号链接，所以
@@ -85,13 +84,14 @@ SSL_KEY=/绝对路径/privkey.pem \
 
 ### 5. 初始化排行榜后端（root，一次性）
 
-后端是 FastAPI + SQLite，由 systemd 以**独立系统用户**运行。`bootstrap-server.sh` 在 root 下
-幂等地完成这一节；下面说明它做了什么，便于排障。登录 shell 为 `nologin`，无 sudo。
+后端是 Node.js 22 内置模块（`node:http` / `node:sqlite` / `node:crypto`）+ SQLite，由 systemd
+以**独立系统用户**运行。`bootstrap-server.sh` 在 root 下幂等地完成这一节；下面说明它做了什么，
+便于排障。
 
+- **Node.js 22（≥22.13）**：运行后端的唯一前提；该版本起 `node:sqlite` 不再需要
+  `--experimental-sqlite` flag。**服务器上不构建、不 `npm install`**——后端由 CI 编译成 JS 后同步。
 - **独立系统用户 `pd-leaderboard`**：`--system`，无登录 shell，无 sudo。隔离要求见
   `docs/PRODUCT_CONCEPT.md` §14 —— **不要复用**静态站的 `deploy-prompt-defense`。
-- **Python 虚拟环境 `<APP_DIR>/venv`**：`python3 -m venv` 创建，再安装
-  `server/requirements.txt`。**依赖只在此安装一次**；服务器上不做构建，也不在每次部署时装依赖。
 - **数据目录 `<APP_DIR>/data`**：属 `pd-leaderboard`（mode 750），存
   `leaderboard.sqlite3`（WAL）。750 确保静态站的部署用户读不到排行榜数据库。
 - **会话签名密钥 `<APP_DIR>/data/session_secret`**：首次用 `openssl rand -hex 32` 生成，
@@ -110,7 +110,9 @@ SSL_KEY=/绝对路径/privkey.pem \
   WorkingDirectory=/srv/apps/prompt-defense.crowntime.cn/current-server
   Environment=PD_DB_PATH=/srv/apps/prompt-defense.crowntime.cn/data/leaderboard.sqlite3
   Environment=PD_SESSION_SECRET_FILE=/srv/apps/prompt-defense.crowntime.cn/data/session_secret
-  ExecStart=/srv/apps/prompt-defense.crowntime.cn/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8781
+  Environment=PD_CURRENT_LINK=/srv/apps/prompt-defense.crowntime.cn/current-server
+  Environment=PD_PORT=8781
+  ExecStart=/usr/bin/node /srv/apps/prompt-defense.crowntime.cn/current-server/main.js
   Restart=always
   RestartSec=2
   # §14 要求的进程内存上限。排行榜是轻量 I/O 服务，256M 有充足余量。
@@ -222,6 +224,5 @@ readlink current                 # 确认
 
 | 限制 | 影响 | 缓解 |
 |---|---|---|
-| 依赖变更需人工重装 | 改了 `server/requirements.txt` 的 PR 合并后，服务不会自动装新依赖 | 运维在 `<APP_DIR>` 重跑 `venv/bin/pip install -r releases/<sha>/server/requirements.txt`，再 `systemctl restart pd-leaderboard` |
 | 后端回滚需重启 | 前端回滚改 `current` 即可，后端还要让服务重启 | 改 `current-server` 符号链接，再 `systemctl restart pd-leaderboard` |
 | SQLite 单写入者 | 高并发写入会串行化 | 黑客松规模足够；写入已限流 |

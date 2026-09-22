@@ -16,7 +16,7 @@
 - **产品真值是 `docs/PRODUCT_CONCEPT.md`** —— 它只记录已确认的决定，末尾的「未决问题」清单同样有约束力：列在那里的事项尚未决定，不得当作需求实现。
 - `docs/IDEA.md` 与 `docs/USER_STORY.md` 是背景、意图和用户故事，用于理解「为什么」，不是需求规格。
 - LLM 供应商为 **DeepSeek**，理由与实测依据见 `docs/PRODUCT_CONCEPT.md` §14。部署由运维负责，具体主机不在本仓库记录。
-- 后端技术栈、数据库、身份方案**已选型**（2026-09-22，见 `docs/PRODUCT_CONCEPT.md` §14）：**Python 3 + uvicorn + FastAPI**（ASGI）、**SQLite**（WAL，独立文件）、**仅昵称 + 服务端会话 token**（无账号体系）。新增运行时依赖时要同步更新 `server/requirements.txt`，并在 §14 记录。
+- 后端技术栈、数据库、身份方案**已选型**（2026-09-22，见 `docs/PRODUCT_CONCEPT.md` §14）：**Node.js 22 内置模块**（`node:http` + `node:sqlite` + `node:crypto`，**零运行时 npm 依赖**）、**SQLite**（WAL，独立文件）、**仅昵称 + 服务端签名会话 token**（无账号体系）。后端 TypeScript 源码在 `server/`，由 CI 编译成 JS，服务器只运行产物。**不要给后端引入运行时 npm 依赖**；确需引入时先在 §14 记录。
 - 代码与文档冲突时，显式指出冲突，不要自行选一边继续。
 
 ## 引擎与 Agent 的分层边界

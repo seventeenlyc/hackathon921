@@ -14,7 +14,7 @@
 | 线上地址 | `https://prompt-defense.crowntime.cn` |
 | 上线方式 | **合并到 `main` 自动部署**，没有手动步骤 |
 | PR 上会发生什么 | 跑 `CI` workflow（构建 + 类型检查 + 后端测试），不部署 |
-| 线上现在是什么 | 静态前端 + **排行榜后端服务**（FastAPI + SQLite） |
+| 线上现在是什么 | 静态前端 + **排行榜后端服务**（Node.js 22 + SQLite） |
 | 数据库 | SQLite，独立文件（`deploy/README.md`） |
 | LLM 代理 | **还不存在** |
 
@@ -47,7 +47,7 @@ curl -s https://prompt-defense.crowntime.cn/version.txt
 npm ci
 npm run test         # == vite build + 前端测试（贴图、排行榜、agent），构建和校验一步两用
 npx tsc --noEmit
-npm run test:server  # 后端 API 测试，需要本地 Python 与 server/requirements-dev.txt
+npm run test:server  # 后端 API 测试：tsc 编译后由 Node 内置 test runner 运行，无需额外依赖
 ```
 
 任何一条挂了，CI 也会挂，PR 进不去。
@@ -68,16 +68,16 @@ npm run test:server  # 后端 API 测试，需要本地 Python 与 server/requir
 
 ### 1. 后端已存在：排行榜 API（2026-09-22 起）
 
-后端技术栈**已选型**（`docs/PRODUCT_CONCEPT.md` §14）：**Python 3 + uvicorn + FastAPI + SQLite**。
-线上 nginx 把 `/api/` 反代到本机 uvicorn（见 `deploy/README.md`）。
+后端技术栈**已选型**（`docs/PRODUCT_CONCEPT.md` §14）：**Node.js 22 内置模块 + SQLite**，
+零运行时 npm 依赖。线上 nginx 把 `/api/` 反代到本机 Node 服务（见 `deploy/README.md`）。
 
 契约与约束：
 
 - 前端只通过 `/api/` 调用。**不要顺手新增其他服务端能力**——LLM 代理仍未实现。
 - 成绩写入以**服务端记录的对局证据**为准，不是客户端上报的最终分数（§9）。
 - 改 API 路径或语义时，同步更新 `docs/PRODUCT_CONCEPT.md` §9。
-- 后端源码在 `server/`，依赖固定在 `server/requirements.txt`。**服务器上不安装依赖、不构建**：
-  虚拟环境由一次性初始化（root）建立；依赖变更需要运维重装，并在 §14 记录。
+- 后端 TypeScript 源码在 `server/`，由 CI 用 `npm run build:server` 编译成 JS；**服务器上不构建、
+  不安装依赖**，只运行编译产物。给后端引入运行时 npm 依赖之前先在 §14 记录。
 
 ### 2. LLM 密钥绝不能进前端
 
@@ -159,7 +159,7 @@ PR 与部署是两个独立的 workflow：PR 上跑 `CI`，合并到 `main` 才�
 
 | 缺什么 | 状态 |
 |---|---|
-| 服务端 DeepSeek 代理 | 无代码。后端栈已选型（Python / FastAPI），可复用排行榜服务 |
+| 服务端 DeepSeek 代理 | 无代码。后端栈已选型（Node.js 22 内置模块），可复用排行榜服务 |
 | 数据库 | SQLite，已用于排行榜（`docs/PRODUCT_CONCEPT.md` §14） |
 | 排行榜持久化 | **已实现**：服务端签发对局会话 + 逐波 append-only，成绩取服务端记录的最大波次（§9） |
 | Agent 运行时 | 无代码。issue #7 的「范围说明」写明待单独开 issue |
