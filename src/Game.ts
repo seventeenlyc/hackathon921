@@ -14,7 +14,7 @@ import {gameLoop, GameSpeed} from './agent/GameLoop';
 import {queueStrategy, startRun} from './StrategyQueue';
 import {readUsernameCookie} from './leaderboard/LeaderboardStore';
 import {fetchSharedLeaderboard} from './leaderboard/LeaderboardClient';
-import {interpolateSnapshot} from './view/interpolate';
+import {FrameBuffer} from './view/frameBuffer';
 import {
     drawBases,
     drawEnemies,
@@ -38,9 +38,8 @@ let runStartedAt: number | null = null;
  */
 class Game {
     private latest: RenderSnapshot | null = null;
-    private previous: RenderSnapshot | null = null;
-    private latestAt = 0;
-    private frameIntervalMs = 100;
+    /** Recent frames on a delayed timeline, so jitter does not freeze the picture. */
+    private readonly frames = new FrameBuffer(150);
     private looping: boolean = true;
 
     constructor() {
@@ -83,34 +82,26 @@ class Game {
     }
 
     private onSnapshot(frame: RenderSnapshot) {
-        if (this.latest && this.latest.state === 'running') {
-            this.previous = this.latest;
-            const delta = performance.now() - this.latestAt;
-            if (delta > 1 && delta < 1000) this.frameIntervalMs = delta;
-        } else {
-            // Coming out of idle/paused/planning: never blend across the gap.
-            this.previous = null;
+        // A frozen game or a fresh run must never blend across the gap.
+        if (frame.state !== 'running') {
+            this.frames.reset();
         }
+        this.frames.push(frame, performance.now());
         this.latest = frame;
-        this.latestAt = performance.now();
         interfaceManager.applySnapshot(frame);
     }
 
     /**
-     * The frame to draw: the last two server frames blended by elapsed time, so
-     * the picture moves at the display's refresh rate instead of jumping once per
-     * push (at 8x that was ~24 simulation ticks per frame). A frozen game
-     * (idle/paused/planning/over) is drawn as-is.
+     * The frame to draw: sampled from a short frame history against a slightly
+     * delayed timeline, so ordinary network/event-loop jitter is absorbed instead
+     * of freezing the picture (production showed gaps up to ~292 ms against a
+     * 50 ms nominal rate). A frozen game is drawn as-is.
      */
     private interpolatedFrame(): RenderSnapshot | null {
-        const latest = this.latest;
-        if (!latest) return null;
-        if (latest.state !== 'running' || !this.previous) return latest;
-
-        const alpha = this.frameIntervalMs > 0
-            ? (performance.now() - this.latestAt) / this.frameIntervalMs
-            : 1;
-        return interpolateSnapshot(this.previous, latest, alpha);
+        if (this.latest && this.latest.state !== 'running') {
+            return this.latest;
+        }
+        return this.frames.sample(performance.now()) ?? this.latest;
     }
 
     private onOver(summary: GameSummary) {
@@ -132,7 +123,6 @@ class Game {
      */
     private updateLoop() {
         camera.update();
-        if (playMode === 'human') towerPlacer.update(this.latest);
     }
 
     private drawLoop() {
@@ -141,6 +131,14 @@ class Game {
         camera.process(ctx);
 
         const snapshot = this.interpolatedFrame();
+
+        // Compute the placement ghost HERE, not in the 30 Hz update loop: the
+        // canvas redraws every animation frame, so a ghost computed a tick behind
+        // trails the cursor (visible as "the mouse is above but the marker is still
+        // below"). This also runs after camera.process(), so it uses this frame's
+        // transform rather than the previous frame's.
+        if (playMode === 'human') towerPlacer.update(snapshot);
+
         if (snapshot) {
             drawMapGrid(ctx, snapshot.grid);
             drawMunitions(ctx, snapshot);

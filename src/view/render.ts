@@ -45,8 +45,8 @@ export function drawMapGrid(ctx: CanvasRenderingContext2D, grid: GridSize): void
 
     ctx.fillStyle = '#1f2125';
     ctx.fillRect(0, 0, gridWidth, gridHeight);
-    ctx.strokeStyle = '#25272b';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#414650';
+    ctx.lineWidth = 1.25;
     ctx.beginPath();
 
     for (let x = 0; x < grid.width; ++x) {
@@ -61,7 +61,7 @@ export function drawMapGrid(ctx: CanvasRenderingContext2D, grid: GridSize): void
     ctx.closePath();
     ctx.stroke();
 
-    ctx.strokeStyle = '#4a4a4e';
+    ctx.strokeStyle = '#697383';
     ctx.lineWidth = 3;
     drawRoundedSquare(ctx, 0, 0, gridWidth, gridHeight, 4);
     ctx.stroke();

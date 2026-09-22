@@ -22,6 +22,7 @@ class TowerPlacer {
     private placing = false;
     private i = 0;
     private j = 0;
+    private pointer = {x: 0, y: 0};
     private shouldBeDrawn = false;
     private latest: RenderSnapshot | null = null;
 
@@ -51,9 +52,10 @@ class TowerPlacer {
         if (!this.placing) return;
 
         this.shouldBeDrawn = false;
-        if (!snapshot) return;
+        if (!snapshot || !canvas.transformMatrix) return;
 
         const mouse = canvas.transformMatrix!.inverse().transformPoint(controls.mouse);
+        this.pointer = mouse;
         const tile = snapshot.grid.tileSize;
         this.i = Math.floor(mouse.x / tile);
         this.j = Math.floor(mouse.y / tile);
@@ -69,8 +71,8 @@ class TowerPlacer {
         const tile = snapshot.grid.tileSize;
         drawTowerPreview(ctx, {
             type: this.selectedType,
-            x: this.i * tile,
-            y: this.j * tile,
+            x: this.pointer.x - tile / 2,
+            y: this.pointer.y - tile / 2,
             tileSize: tile,
             aimRadius: this.selectedAimRadius,
             valid: this.canBePlaced(snapshot),
@@ -79,16 +81,19 @@ class TowerPlacer {
 
     private handleClick() {
         if (!this.placing || !this.session || !this.selectedType || !this.latest) return;
+        // A mouseup can arrive before the next animation frame.
+        this.update(this.latest);
+        if (!this.shouldBeDrawn) return;
         if (!this.canBePlaced(this.latest)) return;
 
         const type = this.selectedType;
         void this.session.workerBuild(type, this.i, this.j)
             .then(result => {
                 interfaceManager.snackbar.toast(result && result.message ? result.message : '');
-                if (result && result.ok) {
-                    this.placing = false;
-                    this.shouldBeDrawn = false;
-                }
+                // Stay in placement mode after a successful build, so the player can
+                // drop several of the same tower in a row. ESC (or picking another
+                // card) leaves the mode; a rejected build also keeps it, so the
+                // player can retry on a different cell.
             })
             .catch(error => interfaceManager.snackbar.toast(String((error && error.message) || error)));
     }

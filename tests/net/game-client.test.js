@@ -95,6 +95,16 @@ function test(name, fn) {
         assert.deepStrictEqual(JSON.parse(fetchImpl.calls[3].init.body), {action: 'build_tower', type: 'canon', i: 3, j: 4});
     });
 
+    await test('a rejected build preserves the readable server message', async () => {
+        const fetchImpl = fakeFetch([{ok: false, status: 409, body: {
+            error: 'INSUFFICIENT_FUNDS', message: '资金不足：需要 400，当前 200',
+        }}]);
+        const client = new GameClient({getToken: () => 'tok', fetchImpl});
+        await assert.rejects(() => client.humanBuild('g1', 'laser', 1, 1),
+            error => error instanceof GameClientError && error.code === 'INSUFFICIENT_FUNDS'
+                && error.message === '资金不足：需要 400，当前 200');
+    });
+
     await test('a rejected command surfaces the server error code', async () => {
         const fetchImpl = fakeFetch([{ok: false, status: 409, body: {error: 'CELL_OCCUPIED'}}]);
         const client = new GameClient({getToken: () => 'tok', fetchImpl});
