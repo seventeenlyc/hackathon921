@@ -32,9 +32,10 @@ export function queueStrategy(text: string): StrategyVersion {
 export function startRun(): void {
     if (!gameLoop.isIdle()) return;
 
-    const pending = strategyStore.queued();
-    const text = (pending ? pending.text : strategyStore.active().text).trim();
-    if (!text) return;
+    // Apply the opening prompt BEFORE the loop can plan wave 1, so the run never
+    // starts on the previous/empty version. `activateForRun` returns null when
+    // there is no prompt, in which case the run refuses to start (§5).
+    if (!strategyStore.activateForRun()) return;
 
     gameLoop.start();
     void waveManager.start();

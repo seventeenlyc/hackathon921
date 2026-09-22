@@ -70,6 +70,38 @@ async function test(name, fn) {
         assert.deepStrictEqual(store.history(), [{version: 0, text: 'unchanged', fromWave: 1}]);
     });
 
+    await test('activateForRun applies the opening prompt before the run starts', () => {
+        const store = new StrategyStore('', 1);
+        store.submit('snake around the spawn', 1);
+
+        const opened = store.activateForRun();
+
+        // Wave 1 plans with this version even if the first PLANNING lock is missed.
+        assert.strictEqual(opened.text, 'snake around the spawn');
+        assert.strictEqual(store.active().version, 1);
+        assert.strictEqual(store.queued(), null);
+    });
+
+    await test('activateForRun is idempotent and safe to call again at PLANNING', () => {
+        const store = new StrategyStore('', 1);
+        store.submit('hold the base', 1);
+        store.activateForRun();
+
+        // The loop still fires the PLANNING lock; it must not create a phantom version.
+        const locked = store.lock();
+        assert.strictEqual(locked.text, 'hold the base');
+        assert.deepStrictEqual(store.history().map(version => version.text), ['', 'hold the base']);
+    });
+
+    await test('activateForRun refuses an empty prompt', () => {
+        const store = new StrategyStore('', 1);
+        assert.strictEqual(store.activateForRun(), null);
+
+        store.submit('   ', 1);
+        assert.strictEqual(store.activateForRun(), null);
+        assert.strictEqual(store.queued().text, '   ', 'a blank submission is not silently applied');
+    });
+
     await test('history keeps every version that took effect', () => {
         const store = new StrategyStore('v0', 1);
         store.submit('v1', 2);
