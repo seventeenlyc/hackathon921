@@ -10,7 +10,9 @@ import './InterfaceManager';
 import {interfaceManager} from "./InterfaceManager";
 import {waveManager} from "./WavesManager";
 import {submitRunScore} from "./leaderboard/LeaderboardUI";
-import {readUsernameCookie} from "./leaderboard/LeaderboardStore";
+import {getSessionUsername} from "./leaderboard/SessionIdentity";
+import {runSync} from "./leaderboard/RunSync";
+import {audioManager} from "./AudioManager";
 import {getSessionToken, fetchSharedLeaderboard} from "./leaderboard/LeaderboardClient";
 import {cashManager} from "./CashManager";
 import {Tower} from "./entities/towers/Tower";
@@ -33,6 +35,8 @@ let decisionsMade = 0;
 class Game {
     private updateInterval: number = -1;
     private looping: boolean = true;
+    private lastSoundWave = 0;
+    private gameOverScheduled = false;
 
     constructor() {
         map.on('added', () => {
@@ -40,16 +44,21 @@ class Game {
         });
         // Human-mode runs are not leaderboard entries: the board compares AI
         // strategies, so a hand-played wave would not be comparable (see §9).
-        if (playMode === 'ai') {
-            waveManager.onWaveReached = wave => this.recordReachedWave(wave);
-        }
+        waveManager.onWaveReached = wave => this.recordReachedWave(wave);
 
         // The run keeps going when the window loses focus — the player may want to
         // look elsewhere while the AI plays; the run ends only when the base falls.
         // Entering PLANNING is the moment a queued prompt is locked in: the AI
         // plans the upcoming wave with exactly this version (issue #17).
         gameLoop.onChange(state => {
-            if (state === 'planning') strategyStore.lock();
+            if (state === 'planning') {
+                const before = strategyStore.active().version;
+                const active = strategyStore.lock();
+                const username = getSessionUsername();
+                if (username && active.version !== before && active.text.trim()) {
+                    runSync.enqueuePrompt(username, active);
+                }
+            }
             if (state === 'running' && runStartedAt === null) runStartedAt = Date.now();
         });
 
@@ -57,12 +66,16 @@ class Game {
     }
 
     recordReachedWave(wave: number = waveManager.waveCounter) {
-        const username = readUsernameCookie();
-        if (username) submitRunScore(username, wave);
+        if (wave > this.lastSoundWave) {
+            this.lastSoundWave = wave;
+            audioManager.playWaveReached();
+        }
+        const username = getSessionUsername();
+        if (playMode === 'ai' && username) submitRunScore(username, wave);
     }
 
     start() {
-        this.updateInterval = setInterval(this.updateLoop.bind(this), 1000 / fps);
+        this.updateInterval = window.setInterval(this.updateLoop.bind(this), 1000 / fps);
         requestAnimationFrame(this.drawLoop.bind(this));
         // The run itself is not started here: the game opens in IDLE so the player
         // can write the opening prompt first. `promptDefense.start()` (or the
@@ -104,19 +117,23 @@ class Game {
     }
 
     gameOver() {
-        setTimeout(() => {
+        if (this.gameOverScheduled) return;
+        this.gameOverScheduled = true;
+        window.setTimeout(() => {
             clearInterval(this.updateInterval);
             this.looping = false;
             waveManager.looping = false;
+            audioManager.playGameOver();
 
             const wave = waveManager.waveCounter;
             // 结算时再同步一次，以覆盖停止波次循环的边界时刻。人类模式不入榜。
             if (playMode === 'ai') this.recordReachedWave(wave);
+            runSync.retryPending();
 
             interfaceManager.showGameOver(this.collectStats(wave));
 
             // 名次以服务端为准，异步补齐；拿不到就保持 “—”。
-            const username = readUsernameCookie();
+            const username = getSessionUsername();
             if (username && playMode === 'ai') {
                 void fetchSharedLeaderboard(username).then(result => {
                     interfaceManager.setResultRank(result && result.me ? result.me.rank : null);

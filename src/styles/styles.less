@@ -460,6 +460,11 @@ body {
     }
 
     .tower-panel {
+      /* The control layer is click-through (`.controls { pointer-events: none }`),
+         so every interactive panel must opt back in; `.control-card` does, but the
+         catalogue did not — its cards could not receive a real click and human
+         placement was impossible (clicks fell through to the canvas). */
+      pointer-events: auto;
       margin-top: 17px;
       border-top: 1px solid rgba(146, 169, 160, 0.14);
       padding-top: 12px;
@@ -672,6 +677,7 @@ body {
     top: 0;
     left: 0;
     z-index: 2;
+    pointer-events: auto;
     width: min(240px, calc(100vw - 32px));
     max-height: min(50vh, 360px);
     overflow-y: auto;
@@ -1071,14 +1077,37 @@ body {
   display: none;
 }
 
-/* Keep the status card and catalogue independent so the wave information stays
-   readable on the left instead of being covered by the tower cards. */
-#inert.mode-ai .tower-panel {
+/* Keep the shared leaderboard and tower catalogue in one flowing rail. The
+   control layer is click-through, so the rail opts its two interactive panels
+   back in while allowing the catalogue to follow the leaderboard's real height. */
+#inert.mode-ai .left-rail {
   position: fixed;
-  top: clamp(128px, 16vh, 150px);
+  top: clamp(16px, 2.2vw, 32px);
   left: clamp(16px, 2.2vw, 32px);
   z-index: 3;
+  display: flex;
   width: min(330px, calc(100vw - 32px));
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+
+#inert.mode-ai .left-rail > * {
+  pointer-events: auto;
+}
+
+#inert.mode-ai .leaderboard-slot {
+  margin: 0;
+}
+
+#inert.mode-ai .leaderboard-panel {
+  position: static;
+  width: 100%;
+}
+
+#inert.mode-ai .left-rail .tower-panel {
+  position: static;
+  width: 100%;
   margin: 0;
   padding: 14px;
   border: 1px solid var(--line);
@@ -1106,12 +1135,134 @@ body {
   box-shadow: var(--shadow);
 }
 
+#inert {
+  .leaderboard-retry {
+    display: block;
+    margin: 4px auto 0;
+    padding: 3px 7px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--accent);
+    cursor: pointer;
+    font: inherit;
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  .leaderboard-list .name {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+  }
+
+  .prompt-history-dialog {
+    width: min(720px, calc(100vw - 32px));
+    max-height: min(80vh, 720px);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface-deep);
+    box-shadow: var(--shadow);
+    color: var(--ink);
+
+    &::backdrop {
+      background: rgba(7, 12, 12, 0.8);
+    }
+
+    h2 {
+      margin-bottom: 14px;
+      color: var(--accent);
+      font-size: 18px;
+    }
+
+    .prompt-history-content {
+      max-height: min(60vh, 520px);
+      overflow-y: auto;
+    }
+
+    .prompt-history-node {
+      margin-bottom: 12px;
+      padding: 12px;
+      border: 1px solid rgba(146, 169, 160, 0.16);
+      border-radius: 10px;
+      background: rgba(24, 31, 31, 0.72);
+
+      .prompt-history-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .prompt-history-text {
+        margin: 0;
+        color: var(--ink);
+        font: inherit;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+    }
+
+    .prompt-history-empty,
+    .prompt-history-error {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .prompt-history-close {
+      margin-top: 14px;
+      padding: 8px 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font: inherit;
+
+      &:hover,
+      &:focus-visible {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+    }
+  }
+}
+
 @media (max-width: 760px) {
-  #inert.mode-ai .tower-panel {
-    top: 282px;
+  #inert.mode-ai .left-rail {
+    top: 12px;
     right: 12px;
     left: 12px;
     width: auto;
+    gap: 8px;
+  }
+
+  #inert.mode-ai .leaderboard-panel {
+    max-height: 240px;
+  }
+
+  #inert.mode-ai .left-rail .tower-panel {
     max-height: 110px;
     overflow-y: auto;
   }

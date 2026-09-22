@@ -97,3 +97,45 @@ test('端到端：超大请求体被当作坏请求拒绝，不会拖垮进程',
         await new Promise<void>(resolve => server.close(() => resolve()));
     }
 });
+
+test('端到端：5000 个中文字符的 Prompt 可通过专用请求体上限，超限请求仍被拒绝', async () => {
+    const { server } = startServer();
+    await new Promise<void>(resolve => server.listen(0, '127.0.0.1', () => resolve()));
+    const base = `http://127.0.0.1:${server.address().port}`;
+
+    try {
+        const sessionRes = await fetch(`${base}/api/session`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ username: '玩家' }),
+        });
+        const session = await sessionRes.json();
+        const runRes = await fetch(`${base}/api/runs`, {
+            method: 'POST',
+            headers: { authorization: `Bearer ${session.token}` },
+        });
+        const { runId } = await runRes.json();
+
+        const promptRes = await fetch(`${base}/api/runs/${runId}/prompts`, {
+            method: 'POST',
+            headers: {
+                authorization: `Bearer ${session.token}`,
+                'content-type': 'application/json',
+            },
+            body: JSON.stringify({ version: 1, prompt: '策'.repeat(5000), fromWave: 1 }),
+        });
+        assert.equal(promptRes.status, 200);
+
+        const tooLargeRes = await fetch(`${base}/api/runs/${runId}/prompts`, {
+            method: 'POST',
+            headers: {
+                authorization: `Bearer ${session.token}`,
+                'content-type': 'application/json',
+            },
+            body: JSON.stringify({ version: 2, prompt: 'B', fromWave: 1, padding: 'x'.repeat(70 * 1024) }),
+        });
+        assert.equal(tooLargeRes.status, 400);
+    } finally {
+        await new Promise<void>(resolve => server.close(() => resolve()));
+    }
+});

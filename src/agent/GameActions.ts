@@ -104,6 +104,15 @@ export class GameActions {
             return failure('CELL_OCCUPIED', t('action.cellOccupied', {i, j}));
         }
 
+        // An unaffordable tower cannot be built anywhere; report that before
+        // probing paths so moving the cursor cannot obscure the funding problem.
+        if (!this.battlefield.canAfford(option.cost)) {
+            return failure(
+                'INSUFFICIENT_FUNDS',
+                t('action.insufficientBuild', {type: rawType, cost: option.cost, cash: this.battlefield.cash()})
+            );
+        }
+
         const placement = this.battlefield.canPlaceAt(i, j);
         if (!placement.ok) {
             const error = placement.error ?? 'BLOCKS_PATH';
@@ -112,13 +121,6 @@ export class GameActions {
                     ? t('action.blocksPath', {i, j})
                     : t('action.cellUnbuildable', {i, j, error});
             return failure(error, message);
-        }
-
-        if (!this.battlefield.canAfford(option.cost)) {
-            return failure(
-                'INSUFFICIENT_FUNDS',
-                t('action.insufficientBuild', {type: rawType, cost: option.cost, cash: this.battlefield.cash()})
-            );
         }
 
         this.battlefield.build(rawType, i, j);

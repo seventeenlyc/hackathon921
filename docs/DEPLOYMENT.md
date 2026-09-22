@@ -79,6 +79,14 @@ npm run test:server  # 后端 API 测试：tsc 编译后由 Node 内置 test run
 - 后端 TypeScript 源码在 `server/`，由 CI 用 `npm run build:server` 编译成 JS；**服务器上不构建、
   不安装依赖**，只运行编译产物。给后端引入运行时 npm 依赖之前先在 §14 记录。
 
+#### SQLite 增量迁移与回滚
+
+提示词溯源使用与排行榜相同的 SQLite 文件。升级到包含溯源功能的版本时，服务启动会执行幂等的增量迁移：仅在 `runs.prompt_head_id` 不存在时增加该列，并创建 `prompt_nodes` 表及其索引；既有 `runs`、`wave_events` 和成绩数据不会被重写或删除。重复启动不会重复增加列或节点表。
+
+升级生产服务前，先在运维侧备份 SQLite 文件（示例：`cp leaderboard.sqlite3 leaderboard.sqlite3.bak-$(date +%Y%m%d%H%M%S)`），再切换编译产物。迁移验证必须使用独立的临时 SQLite 文件，不能用生产库做测试。
+
+回退代码前先验证旧版本能容忍新增的列和表；旧代码不会读取 `prompt_nodes`，因此会暂时看不到历史，但原有成绩仍在。不要为了回退自动删除 `prompt_nodes` 或 `prompt_head_id`；需要恢复数据时使用升级前备份，并按运维流程停服、替换和复核数据库。
+
 ### 2. LLM 密钥绝不能进前端
 
 两个独立的理由，每一个都足够：
@@ -124,6 +132,8 @@ npm run test:server  # 后端 API 测试：tsc 编译后由 Node 内置 test run
 处理并加内容哈希。`src/tools/texturePaths.ts` 的 import 是静态的，**贴图改名或缺失会让构建
 直接失败**，而不是变成运行时 404。`public/` 只放原样拷贝的静态文件（图标、
 `manifest.webmanifest`、`humans.txt` 等）。
+
+音频占位资源位于 `public/audio/`，构建后原样出现在 `dist/audio/`。替换资源时保持 `background.wav`、`wave.wav`、`game-over.wav` 三个稳定路径，使用浏览器可播放的格式，并在替换前确认许可归属；资源请求或解码失败必须仍不阻塞游戏。
 
 迁移（issue #1）没有改变部署契约：入口仍是 `npm run build` → `dist/`，
 `deploy.yml` 一个字都没改。

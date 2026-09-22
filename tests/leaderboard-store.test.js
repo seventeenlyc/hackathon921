@@ -90,9 +90,7 @@ test('submitScore: non-positive score clamped to 1', () => {
 });
 
 test('store is safe without document / localStorage', () => {
-    assert.strictEqual(S.readUsernameCookie(), null);
     assert.strictEqual(S.readStoredLeaderboard(), null);
-    assert.doesNotThrow(() => S.writeUsernameCookie('Alice'));
     assert.doesNotThrow(() => S.writeStoredLeaderboard([]));
 });
 

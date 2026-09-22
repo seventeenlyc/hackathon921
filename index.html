@@ -2,11 +2,11 @@
 <html lang="zh">
   <head>
     <meta charset="UTF-8" />
-    <title data-i18n="app.title">Inert - Minimalistic tower defense in the browser</title>
+    <title data-i18n="app.title">保护笑脸男 — 极简塔防</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta itemprop="name" content="Inert" />
-    <meta property="og:title" content="Inert" />
-    <meta name="twitter:title" content="Inert" />
+    <meta itemprop="name" content="保护笑脸男" />
+    <meta property="og:title" content="保护笑脸男" />
+    <meta name="twitter:title" content="保护笑脸男" />
     <meta name="description" content="Minimalistic tower defense in the browser" />
     <meta itemprop="description" content="Minimalistic tower defense in the browser" />
     <meta property="og:description" content="Minimalistic tower defense in the browser" />
@@ -15,7 +15,7 @@
     <meta property="og:image" content="/img/banner.png" />
     <meta name="twitter:image" content="/img/banner.png" />
     <link rel="author" href="/humans.txt" />
-    <link rel="icon" type="image/png" href="/img/icons/favicon-32x32.png" />
+    <link rel="icon" href="/img/icons/favicon.ico" sizes="any" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#ffffff" />
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet" />
@@ -27,7 +27,7 @@
         <section class="control-card status-panel" aria-labelledby="status-heading">
           <div class="brand-lockup">
             <div class="eyebrow">Prompt Defense</div>
-            <h1 id="status-heading">Inert</h1>
+            <h1 id="status-heading">保护笑脸男</h1>
             <div class="subtitle" data-i18n="header.subtitle">Minimalistic Tower Defense</div>
           </div>
           <div class="status-grid" aria-label="Battlefield status">
@@ -37,13 +37,15 @@
           </div>
         </section>
 
-        <div id="leaderboard-slot" class="leaderboard-slot"></div>
+        <div class="left-rail">
+          <div id="leaderboard-slot" class="leaderboard-slot"></div>
 
-        <section class="tower-panel" aria-labelledby="towers-heading">
-          <h2 id="towers-heading" class="tower-panel-title">Deployable towers</h2>
-          <div id="towers-wrapper" class="tower-palette" aria-label="Deployable towers"></div>
-          <div id="towers-stats" class="tower-stats" aria-live="polite">Select a tower to see its deployment stats.</div>
-        </section>
+          <section class="tower-panel" aria-labelledby="towers-heading">
+            <h2 id="towers-heading" class="tower-panel-title">Deployable towers</h2>
+            <div id="towers-wrapper" class="tower-palette" aria-label="Deployable towers"></div>
+            <div id="towers-stats" class="tower-stats" aria-live="polite">Select a tower to see its deployment stats.</div>
+          </section>
+        </div>
 
         <section class="control-card chatbox-panel" aria-labelledby="chatbox-heading">
           <div class="panel-heading">
@@ -77,6 +79,7 @@
             <button id="pause" type="button" data-i18n="control.pause">Pause</button>
             <button id="resume" type="button" data-i18n="control.resume">Resume</button>
             <button id="speed" type="button">Speed x1</button>
+            <button id="audio-toggle" type="button" data-i18n="control.audio" aria-pressed="false">Sound on</button>
             <button id="lang" type="button" data-i18n="control.lang" data-i18n-title="control.langTitle" title="Switch language (EN / 中文)">EN</button>
           </div>
           <details class="settings-panel">
@@ -93,7 +96,7 @@
             </div>
             <div id="spawner-status" class="spawner-status" aria-live="polite"></div>
             <footer>
-              <div>Inert <span id="version" class="accent">v0.1.16</span></div>
+              <div>保护笑脸男 <span id="version" class="accent">v0.1.21</span></div>
               <div class="code">
                 <span data-i18n="footer.source">Source code:</span>
                 <a href="//github.com/CorentinTh/inert" target="_blank" aria-label="Github repository" rel="noopener">

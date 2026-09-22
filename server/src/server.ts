@@ -4,10 +4,11 @@
 import { createServer } from 'node:http';
 import { ApiDeps, ApiRequest, handleApi } from './http';
 import { handleAgentDecide } from './agent';
-import { extractToken, readJsonBody, splitPath, MAX_AGENT_BODY_BYTES } from './transport';
+import { extractToken, readJsonBody, splitPath, MAX_AGENT_BODY_BYTES, MAX_PROMPT_BODY_BYTES } from './transport';
 
 /** 代理端点：异步（要等 provider），因此不走同步的 handleApi。 */
 const AGENT_DECIDE_PATH = '/api/agent/decide';
+const PROMPT_WRITE_PATH = /^\/api\/runs\/[^/]+\/prompts$/;
 
 export function createApiServer(deps: ApiDeps): any {
     const server = createServer((req: any, res: any) => {
@@ -27,7 +28,14 @@ export function createApiServer(deps: ApiDeps): any {
                 searchParams,
                 token: extractToken(req.headers),
                 body: method === 'POST'
-                    ? await readJsonBody(req, pathname === AGENT_DECIDE_PATH ? MAX_AGENT_BODY_BYTES : undefined)
+                    ? await readJsonBody(
+                        req,
+                        pathname === AGENT_DECIDE_PATH
+                            ? MAX_AGENT_BODY_BYTES
+                            : PROMPT_WRITE_PATH.test(pathname)
+                              ? MAX_PROMPT_BODY_BYTES
+                              : undefined
+                    )
                     : null,
             };
             result = pathname === AGENT_DECIDE_PATH

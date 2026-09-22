@@ -9,6 +9,8 @@ export const MAX_BODY_BYTES = 4096;
  * 其它路由仍用上面的严格上限。
  */
 export const MAX_AGENT_BODY_BYTES = 64 * 1024;
+/** Prompt text is capped at 5000 characters but UTF-8/JSON escaping can expand it. */
+export const MAX_PROMPT_BODY_BYTES = 64 * 1024;
 
 /** 读取并解析 JSON 请求体；超限、空、非法 JSON、读取出错一律返回 null（由路由层判 400）。 */
 export function readJsonBody(req: any, maxBytes: number = MAX_BODY_BYTES): Promise<unknown> {

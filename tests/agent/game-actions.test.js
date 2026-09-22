@@ -125,6 +125,14 @@ function test(name, fn) {
 
 console.log('GameActions');
 
+test('insufficient funds takes precedence over a blocked path without mutation', () => {
+    const field = new FakeBattlefield({cash: 49, blocked: ['3:3']});
+    const result = new GameActions(field).buildTower('canon', 3, 3);
+    assert.strictEqual(result.error, 'INSUFFICIENT_FUNDS');
+    assert.strictEqual(field.cash(), 49);
+    assert.deepStrictEqual(field.builds, []);
+});
+
 test('buildTower rejects an unknown tower type', () => {
     const field = new FakeBattlefield();
     const result = new GameActions(field).buildTower('nuke', 1, 1);

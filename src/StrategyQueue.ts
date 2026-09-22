@@ -1,6 +1,10 @@
 import {gameLoop} from './agent/GameLoop';
 import {effectiveWave, strategyStore, StrategyVersion} from './agent/StrategyStore';
 import {waveManager} from './WavesManager';
+import {getSessionUsername} from './leaderboard/SessionIdentity';
+import {playMode} from './PlayMode';
+import {runSync} from './leaderboard/RunSync';
+import {audioManager} from './AudioManager';
 
 /**
  * Glue between the live game and the versioned strategy store.
@@ -31,12 +35,15 @@ export function queueStrategy(text: string): StrategyVersion {
  */
 export function startRun(): void {
     if (!gameLoop.isIdle()) return;
+    if (playMode === 'ai' && !getSessionUsername()) return;
 
     // Apply the opening prompt BEFORE the loop can plan wave 1, so the run never
     // starts on the previous/empty version. `activateForRun` returns null when
     // there is no prompt, in which case the run refuses to start (§5).
     if (!strategyStore.activateForRun()) return;
 
+    audioManager.startMusic();
+    if (playMode === 'ai') runSync.prepareRun(getSessionUsername()!);
     gameLoop.start();
     void waveManager.start();
 }
