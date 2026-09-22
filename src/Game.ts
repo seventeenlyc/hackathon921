@@ -12,6 +12,7 @@ import {interfaceManager} from "./InterfaceManager";
 import {waveManager} from "./WavesManager";
 import {submitRunScore} from "./leaderboard/LeaderboardUI";
 import {readUsernameCookie} from "./leaderboard/LeaderboardStore";
+import {getSessionToken} from "./leaderboard/LeaderboardClient";
 import {gameLoop, GameSpeed} from "./agent/GameLoop";
 import {GameActions} from "./agent/GameActions";
 import {InertBattlefield} from "./agent/InertBattlefield";
@@ -105,6 +106,8 @@ const agentRuntime = new AgentRuntime({
     actions,
     store: strategyStore,
     fetchImpl: (input, init) => fetch(input, init),
+    // The server requires a valid session; the leaderboard client owns it.
+    getToken: () => getSessionToken(),
     onDecision: entry => decisionLog.add(entry),
     onError: message => decisionLog.error(message),
 });

@@ -1,18 +1,24 @@
 // HTTP 传输层辅助：把 node:http 的原始请求转成路由层需要的普通数据。
 // 单独成文件是为了能直接单测（请求体上限、query 解析、Bearer token 提取）。
 
-/** 请求体上限：本 API 的 body 只有昵称和波次，4KB 绰绰有余，超出即视为坏请求。 */
+/** 请求体上限：昵称与波次的 body 只有几十字节，4KB 绰绰有余。 */
 export const MAX_BODY_BYTES = 4096;
 
+/**
+ * 代理端点的快照含塔列表与敌人统计，比昵称/波次大得多，单独放宽。
+ * 其它路由仍用上面的严格上限。
+ */
+export const MAX_AGENT_BODY_BYTES = 64 * 1024;
+
 /** 读取并解析 JSON 请求体；超限、空、非法 JSON、读取出错一律返回 null（由路由层判 400）。 */
-export function readJsonBody(req: any): Promise<unknown> {
+export function readJsonBody(req: any, maxBytes: number = MAX_BODY_BYTES): Promise<unknown> {
     return new Promise(resolve => {
         let size = 0;
         let tooLarge = false;
         const chunks: any[] = [];
         req.on('data', (chunk: any) => {
             size += chunk.length;
-            if (size > MAX_BODY_BYTES) {
+            if (size > maxBytes) {
                 tooLarge = true;
                 return;
             }

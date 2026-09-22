@@ -37,9 +37,11 @@ declare module 'node:assert/strict' {
 
 declare const process: any;
 declare const Buffer: any;
+declare const AbortController: any;
 declare function setInterval(callback: () => void, ms: number): any;
 declare function clearInterval(handle: any): void;
 declare function setTimeout(callback: () => void, ms: number): any;
+declare function clearTimeout(handle: any): void;
 declare function fetch(input: any, init?: any): Promise<any>;
 declare const console: {
     log(...args: any[]): void;

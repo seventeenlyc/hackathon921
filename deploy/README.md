@@ -96,6 +96,9 @@ SSL_KEY=/绝对路径/privkey.pem \
   `leaderboard.sqlite3`（WAL）。750 确保静态站的部署用户读不到排行榜数据库。
 - **会话签名密钥 `<APP_DIR>/data/session_secret`**：首次用 `openssl rand -hex 32` 生成，
   权限 600、属 `pd-leaderboard`。**绝不进仓库**（`AGENTS.md`「密钥」）。
+- **LLM provider 密钥 `<APP_DIR>/data/deepseek_key`**：DeepSeek API key，权限 600、
+  属 `pd-leaderboard`，**绝不进仓库**。供 `/api/agent/decide` 使用（issue #22）；
+  缺失时后端照常启动，只是该端点返回 503 `PROVIDER_NOT_CONFIGURED`，排行榜不受影响。
 - **systemd unit** `/etc/systemd/system/pd-leaderboard.service`：
 
   ```ini
@@ -110,6 +113,7 @@ SSL_KEY=/绝对路径/privkey.pem \
   WorkingDirectory=/srv/apps/prompt-defense.crowntime.cn/current-server
   Environment=PD_DB_PATH=/srv/apps/prompt-defense.crowntime.cn/data/leaderboard.sqlite3
   Environment=PD_SESSION_SECRET_FILE=/srv/apps/prompt-defense.crowntime.cn/data/session_secret
+  Environment=DEEPSEEK_API_KEY_FILE=/srv/apps/prompt-defense.crowntime.cn/data/deepseek_key
   Environment=PD_CURRENT_LINK=/srv/apps/prompt-defense.crowntime.cn/current-server
   Environment=PD_PORT=8781
   ExecStart=/usr/bin/node /srv/apps/prompt-defense.crowntime.cn/current-server/main.js

@@ -2,8 +2,12 @@
 // 测试因此可以 listen(0) 拿到随机端口做真实的端到端验证。
 
 import { createServer } from 'node:http';
-import { ApiDeps, handleApi } from './http';
-import { extractToken, readJsonBody, splitPath } from './transport';
+import { ApiDeps, ApiRequest, handleApi } from './http';
+import { handleAgentDecide } from './agent';
+import { extractToken, readJsonBody, splitPath, MAX_AGENT_BODY_BYTES } from './transport';
+
+/** 代理端点：异步（要等 provider），因此不走同步的 handleApi。 */
+const AGENT_DECIDE_PATH = '/api/agent/decide';
 
 export function createApiServer(deps: ApiDeps): any {
     const server = createServer((req: any, res: any) => {
@@ -17,13 +21,18 @@ export function createApiServer(deps: ApiDeps): any {
 
         let result;
         try {
-            result = handleApi(deps, {
+            const apiRequest: ApiRequest = {
                 method,
                 pathname,
                 searchParams,
                 token: extractToken(req.headers),
-                body: method === 'POST' ? await readJsonBody(req) : null,
-            });
+                body: method === 'POST'
+                    ? await readJsonBody(req, pathname === AGENT_DECIDE_PATH ? MAX_AGENT_BODY_BYTES : undefined)
+                    : null,
+            };
+            result = pathname === AGENT_DECIDE_PATH
+                ? await handleAgentDecide(deps, apiRequest)
+                : handleApi(deps, apiRequest);
         } catch (e) {
             console.error('请求处理失败', e);
             result = { status: 500, body: { error: 'INTERNAL_ERROR' } };

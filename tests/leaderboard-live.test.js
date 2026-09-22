@@ -104,6 +104,7 @@ async function test(name, fn) {
             './WavesManager': { waveManager },
             './leaderboard/LeaderboardUI': { submitRunScore: (name, wave) => submissions.push([name, wave]) },
             './leaderboard/LeaderboardStore': { readUsernameCookie: () => username },
+            './leaderboard/LeaderboardClient': { getSessionToken: () => null },
             './agent/GameLoop': { gameLoop: { setFocused() {}, onChange() {} } },
             './agent/GameActions': { GameActions: class {} },
             './agent/InertBattlefield': { InertBattlefield: class {} },

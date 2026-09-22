@@ -172,3 +172,11 @@ export async function fetchSharedLeaderboard(
 export function resetClientState(): void {
     session = null;
 }
+
+/**
+ * 返回当前内存中的会话 token（未建立时 null）。
+ * 供其它需要会话准入的前端模块使用（如 AI 运行时调 /api/agent/decide，issue #22）。
+ */
+export function getSessionToken(): string | null {
+    return session ? session.token : null;
+}

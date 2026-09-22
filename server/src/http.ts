@@ -6,6 +6,7 @@
 import { LeaderboardStore } from './store';
 import { signToken, verifyToken } from './token';
 import { sanitizeLimit, sanitizeUsername, sanitizeWave } from './validate';
+import type { AgentConfig } from './agent';
 
 export interface ApiRequest {
     method: string;
@@ -25,6 +26,8 @@ export interface ApiDeps {
     secret: string;
     now: () => number;
     newRunId: () => string;
+    /** LLM 代理配置（issue #22）。缺失时 /api/agent/decide 返回 503，不崩。 */
+    agent?: AgentConfig;
 }
 
 const WAVE_PATH = /^\/api\/runs\/([^/]+)\/waves$/;
