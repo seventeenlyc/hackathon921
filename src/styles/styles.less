@@ -266,6 +266,11 @@ body {
       &[hidden] {
         display: none;
       }
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+      }
     }
 
     /* The mode button sits on its own full-width row above pause/resume/speed,
@@ -996,11 +1001,11 @@ body {
 @media (max-width: 760px) {
   #inert .controls {
     .status-panel {
-      top: 12px;
-      right: 12px;
+      top: 126px;
+      right: auto;
       bottom: auto;
       left: 12px;
-      width: auto;
+      width: calc(50% - 18px);
       padding: 14px;
     }
 
@@ -1026,7 +1031,7 @@ body {
     .operations-panel {
       top: 126px;
       right: 12px;
-      width: auto;
+      width: calc(50% - 18px);
     }
 
     .chatbox-panel {
@@ -1066,12 +1071,30 @@ body {
   display: none;
 }
 
-/* AI keeps the catalogue on the first screen without letting its extra height
-   push the status panel underneath the strategy console. Human mode keeps the
-   same panel in the status card because the chatbox is absent there. */
+/* Keep the status card and catalogue independent so the wave information stays
+   readable on the left instead of being covered by the tower cards. */
 #inert.mode-ai .tower-panel {
   position: fixed;
-  top: clamp(16px, 2.2vw, 32px);
+  top: clamp(128px, 16vh, 150px);
+  left: clamp(16px, 2.2vw, 32px);
+  z-index: 3;
+  width: min(330px, calc(100vw - 32px));
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+#inert.mode-human .status-panel {
+  top: clamp(128px, 16vh, 150px);
+  bottom: auto;
+}
+
+#inert.mode-human .tower-panel {
+  position: fixed;
+  bottom: clamp(16px, 2.2vw, 32px);
   left: clamp(16px, 2.2vw, 32px);
   z-index: 3;
   width: min(330px, calc(100vw - 32px));
@@ -1085,15 +1108,27 @@ body {
 
 @media (max-width: 760px) {
   #inert.mode-ai .tower-panel {
-    top: 258px;
+    top: 282px;
     right: 12px;
     left: 12px;
     width: auto;
-    max-height: 24vh;
+    max-height: 110px;
     overflow-y: auto;
   }
 
   #inert.mode-ai .chatbox-panel {
     max-height: 30vh;
+  }
+
+  #inert.mode-human .status-panel {
+    top: 126px;
+    bottom: auto;
+  }
+
+  #inert.mode-human .tower-panel {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    width: auto;
   }
 }
