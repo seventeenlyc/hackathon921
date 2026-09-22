@@ -102,6 +102,40 @@ async function test(name, fn) {
         assert.strictEqual(displayedWave, 2);
     });
 
+    await test('human mode shows the original inter-wave countdown', async () => {
+        const shown = [];
+        let cleared = 0;
+        let waveManager;
+        waveManager = loadSource('WavesManager.ts', {
+            './EnemyManager': { enemyManager: { add() {} } },
+            './entities/enemies/BossEnemy': { BossEnemy: class {} },
+            './Map': { map: { enemyBases: [] } },
+            './tools/helphers': { rand: () => 0 },
+            './agent/GameLoop': { gameLoop: {
+                sleep: async () => {},
+                holdForPlanning: async () => {},
+            } },
+            './InterfaceManager': { interfaceManager: {
+                setWave() {},
+                setWaveDelay(seconds) { shown.push(seconds); },
+                clearWaveDelay() { cleared += 1; },
+            } },
+            './entities/enemies/Enemy': {},
+            './entities/terrain/Base': {},
+            './entities/enemies/SimpleEnemy': { SimpleEnemy: class {} },
+            './entities/enemies/ArmoredEnemy': { ArmoredEnemy: class {} },
+            './entities/enemies/FastEnemy': { FastEnemy: class {} },
+            './entities/enemies/HealerEnemy': { HealerEnemy: class {} },
+        }).waveManager;
+        waveManager.setInterWaveDelay(3000);
+        waveManager.onWaveReached = wave => { if (wave === 2) waveManager.looping = false; };
+        await waveManager.start();
+
+        // Wave 1 starts immediately; the countdown runs before wave 2: 3, 2, 1.
+        assert.deepStrictEqual(shown, [3, 2, 1]);
+        assert.strictEqual(cleared, 1);
+    });
+
     await test('the current player score is submitted at each reached wave and after username entry', () => {
         const submissions = [];
         let username = 'Alice';

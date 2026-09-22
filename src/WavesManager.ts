@@ -77,10 +77,21 @@ class WavesManager {
 
         while (this.looping) {
             // Human mode: a fixed pause between waves, since there is no AI think
-            // time to create one. It elapses only while stepping, so PAUSE / lost
-            // focus freeze it like everything else.
+            // time to create one. It elapses only while stepping, so PAUSE freezes
+            // it like everything else. The countdown mirrors the original inert
+            // `delayBetweenWaves` display.
             if (this.interWaveDelayMs > 0 && this.waveCounter > 1) {
-                await gameLoop.sleep(this.interWaveDelayMs);
+                let remaining = Math.ceil(this.interWaveDelayMs / 1000);
+                interfaceManager.setWaveDelay(remaining);
+
+                while (remaining > 0 && this.looping) {
+                    await gameLoop.sleep(1000);
+                    if (!this.looping) break;
+                    remaining -= 1;
+                    if (remaining > 0) interfaceManager.setWaveDelay(remaining);
+                }
+
+                interfaceManager.clearWaveDelay();
                 if (!this.looping) break;
             }
 
