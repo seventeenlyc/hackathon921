@@ -460,6 +460,11 @@ body {
     }
 
     .tower-panel {
+      /* The control layer is click-through (`.controls { pointer-events: none }`),
+         so every interactive panel must opt back in; `.control-card` does, but the
+         catalogue did not — its cards could not receive a real click and human
+         placement was impossible (clicks fell through to the canvas). */
+      pointer-events: auto;
       margin-top: 17px;
       border-top: 1px solid rgba(146, 169, 160, 0.14);
       padding-top: 12px;
