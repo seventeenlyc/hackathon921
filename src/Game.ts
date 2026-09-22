@@ -22,8 +22,14 @@ class Game {
         map.on('added', () => {
             enemyManager.updatePaths()
         });
+        waveManager.onWaveReached = wave => this.recordReachedWave(wave);
 
         this.start()
+    }
+
+    recordReachedWave(wave: number = waveManager.waveCounter) {
+        const username = readUsernameCookie();
+        if (username) submitRunScore(username, wave);
     }
 
     start(){
@@ -65,11 +71,8 @@ class Game {
             this.looping = false;
             interfaceManager.showGameOver();
             waveManager.looping = false;
-            // 本局到达的最高波次作为成绩提交到本地排行榜（纯前端，待服务端就绪后替换）。
-            const username = readUsernameCookie();
-            if (username) {
-                submitRunScore(username, waveManager.waveCounter);
-            }
+            // 结算时再同步一次，以覆盖输入用户名或停止波次循环的边界时刻。
+            this.recordReachedWave();
         }, 100)
     }
 }

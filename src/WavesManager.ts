@@ -23,11 +23,13 @@ class WavesManager {
     private delayBetweenWaves = 7; //sec
     public waveCounter = 1
     public looping = true;
+    public onWaveReached: ((wave: number) => void) | null = null;
 
     constructor() {
     }
 
     async start() {
+        if (this.onWaveReached) this.onWaveReached(this.waveCounter);
         while (this.looping) {
             const wave = this.generateWave()
 
@@ -48,8 +50,10 @@ class WavesManager {
             }
             if (!this.looping) break;
             await asyncSleepIntervalSecond(this.delayBetweenWaves, interfaceManager.setWaveDelay.bind(interfaceManager))
+            if (!this.looping) break;
             interfaceManager.clearWaveDelay();
             interfaceManager.setWave(++this.waveCounter);
+            if (this.onWaveReached) this.onWaveReached(this.waveCounter);
         }
     }
 

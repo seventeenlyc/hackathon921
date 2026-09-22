@@ -95,3 +95,5 @@ test('store is safe without document / localStorage', () => {
     assert.doesNotThrow(() => S.writeUsernameCookie('Alice'));
     assert.doesNotThrow(() => S.writeStoredLeaderboard([]));
 });
+
+require('./leaderboard-live.test.js');
