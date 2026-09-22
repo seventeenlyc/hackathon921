@@ -18,7 +18,7 @@ interface Entry {
 }
 
 const STRINGS: { [key: string]: Entry } = {
-    'app.title': {zh: 'Inert — 极简塔防', en: 'Inert - Minimalistic tower defense in the browser'},
+    'app.title': {zh: '保护笑脸男 — 极简塔防', en: '保护笑脸男 - Minimalistic tower defense in the browser'},
     'header.subtitle': {zh: '极简塔防', en: 'Minimalistic Tower Defense'},
 
     'label.wave': {zh: '波次：', en: 'Wave:'},

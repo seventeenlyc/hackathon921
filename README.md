@@ -1,4 +1,4 @@
-# Inert
+# 保护笑脸男
 
 Minimalistic tower defense in the browser. [Try it!](https://inert.thomasset.me)
 
@@ -6,6 +6,7 @@ Minimalistic tower defense in the browser. [Try it!](https://inert.thomasset.me)
 
 This repository is a fork of [CorentinTh/inert](https://github.com/CorentinTh/inert),
 used as the tower-defense base of the **Prompt Defense** hackathon project.
+This fork ships the game under the display name **保护笑脸男**.
 The upstream game is linked above; this fork's build and deployment pipeline is
 described in `docs/DEPLOYMENT.md`.
 
