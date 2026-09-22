@@ -13,6 +13,10 @@ class CashManager {
         interfaceManager.setCash(this.balance);
     }
 
+    getBalance() {
+        return this.balance;
+    }
+
     canWithdraw(amount: number) {
         return this.balance - amount >= 0;
     }

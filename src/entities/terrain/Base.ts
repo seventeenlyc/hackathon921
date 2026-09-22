@@ -43,6 +43,14 @@ export class Base extends GridRenderable {
         }
     }
 
+    getLife() {
+        return this.life;
+    }
+
+    getMaxLife() {
+        return this.maxLife;
+    }
+
     private drawHealthBar(ctx: CanvasRenderingContext2D) {
         const ratio = this.life / this.maxLife;
         ctx.fillStyle = '#4a4a4e'

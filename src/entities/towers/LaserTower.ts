@@ -3,10 +3,12 @@ import {Enemy} from "../enemies/Enemy";
 import {munitionManager} from "../../MunitionManager";
 import {LaserMunition} from "../munitions/LaserMunition";
 import {texturePaths} from "../../tools/texturePaths";
+import {TowerType} from "./towerTypes";
 
 
 export class LaserTower extends Tower {
     public texturePath = texturePaths.towers.laser;
+    public towerType: TowerType = 'laser';
     public name = 'Laser';
     public description = 'Laser tower beam focusing on one enemy. The longer the focus, the bigger the damages.'
     public reloadDurationMs: number = 300;

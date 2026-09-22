@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": ".test-build",
+    "module": "commonjs",
+    "target": "ES2017",
+    "declaration": false,
+    "sourceMap": false
+  },
+  "include": [
+    "src/agent/GameActions.ts",
+    "src/agent/types.ts",
+    "src/entities/towers/towerTypes.ts"
+  ]
+}

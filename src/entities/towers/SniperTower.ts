@@ -3,9 +3,11 @@ import {Enemy} from "../enemies/Enemy";
 import {munitionManager} from "../../MunitionManager";
 import {SniperBulletMunition} from "../munitions/SniperBulletMunition";
 import {texturePaths} from "../../tools/texturePaths";
+import {TowerType} from "./towerTypes";
 
 export class SniperTower extends Tower {
     public texturePath = texturePaths.towers.sniper;
+    public towerType: TowerType = 'sniper';
     public name = 'Sniper';
     aimRadius: number = 250;
     cost: number = 350;

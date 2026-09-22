@@ -1,8 +1,10 @@
 import {CanonTower} from "./CanonTower";
 import {texturePaths} from "../../tools/texturePaths";
+import {TowerType} from "./towerTypes";
 
 export class GatlingTower extends CanonTower {
     public texturePath = texturePaths.towers.gatling;
+    public towerType: TowerType = 'gatling';
     public name = 'Gatling';
     public description = 'Enhanced version of the Canon tower with a high shooting rate.'
 

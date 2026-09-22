@@ -13,6 +13,7 @@ build/Release/
 .parcel-cache/
 dev/
 .persistence/
+.test-build/
 
 # Environment variables and local secrets
 .env
