@@ -90,7 +90,7 @@ async function test(name, fn) {
     await test('the current player score is submitted at each reached wave and after username entry', () => {
         const submissions = [];
         let username = 'Alice';
-        const waveManager = { waveCounter: 1, looping: true, start() { this.onWaveReached(this.waveCounter); } };
+        const waveManager = { waveCounter: 1, looping: true, setPlanner() {}, start() { this.onWaveReached(this.waveCounter); } };
         const game = loadSource('Game.ts', {
             './Canvas': { canvas: {}, ctx: {} },
             './config.json': { fps: 60 },
@@ -104,9 +104,13 @@ async function test(name, fn) {
             './WavesManager': { waveManager },
             './leaderboard/LeaderboardUI': { submitRunScore: (name, wave) => submissions.push([name, wave]) },
             './leaderboard/LeaderboardStore': { readUsernameCookie: () => username },
-            './agent/GameLoop': { gameLoop: { setFocused() {} } },
+            './agent/GameLoop': { gameLoop: { setFocused() {}, onChange() {} } },
             './agent/GameActions': { GameActions: class {} },
             './agent/InertBattlefield': { InertBattlefield: class {} },
+            './agent/AgentRuntime': { AgentRuntime: class {} },
+            './agent/StrategyStore': { strategyStore: { lock() {} } },
+            './StrategyQueue': { queueStrategy: () => ({}) },
+            './DecisionLog': { decisionLog: { add() {}, error() {} } },
         }, {
             window: {},
             setInterval: () => 1,

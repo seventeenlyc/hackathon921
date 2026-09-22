@@ -1,7 +1,11 @@
 import "./styles/styles.less";
 import { game } from './Game';
+import { strategyPanel } from "./StrategyPanel";
 import { UsernameGate, leaderboardPanel } from './leaderboard/LeaderboardUI';
 import { readUsernameCookie } from './leaderboard/LeaderboardStore';
+
+// Instantiated for its side effects (DOM binding) — see StrategyPanel.ts.
+void strategyPanel;
 
 // 首次进入：若本地没有已保存的用户名（cookie），弹出提示输入用户名（无需密码）。
 // 用户名校验通过后写入 cookie，排行榜面板在 LeaderboardUI 导入时即已挂载到左下角。

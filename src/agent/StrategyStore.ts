@@ -1,0 +1,103 @@
+/**
+ * Versioned store for the player's strategy prompt (issue #17,
+ * docs/USER_STORY.md MVP 用户故事 4, docs/PRODUCT_CONCEPT.md §7).
+ *
+ * The rules live here rather than in the DOM or in a game singleton so they can
+ * be unit-tested in a plain Node process:
+ *
+ * - editing is always allowed and never requires pausing;
+ * - a submission is *queued*, so the wave in progress is never affected;
+ * - the queue is locked when the loop enters PLANNING and becomes the version
+ *   the AI plans with for the upcoming wave;
+ * - several edits between two PLANNING boundaries overwrite one another (last
+ *   write wins) while every version that ever took effect stays in history.
+ */
+
+export interface StrategyVersion {
+    /** 0 is the initial (possibly empty) strategy; each submission gets the next number. */
+    version: number;
+    text: string;
+    /** Wave from which this version is the one the AI plans with. */
+    fromWave: number;
+}
+
+/**
+ * Wave a submission made now will become active at. A submission during
+ * `RUNNING` lands on the next boundary; a submission during `PLANNING` is too
+ * late for the wave being planned and defers one more (docs/PRODUCT_CONCEPT.md §7).
+ */
+export function effectiveWave(currentWave: number, isPlanning: boolean): number {
+    return currentWave + (isPlanning ? 2 : 1);
+}
+
+export type StrategyListener = (store: StrategyStore) => void;
+
+export class StrategyStore {
+    private current: StrategyVersion;
+    private queuedVersion: StrategyVersion | null = null;
+    private nextVersionNumber = 1;
+    private readonly locked: StrategyVersion[];
+    private readonly listeners: StrategyListener[] = [];
+
+    constructor(initialText = '', initialWave = 1) {
+        this.current = {version: 0, text: initialText, fromWave: initialWave};
+        this.locked = [this.current];
+    }
+
+    /** The version the planner reads while the loop is in PLANNING. */
+    active(): StrategyVersion {
+        return this.current;
+    }
+
+    /** The submission waiting for the next PLANNING boundary, if any. */
+    queued(): StrategyVersion | null {
+        return this.queuedVersion;
+    }
+
+    /** Every version that has been active at least once, oldest first. */
+    history(): StrategyVersion[] {
+        return [...this.locked];
+    }
+
+    /** Observers are notified whenever the active or queued version changes. */
+    onChange(listener: StrategyListener) {
+        this.listeners.push(listener);
+    }
+
+    /**
+     * Queue a submission for `fromWave`. Overwrites a previous, still-unlocked
+     * submission so that the last edit before the boundary wins.
+     */
+    submit(text: string, fromWave: number): StrategyVersion {
+        this.queuedVersion = {
+            version: this.nextVersionNumber++,
+            text,
+            fromWave,
+        };
+        this.notify();
+        return this.queuedVersion;
+    }
+
+    /**
+     * Called when the loop enters PLANNING: freeze the queued submission as the
+     * active version for the upcoming wave. A no-op when nothing is queued, so
+     * it is safe to call on every PLANNING transition.
+     */
+    lock(): StrategyVersion {
+        if (!this.queuedVersion) {
+            return this.current;
+        }
+
+        this.current = this.queuedVersion;
+        this.queuedVersion = null;
+        this.locked.push(this.current);
+        this.notify();
+        return this.current;
+    }
+
+    private notify() {
+        this.listeners.forEach(listener => listener(this));
+    }
+}
+
+export const strategyStore = new StrategyStore();

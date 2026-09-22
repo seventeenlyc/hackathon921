@@ -15,6 +15,10 @@ import {readUsernameCookie} from "./leaderboard/LeaderboardStore";
 import {gameLoop, GameSpeed} from "./agent/GameLoop";
 import {GameActions} from "./agent/GameActions";
 import {InertBattlefield} from "./agent/InertBattlefield";
+import {strategyStore} from "./agent/StrategyStore";
+import {AgentRuntime} from "./agent/AgentRuntime";
+import {decisionLog} from "./DecisionLog";
+import {queueStrategy} from "./StrategyQueue";
 
 class Game {
     private updateInterval: number = -1;
@@ -31,6 +35,12 @@ class Game {
         controls.on('focusin', () => gameLoop.setFocused(true));
         controls.on('focusout', () => gameLoop.setFocused(false));
         gameLoop.setFocused(controls.tabHasFocus());
+
+        // Entering PLANNING is the moment a queued prompt is locked in: the AI
+        // plans the upcoming wave with exactly this version (issue #17).
+        gameLoop.onChange(state => {
+            if (state === 'planning') strategyStore.lock();
+        });
 
         this.start()
     }
@@ -89,6 +99,20 @@ class Game {
     }
 }
 
+const actions = new GameActions(new InertBattlefield());
+
+const agentRuntime = new AgentRuntime({
+    actions,
+    store: strategyStore,
+    fetchImpl: (input, init) => fetch(input, init),
+    onDecision: entry => decisionLog.add(entry),
+    onError: message => decisionLog.error(message),
+});
+
+// The AI plays through the same action port as the human console; the loop calls
+// it once per PLANNING round (issue #25).
+waveManager.setPlanner(agentRuntime);
+
 export const game = new Game();
 
 /**
@@ -100,12 +124,13 @@ export const game = new Game();
  *   promptDefense.actions.buildTower('canon', 10, 10)
  *   promptDefense.pause(); promptDefense.resume(); promptDefense.setSpeed(2)
  */
-const actions = new GameActions(new InertBattlefield());
-
 (window as any).promptDefense = {
     actions,
     loop: gameLoop,
+    strategy: strategyStore,
+    agent: agentRuntime,
     pause: () => gameLoop.pause(),
     resume: () => gameLoop.resume(),
     setSpeed: (speed: GameSpeed) => gameLoop.setSpeed(speed),
+    setStrategy: (text: string) => queueStrategy(text),
 };
