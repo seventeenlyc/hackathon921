@@ -104,9 +104,11 @@ async function test(name, fn) {
             './WavesManager': { waveManager },
             './leaderboard/LeaderboardUI': { submitRunScore: (name, wave) => submissions.push([name, wave]) },
             './leaderboard/LeaderboardStore': { readUsernameCookie: () => username },
-            './agent/GameLoop': { gameLoop: { setFocused() {} } },
+            './agent/GameLoop': { gameLoop: { setFocused() {}, onChange() {} } },
             './agent/GameActions': { GameActions: class {} },
             './agent/InertBattlefield': { InertBattlefield: class {} },
+            './agent/StrategyStore': { strategyStore: { lock() {} } },
+            './StrategyQueue': { queueStrategy: () => ({}) },
         }, {
             window: {},
             setInterval: () => 1,

@@ -15,6 +15,8 @@ import {readUsernameCookie} from "./leaderboard/LeaderboardStore";
 import {gameLoop, GameSpeed} from "./agent/GameLoop";
 import {GameActions} from "./agent/GameActions";
 import {InertBattlefield} from "./agent/InertBattlefield";
+import {strategyStore} from "./agent/StrategyStore";
+import {queueStrategy} from "./StrategyQueue";
 
 class Game {
     private updateInterval: number = -1;
@@ -31,6 +33,12 @@ class Game {
         controls.on('focusin', () => gameLoop.setFocused(true));
         controls.on('focusout', () => gameLoop.setFocused(false));
         gameLoop.setFocused(controls.tabHasFocus());
+
+        // Entering PLANNING is the moment a queued prompt is locked in: the AI
+        // plans the upcoming wave with exactly this version (issue #17).
+        gameLoop.onChange(state => {
+            if (state === 'planning') strategyStore.lock();
+        });
 
         this.start()
     }
@@ -105,7 +113,9 @@ const actions = new GameActions(new InertBattlefield());
 (window as any).promptDefense = {
     actions,
     loop: gameLoop,
+    strategy: strategyStore,
     pause: () => gameLoop.pause(),
     resume: () => gameLoop.resume(),
     setSpeed: (speed: GameSpeed) => gameLoop.setSpeed(speed),
+    setStrategy: (text: string) => queueStrategy(text),
 };
