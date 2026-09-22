@@ -7,6 +7,9 @@
 // 所有 SQL 都是参数化查询，绝不拼接字符串（AGENTS.md 明确要求）。
 
 import { MAX_WAVE } from './validate';
+import { randomBytes } from 'node:crypto';
+import { MAX_PROMPT_LENGTH } from './prompts';
+import type { BestRunPrompts, PromptInput, PromptNode, PromptWriteResult } from './prompts';
 
 export interface LeaderboardEntry {
     username: string;
@@ -19,6 +22,7 @@ export interface RunRecord {
     username: string;
     createdAt: number;
     lastWave: number;
+    promptHeadId: string | null;
 }
 
 export type WaveRejection =
@@ -39,6 +43,7 @@ export class LeaderboardStore {
     constructor(private readonly db: any) {}
 
     migrate(): void {
+        this.db.exec('PRAGMA foreign_keys = ON;');
         this.db.exec(`
             CREATE TABLE IF NOT EXISTS runs (
                 id         TEXT PRIMARY KEY,
@@ -46,6 +51,12 @@ export class LeaderboardStore {
                 created_at INTEGER NOT NULL,
                 last_wave  INTEGER NOT NULL DEFAULT 0
             );
+        `);
+        const columns = this.db.prepare('PRAGMA table_info(runs)').all();
+        if (!columns.some((column: any) => column.name === 'prompt_head_id')) {
+            this.db.exec('ALTER TABLE runs ADD COLUMN prompt_head_id TEXT;');
+        }
+        this.db.exec(`
             CREATE INDEX IF NOT EXISTS idx_runs_username ON runs (username);
             CREATE TABLE IF NOT EXISTS wave_events (
                 run_id TEXT NOT NULL REFERENCES runs (id),
@@ -54,6 +65,17 @@ export class LeaderboardStore {
                 PRIMARY KEY (run_id, wave)
             );
             CREATE INDEX IF NOT EXISTS idx_wave_events_wave ON wave_events (wave);
+            CREATE TABLE IF NOT EXISTS prompt_nodes (
+                id         TEXT PRIMARY KEY,
+                run_id     TEXT NOT NULL REFERENCES runs (id),
+                prev_id    TEXT REFERENCES prompt_nodes (id),
+                version    INTEGER NOT NULL,
+                prompt     TEXT NOT NULL,
+                from_wave  INTEGER NOT NULL,
+                created_at INTEGER NOT NULL,
+                UNIQUE (run_id, version)
+            );
+            CREATE INDEX IF NOT EXISTS idx_prompt_nodes_run ON prompt_nodes (run_id, version);
         `);
     }
 
@@ -65,7 +87,7 @@ export class LeaderboardStore {
 
     getRun(id: string): RunRecord | null {
         const row = this.db
-            .prepare('SELECT id, username, created_at, last_wave FROM runs WHERE id = ?')
+            .prepare('SELECT id, username, created_at, last_wave, prompt_head_id FROM runs WHERE id = ?')
             .get(id);
         if (!row) return null;
         return {
@@ -73,6 +95,124 @@ export class LeaderboardStore {
             username: row.username,
             createdAt: row.created_at,
             lastWave: row.last_wave,
+            promptHeadId: row.prompt_head_id == null ? null : String(row.prompt_head_id),
+        };
+    }
+
+    /** Atomically append one version that really became active at a wave boundary. */
+    recordPrompt(runId: string, username: string, input: PromptInput, now: number): PromptWriteResult {
+        const run = this.getRun(runId);
+        if (!run) return { recorded: false, reason: 'RUN_NOT_FOUND' };
+        if (run.username.toLowerCase() !== username.toLowerCase()) {
+            return { recorded: false, reason: 'USERNAME_MISMATCH' };
+        }
+
+        this.db.exec('BEGIN IMMEDIATE');
+        try {
+            const current = this.db
+                .prepare('SELECT id, prompt, from_wave FROM prompt_nodes WHERE run_id = ? AND version = ?')
+                .get(runId, input && input.version);
+            if (current) {
+                const same = current.prompt === input.prompt && Number(current.from_wave) === input.fromWave;
+                this.db.exec('COMMIT');
+                return same
+                    ? { recorded: true, version: input.version, fromWave: input.fromWave }
+                    : { recorded: false, reason: 'PROMPT_VERSION_CONFLICT' };
+            }
+
+            const currentRun = this.db
+                .prepare('SELECT created_at, last_wave, prompt_head_id FROM runs WHERE id = ?')
+                .get(runId);
+            if (!currentRun) {
+                this.db.exec('COMMIT');
+                return { recorded: false, reason: 'RUN_NOT_FOUND' };
+            }
+            if (now - Number(currentRun.created_at) > RUN_TTL_MS) {
+                this.db.exec('COMMIT');
+                return { recorded: false, reason: 'RUN_EXPIRED' };
+            }
+            if (!input || !Number.isInteger(input.version) || input.version < 1) {
+                this.db.exec('COMMIT');
+                return { recorded: false, reason: 'PROMPT_VERSION_INVALID' };
+            }
+            if (typeof input.prompt !== 'string' || input.prompt.trim() === '' || input.prompt.length > MAX_PROMPT_LENGTH) {
+                this.db.exec('COMMIT');
+                return { recorded: false, reason: 'PROMPT_INVALID' };
+            }
+            if (!Number.isInteger(input.fromWave) || input.fromWave < 1 || input.fromWave > MAX_WAVE) {
+                this.db.exec('COMMIT');
+                return { recorded: false, reason: 'PROMPT_WAVE_INVALID' };
+            }
+            if (input.fromWave < Number(currentRun.last_wave)) {
+                this.db.exec('COMMIT');
+                return { recorded: false, reason: 'PROMPT_WAVE_BEHIND' };
+            }
+            const latest = this.db
+                .prepare('SELECT MAX(version) AS version FROM prompt_nodes WHERE run_id = ?')
+                .get(runId);
+            if (latest.version != null && input.version <= Number(latest.version)) {
+                this.db.exec('COMMIT');
+                return { recorded: false, reason: 'PROMPT_VERSION_NOT_INCREASING' };
+            }
+
+            const id = randomBytes(16).toString('hex');
+            this.db
+                .prepare(
+                    'INSERT INTO prompt_nodes (id, run_id, prev_id, version, prompt, from_wave, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+                )
+                .run(id, runId, currentRun.prompt_head_id == null ? null : currentRun.prompt_head_id, input.version, input.prompt, input.fromWave, now);
+            this.db.prepare('UPDATE runs SET prompt_head_id = ? WHERE id = ?').run(id, runId);
+            this.db.exec('COMMIT');
+            return { recorded: true, version: input.version, fromWave: input.fromWave };
+        } catch (error) {
+            try { this.db.exec('ROLLBACK'); } catch (rollbackError) { /* preserve original error */ }
+            throw error;
+        }
+    }
+
+    /** Return only the complete chain belonging to the selected user's best run. */
+    bestRunPrompts(username: string): BestRunPrompts {
+        const selected = this.db
+            .prepare(
+                `SELECT r.id, r.username, w.wave, w.at_ms
+                 FROM runs r JOIN wave_events w ON w.run_id = r.id
+                 WHERE lower(r.username) = lower(?)
+                 ORDER BY w.wave DESC, w.at_ms ASC, r.id ASC
+                 LIMIT 1`
+            )
+            .get(username);
+        if (!selected) return { username, runId: null, wave: null, prompts: [] };
+
+        const run = this.getRun(String(selected.id));
+        if (!run) throw new Error('PROMPT_CHAIN_RUN_MISSING');
+        const prompts: PromptNode[] = [];
+        const seen = new Set<string>();
+        let nodeId = run.promptHeadId;
+        while (nodeId !== null) {
+            if (seen.has(nodeId)) throw new Error('PROMPT_CHAIN_CYCLE');
+            seen.add(nodeId);
+            const row = this.db
+                .prepare('SELECT id, run_id, prev_id, version, prompt, from_wave, created_at FROM prompt_nodes WHERE id = ?')
+                .get(nodeId);
+            if (!row) throw new Error('PROMPT_CHAIN_MISSING_NODE');
+            if (String(row.run_id) !== run.id) throw new Error('PROMPT_CHAIN_CROSS_RUN');
+            prompts.push({
+                id: String(row.id),
+                runId: String(row.run_id),
+                prevId: row.prev_id == null ? null : String(row.prev_id),
+                version: Number(row.version),
+                prompt: String(row.prompt),
+                fromWave: Number(row.from_wave),
+                createdAt: Number(row.created_at),
+            });
+            nodeId = row.prev_id == null ? null : String(row.prev_id);
+        }
+        prompts.reverse();
+        return {
+            username: String(selected.username),
+            runId: String(selected.id),
+            wave: Number(selected.wave),
+            prompts,
         };
     }
 

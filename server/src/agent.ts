@@ -11,6 +11,8 @@
 
 import type { ApiDeps, ApiRequest, ApiResponse } from './http';
 import { verifyToken } from './token';
+import { MAX_STRATEGY_LENGTH } from './validate';
+export { MAX_STRATEGY_LENGTH } from './validate';
 
 /**
  * Provider 端点是可配置的：默认仍是 DeepSeek 官方端点，但可以整体换成任何 OpenAI
@@ -38,7 +40,6 @@ export function completionsUrl(baseUrl: string): string {
  * authoritative value; the browser mirrors it only to warn early
  * (`src/agent/StrategyLimits.ts`) and never truncates.
  */
-export const MAX_STRATEGY_LENGTH = 5000;
 export const MAX_ACTIONS_PER_DECISION = 8;
 export const PROVIDER_TIMEOUT_MS = 12000;
 
