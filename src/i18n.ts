@@ -93,6 +93,16 @@ const STRINGS: { [key: string]: Entry } = {
     'lb.syncFailed': {zh: '记录未同步', en: 'Run history not synced'},
     'lb.retrySync': {zh: '重试同步', en: 'Retry sync'},
 
+    'history.loadingTitle': {zh: '正在读取 {name} 的提示词历史', en: 'Loading {name} prompt history'},
+    'history.title': {zh: '{name} · 最高第 {wave} 波对局', en: '{name} · best run: wave {wave}'},
+    'history.loading': {zh: '正在读取…', en: 'Loading…'},
+    'history.empty': {zh: '该局没有保存 Prompt 记录。', en: 'This run has no saved Prompt history.'},
+    'history.failed': {zh: '提示词历史暂时不可用。', en: 'Prompt history is unavailable.'},
+    'history.close': {zh: '关闭', en: 'Close'},
+    'history.open': {zh: '查看 {name} 的最佳对局提示词', en: 'View {name} best-run Prompts'},
+    'history.version': {zh: '版本 {version}', en: 'Version {version}'},
+    'history.fromWave': {zh: '第 {wave} 波起生效', en: 'Effective from wave {wave}'},
+
     'gate.welcome': {zh: '欢迎！', en: 'Welcome!'},
     'gate.prompt': {zh: '输入一个昵称，用于排行榜。', en: 'Pick a username for the leaderboard.'},
     'gate.placeholder': {zh: '你的昵称', en: 'Your name'},

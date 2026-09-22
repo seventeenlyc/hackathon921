@@ -1111,6 +1111,120 @@ body {
   box-shadow: var(--shadow);
 }
 
+#inert {
+  .leaderboard-retry {
+    display: block;
+    margin: 4px auto 0;
+    padding: 3px 7px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--accent);
+    cursor: pointer;
+    font: inherit;
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  .leaderboard-list .name {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+  }
+
+  .prompt-history-dialog {
+    width: min(720px, calc(100vw - 32px));
+    max-height: min(80vh, 720px);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface-deep);
+    box-shadow: var(--shadow);
+    color: var(--ink);
+
+    &::backdrop {
+      background: rgba(7, 12, 12, 0.8);
+    }
+
+    h2 {
+      margin-bottom: 14px;
+      color: var(--accent);
+      font-size: 18px;
+    }
+
+    .prompt-history-content {
+      max-height: min(60vh, 520px);
+      overflow-y: auto;
+    }
+
+    .prompt-history-node {
+      margin-bottom: 12px;
+      padding: 12px;
+      border: 1px solid rgba(146, 169, 160, 0.16);
+      border-radius: 10px;
+      background: rgba(24, 31, 31, 0.72);
+
+      .prompt-history-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .prompt-history-text {
+        margin: 0;
+        color: var(--ink);
+        font: inherit;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+    }
+
+    .prompt-history-empty,
+    .prompt-history-error {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .prompt-history-close {
+      margin-top: 14px;
+      padding: 8px 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font: inherit;
+
+      &:hover,
+      &:focus-visible {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+    }
+  }
+}
+
 @media (max-width: 760px) {
   #inert.mode-ai .tower-panel {
     top: 282px;

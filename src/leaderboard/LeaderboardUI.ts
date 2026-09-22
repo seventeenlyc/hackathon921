@@ -9,6 +9,7 @@ import {getSessionUsername, setSessionUsername} from './SessionIdentity';
 import { fetchSharedLeaderboard } from './LeaderboardClient';
 import type { RemoteLeaderboard } from './LeaderboardClient';
 import {runSync} from './RunSync';
+import {PromptHistoryDialog} from './PromptHistoryDialog';
 import {onLangChange, t} from '../i18n';
 
 const TOP_N = 10;
@@ -76,6 +77,8 @@ class LeaderboardPanel {
     private remoteFailed = false;
     private pendingRemote = false;
     private syncFailed = false;
+    private remoteRequestNumber = 0;
+    private readonly historyDialog: PromptHistoryDialog;
 
     constructor() {
         this.username = getSessionUsername();
@@ -92,6 +95,7 @@ class LeaderboardPanel {
         this.retryButton.type = 'button';
         this.retryButton.className = 'leaderboard-retry';
         this.retryButton.addEventListener('click', () => runSync.retryPending());
+        this.historyDialog = new PromptHistoryDialog();
         this.listEl = document.createElement('ol');
         this.listEl.className = 'leaderboard-list';
         this.footerEl = document.createElement('div');
@@ -123,9 +127,10 @@ class LeaderboardPanel {
 
     /** 拉取服务端共享排行榜；失败则标记离线并继续用本地数据渲染。 */
     private async refreshRemote(): Promise<void> {
-        if (this.pendingRemote) return;
+        const requestNumber = ++this.remoteRequestNumber;
         this.pendingRemote = true;
         const result = await fetchSharedLeaderboard(this.username, TOP_N);
+        if (requestNumber !== this.remoteRequestNumber) return;
         this.pendingRemote = false;
         if (result) {
             this.remote = result;
@@ -160,14 +165,17 @@ class LeaderboardPanel {
             const rankSpan = document.createElement('span');
             rankSpan.className = 'rank';
             rankSpan.textContent = String(i + 1);
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'name';
-            nameSpan.textContent = e.username;
+            const nameButton = document.createElement('button');
+            nameButton.type = 'button';
+            nameButton.className = 'name';
+            nameButton.textContent = e.username;
+            nameButton.setAttribute('aria-label', t('history.open', {name: e.username}));
+            nameButton.addEventListener('click', () => { void this.historyDialog.open(e.username); });
             const waveSpan = document.createElement('span');
             waveSpan.className = 'wave';
             waveSpan.textContent = t('lb.wave', {wave: e.wave});
             li.appendChild(rankSpan);
-            li.appendChild(nameSpan);
+            li.appendChild(nameButton);
             li.appendChild(waveSpan);
             this.listEl.appendChild(li);
         });
