@@ -103,7 +103,10 @@ export class InertBattlefield implements Battlefield {
     }
 
     build(type: TowerType, i: number, j: number): void {
-        map.addElement(i, j, TOWER_CATALOG[type]);
+        const tower = new (TOWER_CATALOG[type])(0, 0, Map.TILE_SIZE);
+        if (map.addElement(i, j, TOWER_CATALOG[type])) {
+            cashManager.withdraw(tower.cost);
+        }
     }
 
     upgrade(id: string): boolean {

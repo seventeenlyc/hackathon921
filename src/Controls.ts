@@ -6,6 +6,8 @@ class Controls extends EventEmitter {
     private element: HTMLElement;
     private bounds: DOMRect;
     private mapPointerDown = false;
+    private mapPointerMoved = false;
+    private pointerDownCoordinates = {x: 0, y: 0};
     public mouse = {x: 0, y: 0};
     mouseInCanvas = false;
 
@@ -19,15 +21,30 @@ class Controls extends EventEmitter {
             if (isEditableTarget(event.target)) return;
             this.emit(`keydown:${event.key.toUpperCase()}`);
         });
-        window.addEventListener('mousemove', event => this.mouse = this.boundMouseCoordinates(event));
+        window.addEventListener('mousemove', event => {
+            const coordinates = this.boundMouseCoordinates(event);
+            if (this.mapPointerDown) {
+                const dx = coordinates.x - this.pointerDownCoordinates.x;
+                const dy = coordinates.y - this.pointerDownCoordinates.y;
+                this.mapPointerMoved = this.mapPointerMoved || Math.hypot(dx, dy) > 4;
+            }
+            this.mouse = coordinates;
+        });
         this.element.addEventListener('mousedown', event => {
+            const coordinates = this.boundMouseCoordinates(event);
             this.mapPointerDown = true;
-            this.emit('mousedown', this.boundMouseCoordinates(event));
+            this.mapPointerMoved = false;
+            this.pointerDownCoordinates = coordinates;
+            this.mouse = coordinates;
+            this.emit('mousedown', coordinates);
         });
         window.addEventListener('mouseup', event => {
             if (!this.mapPointerDown) return;
+            const coordinates = this.boundMouseCoordinates(event);
             this.mapPointerDown = false;
-            this.emit('mouseup', this.boundMouseCoordinates(event));
+            this.mouse = coordinates;
+            this.emit('mouseup', coordinates);
+            if (!this.mapPointerMoved) this.emit('click', coordinates);
         });
         window.addEventListener('focus', () => this.emit('focusin'), false)
         window.addEventListener('blur', () => this.emit('focusout'), false)

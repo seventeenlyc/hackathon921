@@ -3,10 +3,10 @@ import {CanonTower} from "./entities/towers/CanonTower";
 import {map, Map} from "./Map";
 import {Renderable} from "./interfaces/Renderable";
 import {controls} from "./Controls";
-import {GridRenderable} from "./interfaces/GridRenderable";
 import {interfaceManager} from "./InterfaceManager";
-import {cashManager} from "./CashManager";
 import {canvas} from "./Canvas";
+import {GameActions} from "./agent/GameActions";
+import {playMode} from "./PlayMode";
 
 class TowerPlacer extends Renderable {
     public tower: Tower = new CanonTower(0, 0, Map.TILE_SIZE);
@@ -14,24 +14,33 @@ class TowerPlacer extends Renderable {
     private j = 0;
     private i = 0;
     private shouldBeDrawn = false;
+    private actions: GameActions | null = null;
 
     constructor() {
         super();
 
-        controls.on('click', () => {
-            if (this.placing && this.canBePlaced()) {
-                if (cashManager.canWithdraw(this.tower.cost)) {
-                    cashManager.withdraw(this.tower.cost);
-                    map.addElement(this.i, this.j, this.tower.constructor as new (...args: any[]) => GridRenderable);
-                } else {
-                    interfaceManager.snackbar.toast('You don\'t have enough money to buy this tower');
-                }
-            }
-        });
+        if (playMode !== 'human') return;
+
+        controls.on('click', () => this.handleClick());
 
         controls.on('keydown:ESCAPE', () => {
             if (this.placing) this.placing = false;
         });
+    }
+
+    setActions(actions: GameActions) {
+        this.actions = actions;
+    }
+
+    private handleClick() {
+        if (!this.placing || !this.canBePlaced() || !this.actions) return;
+
+        const result = this.actions.buildTower(this.tower.towerType, this.i, this.j);
+        interfaceManager.snackbar.toast(result.message);
+        if (result.ok) {
+            this.placing = false;
+            this.shouldBeDrawn = false;
+        }
     }
 
     draw(ctx: CanvasRenderingContext2D): void {

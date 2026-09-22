@@ -25,7 +25,8 @@ assert.match(index, /class="control-card status-panel/, 'the page must expose th
 assert.match(index, /class="control-card chatbox-panel/, 'the page must expose the lower-right Chatbox region');
 assert.match(index, /id="controls-collapse"/, 'the page must expose an accessible collapse control');
 assert.match(index, /tabindex="0"/, 'the battlefield must be keyboard focusable');
-assert.doesNotMatch(index, /towers-wrapper|towers-stats/, 'the page must not expose human tower placement mounts');
+assert.match(index, /id="towers-wrapper"/, 'the page must expose the human deployable tower mount');
+assert.match(styles, /#inert\.mode-ai \.tower-panel/, 'the human tower mount must stay hidden in AI mode');
 assert.match(strategySource, /getControlLayer\(\)\.hide\(\)/,
     'valid strategy submission must hide the control layer after queueing');
 assert.match(strategySource, /showHint\(\)/,

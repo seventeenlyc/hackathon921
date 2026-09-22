@@ -435,6 +435,125 @@ body {
       gap: 7px;
     }
 
+    .tower-panel {
+      margin-top: 8px;
+      border-top: 1px solid rgba(146, 169, 160, 0.14);
+      padding-top: 8px;
+
+      summary {
+        color: var(--dim);
+        cursor: pointer;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        list-style: none;
+        text-transform: uppercase;
+
+        &::-webkit-details-marker {
+          display: none;
+        }
+
+        &:before {
+          margin-right: 7px;
+          color: var(--accent);
+          content: '+';
+          font-size: 15px;
+          vertical-align: -1px;
+        }
+      }
+
+      &[open] summary:before {
+        content: '−';
+      }
+
+      .tower-palette {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin-top: 10px;
+
+        .tower-card {
+          display: flex;
+          width: 67px;
+          min-height: 78px;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 2px;
+          padding: 4px 3px;
+          border: 1px solid var(--line);
+          border-radius: 8px;
+          background: rgba(16, 25, 23, 0.72);
+          color: var(--muted);
+          cursor: pointer;
+          font-family: inherit;
+          font-size: 9px;
+          line-height: 1.15;
+          transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+
+          canvas {
+            width: 42px;
+            height: 42px;
+          }
+
+          &:hover,
+          &:focus-visible,
+          &.selected {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+            box-shadow: 0 0 0 2px rgba(47, 204, 113, 0.12);
+            color: var(--ink);
+            outline: none;
+          }
+
+          .tower-card-label {
+            overflow: hidden;
+            max-width: 100%;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          .tower-card-cost {
+            color: var(--accent);
+            font-size: 9px;
+          }
+        }
+
+      }
+
+      .tower-stats {
+        min-height: 54px;
+        margin-top: 9px;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.4;
+
+        .title {
+          color: var(--accent);
+          font-size: 12px;
+          font-weight: 700;
+          text-transform: uppercase;
+        }
+
+        .description {
+          margin-top: 3px;
+          color: var(--dim);
+        }
+
+        table {
+          width: 100%;
+          margin-top: 5px;
+          border-collapse: collapse;
+          font-size: 10px;
+
+          td:last-child {
+            color: var(--accent);
+            text-align: right;
+          }
+        }
+      }
+    }
+
     .settings-panel {
       margin-top: 8px;
       border-top: 1px solid rgba(146, 169, 160, 0.14);
@@ -942,10 +1061,15 @@ body {
 }
 
 /* One side controls a run, so the other side's UI is hidden outright: the tower
-   palette and the leaderboard belong to human play's original inert feel, while
-   the prompt box and the AI decision log belong to AI play. */
+   palette belongs to human play, while the prompt box and decision log belong to
+   AI play. */
+#inert.mode-ai .tower-panel,
 #inert.mode-human .strategy,
 #inert.mode-human .decisions,
 #inert.mode-human .leaderboard-panel {
+  display: none;
+}
+
+#inert.mode-human .chatbox-panel {
   display: none;
 }

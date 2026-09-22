@@ -51,10 +51,12 @@ assert.match(
 );
 assert.match(controlsSource, /mapPointerDown/,
     'Controls must track an active map drag for release outside the Canvas');
-assert.doesNotMatch(gameSource, /TowerPlacer|towerPlacer/,
-    'the game loop must not update or draw a human tower placer');
-assert.doesNotMatch(interfaceSource, /TowerPlacer|towerPlacer|towers-wrapper/,
-    'the interface must not initialize a human tower palette');
+assert.match(gameSource, /if \(playMode === 'human'\) towerPlacer\.update\(\)/,
+    'the game loop must update the tower preview only in human mode');
+assert.match(gameSource, /if \(playMode === 'human'\) towerPlacer\.draw\(ctx\)/,
+    'the game loop must draw the tower preview only in human mode');
+assert.match(interfaceSource, /if \(playMode === 'human'\) this\.setTowers\(\)/,
+    'the interface must initialize the tower palette only in human mode');
 assert.match(stylesSource, /(?:\.controls\.is-hidden|&\.is-hidden)[\s\S]*visibility:\s*hidden/,
     'hidden controls must be removed from hit testing and visibility');
 assert.match(stylesSource, /(?:\.controls\.is-hidden|&\.is-hidden)[\s\S]*pointer-events:\s*none/,

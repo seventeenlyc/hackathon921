@@ -148,22 +148,49 @@ class InterfaceManager {
         ];
         const pad = Map.TILE_SIZE * 0.5;
         const canvasSize = Map.TILE_SIZE + pad;
+        let selectedCard: HTMLButtonElement | null = null;
 
         towers.forEach(TowerClass => {
+            const tower = new TowerClass(0, 0, Map.TILE_SIZE);
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.className = 'tower-card';
+            card.setAttribute('aria-label', `${tower.name}, costs ${tower.cost} cash`);
+            card.title = `${tower.name} · ${tower.cost} cash`;
+
             const canvas = document.createElement('canvas');
             canvas.width = canvasSize;
             canvas.height = canvasSize;
-            this.towersWrapperElement.insertAdjacentElement("beforeend", canvas);
+            canvas.setAttribute('aria-hidden', 'true');
+            card.appendChild(canvas);
+
+            const label = document.createElement('span');
+            label.className = 'tower-card-label';
+            label.textContent = tower.name;
+            const cost = document.createElement('span');
+            cost.className = 'tower-card-cost';
+            cost.textContent = `${tower.cost} ¢`;
+            card.append(label, cost);
+            this.towersWrapperElement.appendChild(card);
 
             const ctx = canvas.getContext('2d')!;
-            const tower = new TowerClass(0, 0, Map.TILE_SIZE);
             tower.setCoordinates(pad / 2, pad / 2);
             tower.draw(ctx);
             textureManager.onLoaded(tower.texturePath, () => tower.draw(ctx));
 
-            canvas.onclick = () => {
+            const selectTower = () => {
+                selectedCard?.classList.remove('selected');
+                selectedCard = card;
+                card.classList.add('selected');
                 towerPlacer.place(TowerClass);
                 this.showTowerStats(tower);
+            };
+            card.onclick = selectTower;
+            card.onkeydown = event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    selectTower();
+                }
             };
         })
     }
@@ -179,15 +206,17 @@ class InterfaceManager {
             `${(tower.damage.min / reloadDuration).toFixed(0)} - ${(tower.damage.max / reloadDuration).toFixed(0)}` :
             tower.damage / reloadDuration;
 
-        // `damage` is either a number or a {min,max} range. The typeof guard keeps
-        // the range-damage case (laser) from showing nonsense rows.
+        const hasDamage = typeof tower.damage === 'number'
+            ? tower.damage > 0
+            : tower.damage.max > 0;
+
         this.towersStatsElement.innerHTML = `
             <div class="title">${tower.name}</div>
             <div class="description">${tower.description}</div>
             <table class="table5050">
                 <tr><td>Cost: </td><td class="accent">${tower.cost} ¢</td></tr>
                 <tr><td>Aim radius:</td><td class="accent">${tower.aimRadius}</td></tr>
-                ${typeof tower.damage === 'number' && tower.damage > 0 ? `
+                ${hasDamage ? `
                     <tr><td>Damage:</td><td class="accent">${damage}</td></tr>
                     <tr><td>Reload:</td><td class="accent">${reloadDuration.toFixed(3)} s</td></tr>
                     <tr><td title="Damage Per Second">DPS:</td><td class="accent">${dps}</td></tr>
