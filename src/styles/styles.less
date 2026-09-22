@@ -465,11 +465,13 @@ body {
     }
   }
 
-  // 排行榜面板：固定在界面左下角
+  // 排行榜面板：顶到页面右上角
   .leaderboard-panel {
-    /* Top-right: the left column is the control sidebar, so the board sits opposite it. */
-    position: fixed; right: 15px; top: 15px; z-index: 2; width: 240px;
+    /* Flush with the page's top-right corner; the left column is the control sidebar. */
+    position: fixed; top: 0; right: 0; z-index: 2; width: 240px;
     background-color: rgba(52, 52, 52, 0.55); color: #a5a5a5; border-radius: 5px;
+    /* Square off the corner that touches the page edge. */
+    border-top-right-radius: 0;
     box-shadow: 0 2px 1px -1px rgba(0,0,0,0.2), 0 1px 1px 0 rgba(0,0,0,0.14), 0 1px 3px 0 rgba(0,0,0,0.12);
     font-size: 13px; padding: 10px 12px;
     .leaderboard-title { text-transform: uppercase; text-align: center; font-size: 14px; color: var(--accent); margin-bottom: 8px; }
@@ -611,7 +613,6 @@ body {
 }
 
 #inert.mode-human .strategy,
-#inert.mode-human .decisions,
-#inert.mode-human .leaderboard-panel {
+#inert.mode-human .decisions {
   display: none;
 }
