@@ -1,5 +1,6 @@
 import {strategyStore} from './agent/StrategyStore';
 import {queueStrategy} from './StrategyQueue';
+import {getControlLayer} from './ControlLayer';
 
 /**
  * The player's strategy prompt input (docs/USER_STORY.md MVP 用户故事 2 & 4).
@@ -21,6 +22,12 @@ export class StrategyPanel {
         this.input.value = strategyStore.active().text;
         this.applyButton.addEventListener('click', () => this.submit());
 
+        if (strategyStore.active().text.trim()) {
+            getControlLayer().hide();
+        } else {
+            getControlLayer().show();
+        }
+
         // PLANNING locks the queue (wired in Game), which clears the "queued"
         // indicator; re-render on every transition so the status stays truthful.
         strategyStore.onChange(() => this.render());
@@ -39,6 +46,7 @@ export class StrategyPanel {
         this.status.classList.remove('warn');
         queueStrategy(text);
         this.render();
+        getControlLayer().hide();
     }
 
     private render() {
