@@ -45,8 +45,10 @@ export function handleApi(deps: ApiDeps, req: ApiRequest): ApiResponse {
     const method = req.method.toUpperCase();
 
     // 供 nginx / 运维探活，不触碰数据库。
+    // providerConfigured 让运维不必翻 journal 就能判断 LLM 代理是否拿到 key（issue #22 的接口约定）。
+    // 排行榜不依赖它：缺 key 时这里仍是 { ok: true }，只有 /api/agent/decide 返回 503。
     if (req.pathname === '/api/health' && method === 'GET') {
-        return json(200, { ok: true });
+        return json(200, { ok: true, providerConfigured: Boolean(deps.agent && deps.agent.apiKey) });
     }
 
     // 用昵称换一个签名会话 token。无注册、无密码（docs/PRODUCT_CONCEPT.md §14）。

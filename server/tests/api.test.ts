@@ -37,10 +37,18 @@ function openRun(deps: ApiDeps, username: string): { token: string; runId: strin
     return { token, runId: run.body.runId as string };
 }
 
-test('GET /api/health 返回 ok', () => {
+test('GET /api/health 返回 ok，并报告 provider 是否已配置', () => {
     const res = handleApi(makeDeps(), request({ pathname: '/api/health' }));
     assert.equal(res.status, 200);
-    assert.deepEqual(res.body, { ok: true });
+    // 未注入 agent 配置 => 未配置；这也是「后端照常可用、只有 decide 会 503」的探活依据。
+    assert.deepEqual(res.body, { ok: true, providerConfigured: false });
+});
+
+test('GET /api/health 在配了 provider key 时 providerConfigured 为 true', () => {
+    const deps: ApiDeps = { ...makeDeps(), agent: { apiKey: 'test-key' } };
+    const res = handleApi(deps, request({ pathname: '/api/health' }));
+    assert.equal(res.status, 200);
+    assert.deepEqual(res.body, { ok: true, providerConfigured: true });
 });
 
 test('POST /api/session 用合法昵称换取 token', () => {
