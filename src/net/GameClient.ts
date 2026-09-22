@@ -96,7 +96,9 @@ export class GameClient {
 
         if (!response.ok) {
             const code = payload && payload.error ? String(payload.error) : 'HTTP_' + response.status;
-            throw new GameClientError(response.status, code, `${path} failed: ${code}`);
+            const message = payload && typeof payload.message === 'string' && payload.message.trim()
+                ? payload.message : `${path} failed: ${code}`;
+            throw new GameClientError(response.status, code, message);
         }
         return payload;
     }

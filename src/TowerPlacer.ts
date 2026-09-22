@@ -22,6 +22,7 @@ class TowerPlacer {
     private placing = false;
     private i = 0;
     private j = 0;
+    private pointer = {x: 0, y: 0};
     private shouldBeDrawn = false;
     private latest: RenderSnapshot | null = null;
 
@@ -51,9 +52,10 @@ class TowerPlacer {
         if (!this.placing) return;
 
         this.shouldBeDrawn = false;
-        if (!snapshot) return;
+        if (!snapshot || !canvas.transformMatrix) return;
 
         const mouse = canvas.transformMatrix!.inverse().transformPoint(controls.mouse);
+        this.pointer = mouse;
         const tile = snapshot.grid.tileSize;
         this.i = Math.floor(mouse.x / tile);
         this.j = Math.floor(mouse.y / tile);
@@ -69,8 +71,8 @@ class TowerPlacer {
         const tile = snapshot.grid.tileSize;
         drawTowerPreview(ctx, {
             type: this.selectedType,
-            x: this.i * tile,
-            y: this.j * tile,
+            x: this.pointer.x - tile / 2,
+            y: this.pointer.y - tile / 2,
             tileSize: tile,
             aimRadius: this.selectedAimRadius,
             valid: this.canBePlaced(snapshot),
@@ -79,6 +81,9 @@ class TowerPlacer {
 
     private handleClick() {
         if (!this.placing || !this.session || !this.selectedType || !this.latest) return;
+        // A mouseup can arrive before the next animation frame.
+        this.update(this.latest);
+        if (!this.shouldBeDrawn) return;
         if (!this.canBePlaced(this.latest)) return;
 
         const type = this.selectedType;
