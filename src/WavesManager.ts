@@ -10,7 +10,7 @@ import {ArmoredEnemy} from "./entities/enemies/ArmoredEnemy";
 import {FastEnemy} from "./entities/enemies/FastEnemy";
 import {HealerEnemy} from "./entities/enemies/HealerEnemy";
 import {gameLoop, Planner} from "./agent/GameLoop";
-import {bossLifeRatio, earlyWaveReliefFactor, waveLifeRatio, waveSpeedMultiplier} from "./tools/enemyScaling";
+import {earlyWaveReliefFactor, waveLifeRatio, waveSpeedMultiplier} from "./tools/enemyScaling";
 import {spawnCountForWave} from "./agent/SpawnRoutes";
 
 interface WaveGroup {
@@ -171,7 +171,7 @@ class WavesManager {
             }
         }
 
-        // 前 200 波整体缓冲 0.4；精英 Boss 是例外，始终按 0.4（属性固定在等效第 152 波）。
+        // Keep elite-wave bosses at their effective wave-152 life and speed.
         const relief = earlyWaveReliefFactor(this.waveCounter, enemy instanceof BossEnemy);
         enemy.life *= relief;
         enemy.speed *= relief;
@@ -182,7 +182,7 @@ class WavesManager {
     private generateWave(): Wave {
         const wave = [];
         const ratio = waveLifeRatio(this.waveCounter);
-        const bossRatio = bossLifeRatio(this.waveCounter);
+        const bossRatio = this.waveCounter >= 201 ? waveLifeRatio(152) : ratio;
 
         if (this.waveCounter >= 201) {
             wave.push({

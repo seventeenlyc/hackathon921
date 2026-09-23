@@ -20,6 +20,8 @@ export class DevPanel {
     private errorEl: HTMLElement | null = null;
     private lastError: DevUnlockReason | null = null;
     private busy = false;
+    private waveInput: HTMLInputElement | null = null;
+    private cashInput: HTMLInputElement | null = null;
 
     constructor(wrench: HTMLButtonElement | null) {
         this.wrench = wrench;
@@ -105,6 +107,15 @@ export class DevPanel {
 
         const actions = document.createElement('div');
         actions.className = 'dev-actions';
+        if (devController.isUnlocked) {
+            const confirm = document.createElement('button');
+            confirm.type = 'button';
+            confirm.className = 'dev-confirm-btn';
+            confirm.textContent = t('dev.confirm');
+            confirm.disabled = !gameLoop.isIdle();
+            confirm.addEventListener('click', () => this.handleConfirm());
+            actions.appendChild(confirm);
+        }
         const close = document.createElement('button');
         close.type = 'button';
         close.className = 'dev-close';
@@ -209,9 +220,10 @@ export class DevPanel {
             const result = devController.setStartWave(parsed);
             if (!result.ok) {
                 waveInput.value = String(devController.getConfig().startWave);
-                this.toastConfigError(result.reason === 'WAVE_OUT_OF_RANGE' ? 'dev.invalidWave' : 'dev.invalidWave');
+                this.toastConfigError('dev.invalidWave');
             }
         });
+        this.waveInput = waveInput;
         waveField.append(waveLabel, waveInput);
 
         const cashField = document.createElement('label');
@@ -233,6 +245,7 @@ export class DevPanel {
                 this.toastConfigError('dev.invalidCash');
             }
         });
+        this.cashInput = cashInput;
         cashField.append(cashLabel, cashInput);
 
         grid.append(waveField, cashField);
@@ -246,6 +259,28 @@ export class DevPanel {
         }
 
         return wrap;
+    }
+
+    /** Confirm button: re-read the inputs, validate on the engine side, close on success. */
+    private handleConfirm(): void {
+        let ok = true;
+        if (this.waveInput) {
+            const result = devController.setStartWave(Number(this.waveInput.value));
+            if (!result.ok) {
+                this.waveInput.value = String(devController.getConfig().startWave);
+                this.toastConfigError('dev.invalidWave');
+                ok = false;
+            }
+        }
+        if (this.cashInput) {
+            const result = devController.setStartCash(Number(this.cashInput.value));
+            if (!result.ok) {
+                this.cashInput.value = String(devController.getConfig().startCash);
+                this.toastConfigError('dev.invalidCash');
+                ok = false;
+            }
+        }
+        if (ok) this.close();
     }
 
     /** Inline, aria-live error text (the panel has no Snackbar of its own). */

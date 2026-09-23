@@ -959,8 +959,12 @@ body {
       border: 1px solid rgba(53, 226, 255, 0.42);
       border-radius: 6px;
       box-shadow: var(--shadow);
+      // 两个 tab 视图叠放进同一网格单元（第 2 行 / 第 1 列）：面板高度恒等于
+      // 较高视图的高度，点击页签切换时面板高度保持不变（2026-09-24 确认）。
+      display: grid;
 
       .database-header {
+        grid-area: 1 / 1;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -1008,10 +1012,14 @@ body {
       }
 
       .db-view {
+        grid-area: 2 / 1;
         margin-top: 10px;
 
         &[hidden] {
-          display: none;
+          // 隐藏视图必须继续参与布局（与激活视图同格叠放、只贡献高度）；
+          // 若走 display:none，面板高度会随页签切换跳动。
+          display: block;
+          visibility: hidden;
         }
       }
     }
@@ -1136,7 +1144,11 @@ body {
       }
 
       .tower-stats {
-        min-height: 54px;
+        // 定高（中英文选中态实测均为 110px）：提示态与选中态占据相同高度，
+        // 选中机体不再撑高整个战术数据库面板（2026-09-24 确认）；超出时在
+        // 盒内滚动兜底。
+        height: 110px;
+        overflow-y: auto;
         margin-top: 9px;
         color: var(--muted);
         font-family: var(--font-mono);
@@ -1959,7 +1971,7 @@ body {
 
       .dev-actions { display: flex; justify-content: flex-end; }
 
-      .dev-close, .dev-unlock-btn {
+      .dev-close, .dev-unlock-btn, .dev-confirm-btn {
         padding: 7px 18px;
         border: 1px solid rgba(53, 226, 255, 0.4);
         background: transparent;
@@ -1972,6 +1984,7 @@ body {
         &:disabled { opacity: 0.5; cursor: not-allowed; }
       }
       .dev-unlock-btn { border-color: rgba(255, 180, 84, 0.55); color: #ffb454; }
+      .dev-confirm-btn { border-color: rgba(53, 226, 255, 0.6); color: #35e2ff; }
     }
   }
 
