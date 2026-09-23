@@ -86,7 +86,7 @@ class InterfaceManager {
         this.audioButton?.addEventListener('click', () => {
             const muted = !audioManager.isMuted();
             audioManager.setMuted(muted);
-            if (!muted) audioManager.startMusic();
+            if (!muted && !gameLoop.isIdle()) audioManager.startMusic();
             this.updateAudioLabel();
         });
         const langButton = document.getElementById('lang') as HTMLButtonElement | null;
