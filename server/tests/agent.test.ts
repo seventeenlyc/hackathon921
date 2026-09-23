@@ -58,6 +58,23 @@ function providerResponse(status: number, payload: any) {
 test('validateAgentRequest 接受合法请求', () => {
     const result = validateAgentRequest({ strategy: 'build near base', state: { wave: 1 } });
     assert.equal(result.ok, true);
+    if (result.ok) {
+        assert.equal(result.value.lang, 'zh');
+    }
+
+    const resultEn = validateAgentRequest({ strategy: 'build near base', state: { wave: 1 }, lang: 'en' });
+    assert.equal(resultEn.ok, true);
+    if (resultEn.ok) {
+        assert.equal(resultEn.value.lang, 'en');
+    }
+});
+
+test('validateAgentRequest 拒绝非法语言参数', () => {
+    const result = validateAgentRequest({ strategy: 'build near base', state: { wave: 1 }, lang: 'fr' });
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+        assert.equal(result.error, 'INVALID_LANGUAGE');
+    }
 });
 
 test('validateAgentRequest 接受恰好达到上限的策略', () => {

@@ -47,7 +47,7 @@ export const PROVIDER_TIMEOUT_MS = 12000;
 const TOWER_TYPES = ['canon', 'gatling', 'slow', 'sniper', 'laser'];
 const DECISION_SUMMARY_PROPERTY = {
     type: 'string',
-    description: 'One short player-facing reason for this action (at most 120 characters). State the battlefield factor and intent, never private reasoning.',
+    description: 'One short player-facing macro tactical assessment (at most 120 characters). State the battlefield threat, route coverage, or strategic intent. NEVER recite grid coordinates (i, j) or raw tool actions.',
 };
 
 /** 提供方响应中我们真正用到的最小面；测试用假实现替换，无需网络。 */
@@ -142,53 +142,72 @@ export const AGENT_TOOLS = [
 
 const AGENT_TOOL_NAMES = AGENT_TOOLS.map(tool => tool.function.name);
 
-export const AGENT_SYSTEM_PROMPT = [
-    'You are the autonomous player of an endless tower-defense game. A human wrote',
-    'a strategy in the user message, and your job is to execute THAT strategy. It is',
-    'the mission and it overrides every default preference below. Do not invent',
-    'goals the player did not ask for; when the strategy is silent, use the',
-    'defaults.',
-    '',
-    'Rules:',
-    '- You affect the battlefield ONLY by calling the provided tools. You cannot',
-    '  move enemies or edit the game state directly.',
-    '- You are called once at each wave boundary, before the next wave spawns.',
-    '  Decide what to build or upgrade now.',
-    '- The engine validates every action and may reject it (not enough cash,',
-    '  occupied cell, would block the path). If an action is rejected, adapt',
-    '  instead of repeating the same call.',
-    '- You may return zero, one, or several tool calls. Prefer a few high-value',
-    '  actions over many.',
-    '- Grid coordinates are (i, j) = (column, row). Any free cell is legal; the',
-    '  candidates in the state are suggestions, not the only cells you may use.',
-    '- `buildCandidates` are cells beside the route that cover enemy traffic. Use',
-    '  them when the strategy is about damage, coverage or defending lanes.',
-    '- `pathShapingCandidates` are cells ON the current route whose placement adds',
-    '  `addedTiles` to the walk. Use them when the strategy asks to slow enemies by',
-    '  making them travel farther (a maze, spiral, snake, detour or choke point).',
-    '  Building on the route is allowed: the engine reroutes enemies and rejects',
-    '  only a placement that would seal every spawn off (BLOCKS_PATH). One wall',
-    '  adds only a few tiles, so keep extending the detour over several waves.',
-    '- Enemies can spawn from several lanes; the state lists them in `lanes` and',
-    '  `spawns`, and each candidate says which lane it is for. Unless the player',
-    '  strategy says otherwise, cover every lane rather than piling up on one.',
-    '- You can use tactical battle items via `use_item`. Available items:',
-    '  * `tripo`: 5s 300% firepower (x3 tower damage), costs 1000 cash, 10s cooldown. Best against boss or heavy waves.',
-    '  * `seeed_studio`: 5s 150% attack speed, costs 1000 cash, 10s cooldown. Best against swarms.',
-    '  * `evomap`: 2% max HP AOE damage to ALL enemies on the map, 10s cooldown. First 2 uses are FREE, then 1000 cash. Great against large waves.',
-    '  * `hypershell`: repairs base by +25% max life, costs 1000 cash, 10s cooldown. Use when base is damaged or in critical danger.',
-    '  * `natural_oil`: 5s 150% attack speed, costs 1000 cash, 10s cooldown.',
-    '- Every tool call must include `decision_summary` in its arguments: a brief',
-    '  player-facing reason tied to the strategy and battlefield, at most 120 characters.',
-    '- If you call no tools, put a concise player-facing decision summary in the',
-    '  assistant message content (at most 240 characters).',
-    '- Do not show hidden chain-of-thought, private deliberation, or step-by-step',
-    '  internal reasoning.',
-].join('\n');
+export function buildSystemPrompt(lang: 'zh' | 'en' = 'zh'): string {
+    const langInstruction = lang === 'en'
+        ? 'Language: You MUST write your player-facing decision summary in English.'
+        : 'Language: You MUST write your player-facing decision summary in Simplified Chinese (简体中文).';
+
+    return [
+        'You are the autonomous player of an endless tower-defense game. A human wrote',
+        'a strategy in the user message, and your job is to execute THAT strategy. It is',
+        'the mission and it overrides every default preference below. Do not invent',
+        'goals the player did not ask for; when the strategy is silent, use the',
+        'defaults.',
+        '',
+        'Priority Override:',
+        '- The human player\'s strategy is paramount. If the strategy asks to spend aggressively,',
+        '  build on the frontline, or prioritize items, you MUST follow those directives and',
+        '  override any default conservative/saving tendencies.',
+        '',
+        'Rules:',
+        '- You affect the battlefield ONLY by calling the provided tools. You cannot',
+        '  move enemies or edit the game state directly.',
+        '- You are called once at each wave boundary, before the next wave spawns.',
+        '  Decide what to build or upgrade now.',
+        '- The engine validates every action and may reject it (not enough cash,',
+        '  occupied cell, would block the path). If an action is rejected, adapt',
+        '  instead of repeating the same call.',
+        '- You may return zero, one, or several tool calls. Prefer a few high-value',
+        '  actions over many, unless the player strategy specifies active/aggressive investment.',
+        '- Grid coordinates are (i, j) = (column, row). Any free cell is legal; the',
+        '  candidates in the state are suggestions, not the only cells you may use.',
+        '- `buildCandidates` are cells beside the route that cover enemy traffic. Each candidate',
+        '  has a `zone` tag: "frontline" (spawn area), "midfield", or "base". Follow player directives',
+        '  when choosing zones.',
+        '- `pathShapingCandidates` are cells ON the current route whose placement adds',
+        '  `addedTiles` to the walk. Use them when the strategy asks to slow enemies by',
+        '  making them travel farther (a maze, spiral, snake, detour or choke point).',
+        '  Building on the route is allowed: the engine reroutes enemies and rejects',
+        '  only a placement that would seal every spawn off (BLOCKS_PATH). One wall',
+        '  adds only a few tiles, so keep extending the detour over several waves.',
+        '- Enemies can spawn from several lanes; the state lists them in `lanes` and',
+        '  `spawns`, and each candidate says which lane it is for. Unless the player',
+        '  strategy says otherwise, cover every lane rather than piling up on one.',
+        '- If `invalidCells` are listed in the state, those coordinates are permanently blocked or occupied for this match. DO NOT attempt to place towers on any cell in `invalidCells`.',
+        '- You can use tactical battle items via `use_item`. Available items:',
+        '  * `tripo`: 5s 300% firepower (x3 tower damage), costs 1000 cash, 10s cooldown. Best against boss or heavy waves.',
+        '  * `seeed_studio`: 5s 150% attack speed, costs 1000 cash, 10s cooldown. Best against swarms.',
+        '  * `evomap`: 2% max HP AOE damage to ALL enemies on the map, 10s cooldown. First 2 uses are FREE, then 1000 cash. Great against large waves.',
+        '  * `hypershell`: repairs base by +25% max life, costs 1000 cash, 10s cooldown. Use when base is damaged or in critical danger.',
+        '  * `natural_oil`: 5s 150% attack speed, costs 1000 cash, 10s cooldown.',
+        '- Every tool call must include `decision_summary` in its arguments: a brief',
+        '  player-facing macro tactical assessment (at most 120 characters) tied to the strategy and battlefield.',
+        '  CRITICAL: NEVER recite coordinates (i, j), cell indices, or raw tool actions in decision_summary.',
+        '  Focus on tactical threats, choke coverage, or resource trade-offs.',
+        '- If you call no tools, put a concise player-facing macro tactical reasoning in the',
+        '  assistant message content (at most 240 characters) explaining your tactical choice to hold.',
+        '- Do not show hidden chain-of-thought, private deliberation, or step-by-step',
+        '  internal reasoning.',
+        '',
+        langInstruction,
+    ].join('\n');
+}
+
+export const AGENT_SYSTEM_PROMPT = buildSystemPrompt('zh');
 
 export interface AgentValidationOk {
     ok: true;
-    value: { strategy: string; state: Record<string, unknown> };
+    value: { strategy: string; state: Record<string, unknown>; lang: 'zh' | 'en' };
 }
 
 export interface AgentValidationError {
@@ -204,6 +223,7 @@ export function validateAgentRequest(body: unknown): AgentValidationOk | AgentVa
 
     const strategy = (body as Record<string, unknown>).strategy;
     const state = (body as Record<string, unknown>).state;
+    const rawLang = (body as Record<string, unknown>).lang;
 
     if (typeof strategy !== 'string' || strategy.trim() === '') {
         return { ok: false, error: 'EMPTY_STRATEGY', message: 'A non-empty strategy string is required.' };
@@ -221,15 +241,23 @@ export function validateAgentRequest(body: unknown): AgentValidationOk | AgentVa
         return { ok: false, error: 'INVALID_STATE', message: 'A game state snapshot object is required.' };
     }
 
-    return { ok: true, value: { strategy, state: state as Record<string, unknown> } };
+    let lang: 'zh' | 'en' = 'zh';
+    if (rawLang !== undefined && rawLang !== null) {
+        if (rawLang !== 'zh' && rawLang !== 'en') {
+            return { ok: false, error: 'INVALID_LANGUAGE', message: 'Language must be either "zh" or "en".' };
+        }
+        lang = rawLang;
+    }
+
+    return { ok: true, value: { strategy, state: state as Record<string, unknown>, lang } };
 }
 
 /**
  * 玩家策略只进 user message，绝不拼进 system prompt —— 这是安全属性，不是风格选择。
  */
-export function composeAgentMessages(strategy: string, state: unknown): any[] {
+export function composeAgentMessages(strategy: string, state: unknown, lang: 'zh' | 'en' = 'zh'): any[] {
     return [
-        { role: 'system', content: AGENT_SYSTEM_PROMPT },
+        { role: 'system', content: buildSystemPrompt(lang) },
         {
             role: 'user',
             content: `Battlefield state (JSON):\n${JSON.stringify(state)}\n\nPlayer strategy:\n${strategy}`,
@@ -282,18 +310,18 @@ export function extractAgentSummary(payload: any): string | null {
 
     // Tool-call replies may have null content. Read only the explicit public
     // explanation in allowed tool arguments, never reasoning_content.
+    // We take the first valid player-facing macro assessment, avoiding coordinate reciting.
     const calls = Array.isArray(message.tool_calls) ? message.tool_calls : [];
-    const reasons: string[] = [];
     for (const call of calls.slice(0, MAX_ACTIONS_PER_DECISION)) {
         const fn = call && call.function;
         if (!fn || AGENT_TOOL_NAMES.indexOf(fn.name) === -1) continue;
         const reason = publicSummary(parseArguments(fn.arguments).decision_summary);
-        if (!reason || reasons.indexOf(reason) !== -1) continue;
-        if ([...reasons, reason].join(' · ').length > MAX_DECISION_SUMMARY_LENGTH) break;
-        reasons.push(reason);
+        if (reason) {
+            return reason;
+        }
     }
 
-    return reasons.length ? reasons.join(' · ') : publicSummary(message.content);
+    return publicSummary(message.content);
 }
 
 export function mapProviderError(status: number, payload: any): { error: string; message: string } {
@@ -398,8 +426,8 @@ export async function handleAgentDecide(deps: ApiDeps, req: ApiRequest): Promise
         };
     }
 
-    const { strategy, state } = validation.value;
-    const result = await callProvider(agent, composeAgentMessages(strategy, state));
+    const { strategy, state, lang } = validation.value;
+    const result = await callProvider(agent, composeAgentMessages(strategy, state, lang));
     if (!result.ok) {
         return { status: 502, body: { error: result.error, message: result.message } };
     }
