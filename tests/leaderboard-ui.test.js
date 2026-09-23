@@ -91,14 +91,23 @@ class FakeElement {
         this.parentNode = null;
         this.listeners = {};
         this._textContent = '';
-        this.className = '';
+        this._classes = new Set();
+        this.dataset = {};
         this.classList = {
-            add: cls => { if (!this.className.includes(cls)) this.className += ' ' + cls; },
-            remove: cls => { this.className = this.className.replace(cls, '').trim(); },
+            add: cls => { this._classes.add(cls); },
+            remove: cls => { this._classes.delete(cls); },
+            toggle: (cls, force) => {
+                const enable = force === undefined ? !this._classes.has(cls) : Boolean(force);
+                if (enable) this._classes.add(cls); else this._classes.delete(cls);
+                return enable;
+            },
         };
         this.hidden = false;
         this.type = 'button';
     }
+    // 真实 DOM 中 className 与 classList 同步；测试桩必须保持同一语义。
+    get className() { return [...this._classes].join(' '); }
+    set className(val) { this._classes = new Set(String(val).split(/\s+/).filter(Boolean)); }
     get textContent() {
         return this._textContent || '';
     }
@@ -203,70 +212,94 @@ function loadUI(document, currentPlayMode, remoteData = null) {
     return moduleObj.exports;
 }
 
-// 1. AI 模式下的切换循环：ai -> human -> total -> ai
+// 1. 三个榜 Tab 存在且初始态正确：AI 模式初始为 ai 榜，点击 Tab 直接切换并高亮
 {
     const doc = new FakeDocument();
     const { LeaderboardPanel } = loadUI(doc, 'ai');
     const panel = new LeaderboardPanel();
     assert.strictEqual(panel.currentMode, 'ai', 'AI 模式初始榜单为 ai');
-    const toggleBtn = panel.modeButton;
-    assert.ok(toggleBtn, '必须提供榜单切换按钮');
-    toggleBtn.click();
-    assert.strictEqual(panel.currentMode, 'human', '第一次点击切换至 human');
-    toggleBtn.click();
-    assert.strictEqual(panel.currentMode, 'total', '第二次点击切换至 total');
-    toggleBtn.click();
-    assert.strictEqual(panel.currentMode, 'ai', '第三次点击循环回 ai');
+    assert.strictEqual(panel.modeTabs.length, 3, '必须提供三个榜 Tab（AI / 人类 / 混合）');
+    const modeOf = tab => tab.dataset.mode;
+    assert.deepStrictEqual(panel.modeTabs.map(modeOf), ['ai', 'human', 'total'], 'Tab 顺序固定为 ai/human/total');
+    const tabByMode = mode => panel.modeTabs.find(tab => modeOf(tab) === mode);
+    const assertActive = (mode, msg) => {
+        for (const tab of panel.modeTabs) {
+            const expected = modeOf(tab) === mode;
+            assert.strictEqual(tab.className.includes('is-active'), expected, msg);
+        }
+    };
+    assertActive('ai', '初始只有 ai Tab 激活');
+    tabByMode('human').click();
+    assert.strictEqual(panel.currentMode, 'human', '点击人类榜切换至 human');
+    assertActive('human', '切换后只有 human Tab 激活');
+    tabByMode('total').click();
+    assert.strictEqual(panel.currentMode, 'total', '点击混合榜切换至 total');
+    assertActive('total', '切换后只有 total Tab 激活');
+    tabByMode('ai').click();
+    assert.strictEqual(panel.currentMode, 'ai', '点击 AI 榜切回 ai');
+    assertActive('ai', '切回后只有 ai Tab 激活');
 }
 
-// 2. 人类模式下的切换循环：human -> ai -> total -> human
+// 2. 人类模式下初始为 human 榜
 {
     const doc = new FakeDocument();
     const { LeaderboardPanel } = loadUI(doc, 'human');
     const panel = new LeaderboardPanel();
     assert.strictEqual(panel.currentMode, 'human', '人类模式初始榜单为 human');
-    const toggleBtn = panel.modeButton;
-    assert.ok(toggleBtn, '必须提供榜单切换按钮');
-    toggleBtn.click();
-    assert.strictEqual(panel.currentMode, 'ai', '第一次点击切换至 ai');
-    toggleBtn.click();
-    assert.strictEqual(panel.currentMode, 'total', '第二次点击切换至 total');
-    toggleBtn.click();
-    assert.strictEqual(panel.currentMode, 'human', '第三次点击循环回 human');
+    assert.strictEqual(panel.modeTabs.length, 3, '必须提供三个榜 Tab（AI / 人类 / 混合）');
 }
 
-// 3. 渲染同一玩家的 AI 与人类记录：两行、两个不同标志、仅 AI 包含 Prompt 历史按钮
+// 3. 渲染同一玩家的 AI 与人类记录：两行、两个不同标志、仅 AI 包含 Prompt 历史按钮；
+//    每行用户名左侧必须有头像（有 avatarId 渲染图片，缺失渲染占位）。
 (async () => {
     const doc = new FakeDocument();
     const remoteData = mode => ({
         entries: [
             { uid: 7, rank: 1, username: 'Alice', avatarId: 'aramaki', wave: 20, achievedAt: 100, mode: 'human' },
-            { uid: 7, rank: 2, username: 'Alice', avatarId: 'aramaki', wave: 10, achievedAt: 50, mode: 'ai' },
+            { uid: 7, rank: 2, username: 'Alice', avatarId: null, wave: 10, achievedAt: 50, mode: 'ai' },
         ],
         me: { uid: 7, username: 'Alice', avatarId: 'aramaki', rank: 1, wave: 20, mode: 'human' },
     });
     const { LeaderboardPanel } = loadUI(doc, 'ai', remoteData);
     const panel = new LeaderboardPanel();
-    // 渲染总榜
+    // 渲染混合榜
     await panel.refresh('total');
     const items = panel.listEl.children;
-    assert.strictEqual(items.length, 2, '总榜应渲染两条记录');
+    assert.strictEqual(items.length, 2, '混合榜应渲染两条记录');
 
-    // 第一条：human
+    // 头像渲染在用户名左侧：mode-tag 之后、name 之前
+    const avatarOf = item => {
+        const idx = item.children.findIndex(c => c.className && c.className.includes('avatar'));
+        return { idx, el: item.children[idx] };
+    };
+
+    // 第一条：human，带头像图片
     const humanItem = items[0];
     const humanFlag = humanItem.children.find(c => c.className && c.className.includes('mode'));
     assert.ok(humanFlag, '人类记录必须有模式标识');
     assert.match(humanFlag.textContent, /人|Human/);
     const humanButton = humanItem.children.find(c => c.tagName === 'BUTTON' && c.className === 'name');
     assert.strictEqual(humanButton, undefined, '人类记录不得有 Prompt 历史按钮');
+    const humanAvatar = avatarOf(humanItem);
+    assert.ok(humanAvatar.el, '人类记录必须渲染头像槽位');
+    assert.ok(!humanAvatar.el.className.includes('is-empty'), '有 avatarId 的记录不得使用占位');
+    const img = humanAvatar.el.children.find(c => c.tagName === 'IMG');
+    assert.ok(img, '有 avatarId 的记录必须渲染 <img> 头像');
+    assert.strictEqual(img.src, 'fake://aramaki', '头像 src 必须来自 AVATAR_SRC 常量表');
+    assert.ok(humanAvatar.idx < humanItem.children.findIndex(c => c.className === 'name'),
+        '头像必须位于用户名左侧');
 
-    // 第二条：ai
+    // 第二条：ai，avatarId 缺失 → 占位头像
     const aiItem = items[1];
     const aiFlag = aiItem.children.find(c => c.className && c.className.includes('mode'));
     assert.ok(aiFlag, 'AI 记录必须有模式标识');
     assert.match(aiFlag.textContent, /AI/);
     const aiButton = aiItem.children.find(c => c.tagName === 'BUTTON' && c.className === 'name');
     assert.ok(aiButton, 'AI 记录必须包含 Prompt 历史按钮');
+    const aiAvatar = avatarOf(aiItem);
+    assert.ok(aiAvatar.el, 'AI 记录必须渲染头像槽位');
+    assert.ok(aiAvatar.el.className.includes('is-empty'), 'avatarId 缺失的记录必须使用占位头像');
+    assert.strictEqual(aiAvatar.el.children.length, 0, '占位头像不得包含 <img>');
 
     console.log('Validated leaderboard UI mount points and empty-state footer flow.');
 })().catch(err => {
