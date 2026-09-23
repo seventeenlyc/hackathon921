@@ -122,8 +122,10 @@ export abstract class Tower extends GridRenderable {
         ctx.fillStyle = tmpColor;
     }
 
-    protected drawTexture(ctx: CanvasRenderingContext2D, rotation = 0) {
-        textureManager.draw(ctx, this.texturePath, this.center.x, this.center.y, this.width, this.width, rotation);
+    // Whole-unit artwork stays upright even when the tower tracks a target;
+    // projectiles and beams still use the target position independently.
+    protected drawTexture(ctx: CanvasRenderingContext2D) {
+        textureManager.draw(ctx, this.texturePath, this.center.x, this.center.y, this.width, this.width);
     }
 
     draw(ctx: CanvasRenderingContext2D): void {
