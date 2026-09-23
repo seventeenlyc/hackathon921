@@ -94,8 +94,7 @@ export class StrategyPanel {
 
         this.count.textContent = `${length} / ${STRATEGY_MAX_LENGTH}`;
         this.count.classList.toggle('over', over);
-        // 主文案写入 .btn-main，保留按钮里的装饰性副行（.btn-sub）不被 textContent 覆盖；
-        // 元素缺失时回退到整体 textContent，兼容无 DOM 的测试桩。
+        // 主文案写入 .btn-main 子元素，缺失时回退到整体 textContent，兼容无 DOM 的测试桩。
         const applyMain = this.applyButton.querySelector('.btn-main');
         const applyText = idle ? t('strategy.start') : t('strategy.apply');
         if (applyMain) applyMain.textContent = applyText;
