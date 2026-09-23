@@ -73,7 +73,6 @@ class InterfaceManager {
         this.pauseButton.onclick = () => gameLoop.pause();
         this.resumeButton.onclick = () => {
             gameLoop.resume();
-            this.controlLayer.hide();
         };
         this.speedElement.onclick = () => {
             gameLoop.setSpeed(nextSpeed(gameLoop.speed));
