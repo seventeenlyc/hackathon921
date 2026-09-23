@@ -63,6 +63,7 @@ bower_components/
 .vscode/
 .DS_Store
 Thumbs.db
+.workbuddy/
 
 # Temporary and local project files
 tmp/
