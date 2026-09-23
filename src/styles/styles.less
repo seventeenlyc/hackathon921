@@ -169,6 +169,32 @@ body {
       white-space: nowrap;
     }
 
+    // 头部「控制面板」开关：控制主界面各面板（左右栏 + 战术数据库）的整体显隐。
+    .controls-panel-toggle {
+      padding: 4px 10px;
+      border: 1px solid rgba(53, 226, 255, 0.45);
+      border-radius: 4px;
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      white-space: nowrap;
+
+      &:hover {
+        background: var(--accent-soft);
+      }
+
+      &.is-off {
+        border-color: var(--line);
+        color: var(--dim);
+        text-decoration: line-through;
+      }
+    }
+
     .live-indicator {
       display: flex;
       align-items: center;
@@ -538,24 +564,9 @@ body {
       }
     }
 
-    .icon-button {
-      width: 30px;
-      height: 30px;
-      border: 1px solid var(--line);
-      border-radius: 50%;
-      background: transparent;
-      color: var(--muted);
-      cursor: pointer;
-      font-family: inherit;
-      font-size: 22px;
-      line-height: 1;
-      transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease;
-
-      &:hover {
-        border-color: var(--accent);
-        background: var(--accent-soft);
-        color: var(--accent);
-      }
+    // 面板整层隐藏时（头部「控制面板」开关），战术数据库一并隐藏。
+    .database-panel.is-hidden {
+      display: none;
     }
 
     .state-controls button {

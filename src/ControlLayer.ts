@@ -20,10 +20,11 @@ export class ControlLayer {
     constructor(
         private readonly root: HTMLElement,
         private readonly battlefield: HTMLCanvasElement,
-        collapseButton: HTMLButtonElement,
+        private readonly panelToggle: HTMLButtonElement,
         eventSource: ControlEvents,
         private readonly hint: HTMLElement | null = null,
         private readonly mapFrame: HTMLElement | null = null,
+        private readonly databasePanel: HTMLElement | null = null,
     ) {
         this.visibility = root.classList.contains('is-visible') ? 'visible' : 'hidden';
         this.syncDom();
@@ -37,7 +38,7 @@ export class ControlLayer {
         eventSource.on('keydown:ESCAPE', () => {
             if (this.isVisible()) this.hide();
         });
-        collapseButton.addEventListener('click', () => this.hide());
+        panelToggle.addEventListener('click', () => this.toggle());
     }
 
     show() {
@@ -81,6 +82,10 @@ export class ControlLayer {
         this.root.setAttribute('aria-hidden', String(!visible));
         (this.root as HTMLElement & {inert: boolean}).inert = !visible;
         this.mapFrame?.classList.toggle('is-hidden', !visible);
+        // 头部「控制面板」开关与战术数据库面板跟随整层显隐。
+        this.panelToggle.classList.toggle('is-off', !visible);
+        this.panelToggle.setAttribute('aria-pressed', String(visible));
+        this.databasePanel?.classList.toggle('is-hidden', !visible);
     }
 }
 
@@ -91,13 +96,14 @@ export function getControlLayer(): ControlLayer {
 
     const root = document.getElementById('control-layer');
     const battlefield = document.getElementById('canvas');
-    const collapseButton = document.getElementById('controls-collapse');
+    const panelToggle = document.getElementById('controls-panel-toggle');
     const hint = document.getElementById('controls-hint');
     const mapFrame = document.getElementById('map-frame');
-    if (!(root instanceof HTMLElement) || !(battlefield instanceof HTMLCanvasElement) || !(collapseButton instanceof HTMLButtonElement)) {
+    const databasePanel = document.getElementById('database-panel');
+    if (!(root instanceof HTMLElement) || !(battlefield instanceof HTMLCanvasElement) || !(panelToggle instanceof HTMLButtonElement)) {
         throw new Error('Control layer markup is incomplete');
     }
 
-    singleton = new ControlLayer(root, battlefield, collapseButton, controls, hint, mapFrame);
+    singleton = new ControlLayer(root, battlefield, panelToggle, controls, hint, mapFrame, databasePanel);
     return singleton;
 }
