@@ -1,5 +1,14 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { defineConfig } from 'vite';
+import { buildPlayerStory } from './scripts/player-story.mjs';
+
+// The backstory shown by the in-game reader is extracted from the single source
+// document at build time (issue #99): the packed client only ever gets the
+// PLAYER-STORY region, never the internal design (future waves / endings).
+const playerStory = buildPlayerStory(readFileSync(
+    new URL('./docs/保护笑脸男-游戏世界观与剧情设定-v2.md', import.meta.url),
+    'utf8',
+));
 
 const backgroundDirectory = new URL('./public/audio/background/', import.meta.url);
 const demoDirectory = new URL('./public/audio/', import.meta.url);
@@ -69,5 +78,6 @@ export default defineConfig({
         __BACKGROUND_TRACKS__: JSON.stringify(backgroundTracks),
         __SPECIAL_MUSIC_PATHS__: JSON.stringify(specialMusicPaths),
         __PHASE_MUSIC_PATHS__: JSON.stringify(phaseMusicPaths),
+        __PLAYER_STORY__: JSON.stringify(playerStory),
     },
 });

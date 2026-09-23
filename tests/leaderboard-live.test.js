@@ -243,6 +243,7 @@ async function test(name, fn) {
             './narrative/NarrativeDirector': { NarrativeDirector: class { constructor() {} beforeWave() {} } },
             './narrative/NarrativeScript': { NARRATIVE_SCENES: [] },
             './narrative/NarrativeOverlay': { narrativeOverlay: { play: async () => {} } },
+            './narrative/StoryReader': { storyReader: { open() {}, close() {}, isOpen: false } },
         }, {
             window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {} },
             setInterval: () => 1,
@@ -310,6 +311,7 @@ async function test(name, fn) {
             './narrative/NarrativeDirector': { NarrativeDirector: class { constructor() {} beforeWave() {} } },
             './narrative/NarrativeScript': { NARRATIVE_SCENES: [] },
             './narrative/NarrativeOverlay': { narrativeOverlay: { play: async () => {} } },
+            './narrative/StoryReader': { storyReader: { open() {}, close() {}, isOpen: false } },
         }, {
             window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {} },
             setInterval: () => 1,
