@@ -455,10 +455,10 @@ body {
         text-shadow: 0 0 12px rgba(53, 226, 255, 0.35);
       }
 
-      // 状态词（最长 PLANNING）在 1/3 卡宽内放不下 20px，按设计比例缩小；
-      // 数值卡保持 20px 大字。
+      // 状态值在 1/3 卡宽内放不下 20px：EN 最长 PLANNING，zh 最长「战术分析中」
+      // （5 个全角字符，13px 时会被截断），12px 可完整放下；数值卡保持 20px 大字。
       #state {
-        font-size: 13px;
+        font-size: 12px;
         line-height: 1.2;
       }
 
@@ -476,13 +476,40 @@ body {
       }
     }
 
+    // 设计稿：青色描边面板 + 左上/右下 L 形角标刻线。
     .chatbox-panel {
+      position: relative;
       flex: 0 0 auto;
       min-height: 0;
       display: flex;
       flex-direction: column;
       padding: 14px;
       overflow-y: auto;
+      border-color: rgba(53, 226, 255, 0.42);
+      border-radius: 6px;
+
+      &::before,
+      &::after {
+        content: '';
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        pointer-events: none;
+      }
+
+      &::before {
+        top: -1px;
+        left: -1px;
+        border-top: 2px solid var(--accent);
+        border-left: 2px solid var(--accent);
+      }
+
+      &::after {
+        bottom: -1px;
+        right: -1px;
+        border-bottom: 2px solid var(--accent);
+        border-right: 2px solid var(--accent);
+      }
     }
 
     .panel-heading {
@@ -490,7 +517,9 @@ body {
       align-items: flex-start;
       justify-content: space-between;
       gap: 20px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(53, 226, 255, 0.28);
 
       .eyebrow {
         color: var(--accent);
@@ -592,15 +621,23 @@ body {
       }
 
       .strategy-count {
+        position: absolute;
+        right: 10px;
+        bottom: 8px;
         color: var(--dim);
         font-size: 9px;
         font-weight: 400;
         letter-spacing: 0.08em;
         text-transform: none;
+        pointer-events: none;
 
         &.over {
           color: #e07a7a;
         }
+      }
+
+      .strategy-inputwrap {
+        position: relative;
       }
 
       .strategy-input {
@@ -608,9 +645,9 @@ body {
         width: 100%;
         min-height: 94px;
         resize: vertical;
-        padding: 11px 12px;
-        border: 1px solid var(--line);
-        border-radius: 10px;
+        padding: 11px 12px 24px;
+        border: 1px solid rgba(53, 226, 255, 0.38);
+        border-radius: 8px;
         background: var(--surface-deep);
         color: var(--ink);
         font-family: inherit;
@@ -629,48 +666,45 @@ body {
 
       .strategy-actions {
         display: flex;
-        align-items: center;
+        align-items: stretch;
         gap: 10px;
-        margin-top: 8px;
+        margin-top: 10px;
       }
 
-      .strategy-apply {
-        border: 1px solid var(--line);
-        border-radius: 9px;
-        background: rgba(16, 25, 23, 0.72);
-        color: var(--muted);
-        cursor: pointer;
-        font-family: inherit;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease;
-
-        &:hover {
-          border-color: var(--accent);
-          background: var(--accent-soft);
-          color: var(--accent);
-        }
-      }
-
+      // 设计稿：主按钮实心青绿 + 深色字，次按钮青色描边；均为等宽圆角双行布局。
       .strategy-actions button {
-        padding: 8px 10px;
-        border: 1px solid var(--line);
-        border-radius: 9px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        padding: 9px 10px;
+        border: 1px solid rgba(53, 226, 255, 0.45);
+        border-radius: 8px;
         background: transparent;
-        color: var(--muted);
+        color: var(--accent);
         cursor: pointer;
         font-family: inherit;
         font-size: 11px;
         font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
+        letter-spacing: 0.04em;
+
+        .btn-main {
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+
+        .btn-sub {
+          font-size: 8px;
+          font-weight: 700;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          opacity: 0.72;
+        }
 
         &:hover:not(:disabled) {
           border-color: var(--accent);
           background: var(--accent-soft);
-          color: var(--accent);
         }
 
         &:disabled {
@@ -679,14 +713,25 @@ body {
         }
       }
 
-      .strategy-apply {
-        flex: 0 0 auto;
-        padding: 9px 13px;
+      // 主按钮：实心青绿 + 深色字；选择器带 .strategy-actions 抬高优先级，
+      // 避免被上面的 .strategy-actions button 通用描边样式覆盖。
+      .strategy-actions .strategy-apply,
+      .strategy-actions button.strategy-apply {
+        background: #46e3c6;
+        border-color: #46e3c6;
+        color: #052731;
+      }
+
+      .strategy-actions .strategy-apply:hover:not(:disabled) {
+        background: #5ff0d4;
+        border-color: #5ff0d4;
+        color: #052731;
       }
 
       .strategy-status {
+        display: block;
         min-height: 15px;
-        flex: 1;
+        margin-top: 8px;
         color: var(--dim);
         font-size: 11px;
         line-height: 1.35;
@@ -940,7 +985,8 @@ body {
       }
     }
 
-    // 战术数据库：底部居中面板，含塔奇克马 / 敌人情报两个 tab。
+    // 战术数据库：底部居中面板，含我方兵力 / 敌方情报两个 tab。
+    // 设计稿：青色外框、标题在左、页签在右，激活页签为实心青底深色字。
     .database-panel {
       position: absolute;
       bottom: 12px;
@@ -950,8 +996,8 @@ body {
       transform: translateX(-50%);
       pointer-events: auto;
       background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: 2px;
+      border: 1px solid rgba(53, 226, 255, 0.42);
+      border-radius: 6px;
       box-shadow: var(--shadow);
 
       .database-header {
@@ -960,7 +1006,15 @@ body {
         justify-content: space-between;
         gap: 12px;
         padding-bottom: 8px;
-        border-bottom: 1px solid rgba(120, 160, 175, 0.14);
+        border-bottom: 1px solid rgba(53, 226, 255, 0.28);
+      }
+
+      .database-title {
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
       }
 
       .database-tabs {
@@ -968,10 +1022,11 @@ body {
         gap: 6px;
 
         .db-tab {
-          padding: 5px 12px;
-          border: 1px solid var(--line);
+          padding: 5px 14px;
+          border: 1px solid rgba(53, 226, 255, 0.45);
+          border-radius: 4px;
           background: transparent;
-          color: var(--muted);
+          color: var(--accent);
           cursor: pointer;
           font-size: 10px;
           font-weight: 700;
@@ -981,13 +1036,13 @@ body {
 
           &:hover {
             border-color: var(--accent);
-            color: var(--accent);
+            background: var(--accent-soft);
           }
 
           &.active {
             border-color: var(--accent);
-            background: var(--accent-soft);
-            color: var(--accent);
+            background: rgba(53, 226, 255, 0.85);
+            color: #052731;
           }
         }
       }
@@ -997,6 +1052,49 @@ body {
 
         &[hidden] {
           display: none;
+        }
+      }
+    }
+
+    // 属性行：我方兵力与敌方情报卡片共用的「标签 + 数值 + 分段条」。
+    .tower-stat {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      line-height: 1;
+
+      .stat-label {
+        width: 30px;
+        flex: none;
+        color: rgba(53, 226, 255, 0.72);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .stat-value {
+        width: 36px;
+        flex: none;
+        overflow: hidden;
+        color: #dff7ff;
+        font-weight: 700;
+        text-align: right;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .stat-bar {
+        flex: 1;
+        height: 6px;
+        border-radius: 2px;
+        background: repeating-linear-gradient(90deg, rgba(53, 226, 255, 0.16) 0 3px, transparent 3px 6px);
+
+        .stat-fill {
+          display: block;
+          height: 100%;
+          border-radius: 2px;
+          background: repeating-linear-gradient(90deg, var(--accent) 0 3px, rgba(53, 226, 255, 0.55) 3px 5px, transparent 5px 6px);
         }
       }
     }
@@ -1011,32 +1109,58 @@ body {
       .tower-palette {
         display: flex;
         flex-wrap: wrap;
-        gap: 7px;
+        gap: 8px;
 
+        // 设计稿卡片：头部立绘 + 型号名，中部 COST/DMG/RATE/RANGE 分段条，底部描述行。
         .tower-card {
           display: flex;
           flex: 1;
-          width: calc((100% - 28px) / 5);
-          min-width: 48px;
-          min-height: 78px;
+          width: calc((100% - 32px) / 5);
+          min-width: 118px;
           flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 2px;
-          padding: 4px 3px;
-          border: 1px solid var(--line);
-          border-radius: 2px;
-          background: rgba(8, 16, 22, 0.72);
+          gap: 7px;
+          padding: 8px 9px;
+          border: 1px solid rgba(53, 226, 255, 0.32);
+          border-radius: 6px;
+          background: rgba(6, 13, 19, 0.78);
           color: var(--muted);
           cursor: pointer;
           font-family: inherit;
-          font-size: 9px;
-          line-height: 1.15;
+          text-align: left;
           transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
 
+          .tower-card-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+
           canvas {
-            width: 38px;
-            height: 38px;
+            width: 40px;
+            height: 40px;
+            flex: none;
+          }
+
+          .tower-card-name {
+            color: var(--accent);
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1.25;
+          }
+
+          .tower-card-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+          }
+
+          .tower-card-flavor {
+            padding-top: 6px;
+            border-top: 1px solid rgba(53, 226, 255, 0.16);
+            color: var(--dim);
+            font-size: 9px;
+            line-height: 1.4;
+            text-align: center;
           }
 
           &:hover,
@@ -1047,19 +1171,6 @@ body {
             box-shadow: 0 0 0 2px rgba(53, 226, 255, 0.12);
             color: var(--ink);
             outline: none;
-          }
-
-          .tower-card-label {
-            overflow: hidden;
-            max-width: 100%;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-          }
-
-          .tower-card-cost {
-            color: var(--accent);
-            font-family: var(--font-mono);
-            font-size: 9px;
           }
         }
       }
@@ -1110,38 +1221,64 @@ body {
       .hostile-card {
         display: flex;
         flex-direction: column;
-        align-items: center;
-        gap: 3px;
-        padding: 8px 6px;
-        border: 1px solid rgba(120, 160, 175, 0.16);
+        gap: 7px;
+        padding: 8px 9px;
+        border: 1px solid rgba(53, 226, 255, 0.28);
+        border-radius: 6px;
         background: rgba(8, 16, 22, 0.72);
-        text-align: center;
+        text-align: left;
+
+        .hostile-card-head {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
 
         // 非正方形敌人插画需要 contain 与平滑采样。
         img {
-          width: 34px;
-          height: 34px;
+          width: 36px;
+          height: 36px;
+          flex: none;
           object-fit: contain;
           image-rendering: auto;
         }
 
+        .hostile-name-block {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          min-width: 0;
+        }
+
         .hostile-name {
-          color: var(--ink);
-          font-size: 11px;
+          overflow: hidden;
+          color: var(--accent);
+          font-size: 10px;
           font-weight: 700;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .hostile-code {
-          color: var(--accent);
+          color: var(--dim);
           font-family: var(--font-mono);
           font-size: 9px;
           letter-spacing: 0.14em;
         }
 
+        .hostile-stats {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
         .hostile-desc {
+          padding-top: 6px;
+          border-top: 1px solid rgba(53, 226, 255, 0.16);
           color: var(--dim);
-          font-size: 10px;
-          line-height: 1.35;
+          font-size: 9px;
+          line-height: 1.4;
+          text-align: center;
         }
       }
     }

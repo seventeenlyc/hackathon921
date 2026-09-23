@@ -31,6 +31,7 @@ class FakeElement {
         this.textContent = '';
         this.disabled = false;
         this.hidden = false;
+        this.style = {};
         this.classList = {add() {}, remove() {}, toggle() {}};
     }
     appendChild(child) { this.children.push(child); return child; }
@@ -63,8 +64,15 @@ function mountedInterface() {
     }, {document}).cashManager;
     cashManager.add(2000);
     const listeners = [];
+    const audio = {
+        muted: false, starts: 0,
+        isMuted() { return this.muted; },
+        setMuted(muted) { this.muted = muted; },
+        startMusic() { this.starts += 1; },
+    };
     const gameLoop = {
         state: 'idle', speed: 1,
+        isIdle() { return this.state === 'idle'; },
         onChange(listener) { listeners.push(listener); },
         change(state) { this.state = state; listeners.forEach(listener => listener(state)); },
     };
@@ -92,7 +100,7 @@ function mountedInterface() {
         './TowerPlacer': {towerPlacer: {place() {}}},
         './ControlLayer': {getControlLayer: () => ({hide() {}})},
         './i18n': i18n,
-        './AudioManager': {audioManager: {isMuted: () => false, setMuted() {}, startMusic() {}}},
+        './AudioManager': {audioManager: audio},
         './CashManager': {cashManager},
         './items/NaturalOil': {naturalOilController},
         './items/TacticalItems': {tacticalItemsController},
@@ -109,7 +117,7 @@ function mountedInterface() {
     const interfaceManager = loadSource('src/InterfaceManager.ts', dependencies, {document}).interfaceManager;
     return {button: document.getElementById('natural-oil'),
         status: document.getElementById('natural-oil-status'), cashManager,
-        naturalOilController, tacticalItemsController, gameLoop, interfaceManager, document, i18n,
+        naturalOilController, tacticalItemsController, gameLoop, interfaceManager, document, i18n, audio,
         tachikomaTab: document.getElementById('db-tab-tachikoma'),
         hostileTab: document.getElementById('db-tab-hostile'),
         tachikomaView: document.getElementById('db-view-tachikoma'),
@@ -135,6 +143,16 @@ assert.doesNotMatch(gameSource, /bindThreatSource/,
     'removing the redundant panel must also stop its live enemy polling');
 
 const ui = mountedInterface();
+const audioButton = ui.document.getElementById('audio-toggle');
+audioButton.click(); // Mute while idle.
+audioButton.click(); // Unmute while idle: do not bypass the battle-start gate.
+assert.strictEqual(ui.audio.starts, 0, 'the audio toggle must not start music before battle');
+assert.strictEqual(ui.audio.muted, false);
+ui.gameLoop.change('running');
+audioButton.click();
+audioButton.click();
+assert.strictEqual(ui.audio.starts, 1, 'unmuting during a run may resume music');
+ui.gameLoop.change('idle');
 ui.hostileTab.click();
 assert.strictEqual(ui.hostileView.hidden, false, 'enemy catalogue opens from its tab');
 assert.strictEqual(ui.tachikomaView.hidden, true, 'tower catalogue hides while enemy tab is selected');

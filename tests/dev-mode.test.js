@@ -149,7 +149,7 @@ function makeTransport(responses) {
                     enqueuePrompt: () => events.push('ranked-prompt'),
                 },
             },
-            './AudioManager': { audioManager: { setWave: w => events.push(['music-wave', w]), startMusic: () => events.push('music-start') } },
+            './AudioManager': { audioManager: { beginRun: w => events.push(['music-wave', w]) } },
             './CashManager': { cashManager: { setBalance: v => events.push(['cash', v]) } },
             './InterfaceManager': { interfaceManager: { setWave: w => events.push(['display-wave', w]) } },
             './dev': {
@@ -195,7 +195,7 @@ function makeTransport(responses) {
                     enqueuePrompt: () => events.push('ranked-prompt'),
                 },
             },
-            './AudioManager': { audioManager: { setWave: w => events.push(['music-wave', w]), startMusic: () => events.push('music-start') } },
+            './AudioManager': { audioManager: { beginRun: w => events.push(['music-wave', w]) } },
             './CashManager': { cashManager: { setBalance: () => events.push('cash-set') } },
             './InterfaceManager': { interfaceManager: { setWave: () => events.push('display-wave-set') } },
             './dev': {

@@ -47,13 +47,22 @@ function tableValue(key, locale) {
 }
 
 for (const state of ['idle', 'running', 'paused', 'planning']) {
+    // 主值随界面语言：zh 界面显示中文、en 界面显示英文；副行固定给另一语言作对照。
     assert.ok(
-        /^[A-Z]/.test(tableValue(`state.${state}`, 'zh')) && /^[A-Z]/.test(tableValue(`state.${state}`, 'en')),
-        `state.${state} main value must stay uppercase EN in both locales`,
+        /[\u4e00-\u9fff]/.test(tableValue(`state.${state}`, 'zh')),
+        `state.${state} 中文界面的主值必须是中文`,
     );
     assert.ok(
-        /[\u4e00-\u9fff]/.test(tableValue(`stateSub.${state}`, 'zh')) && /[\u4e00-\u9fff]/.test(tableValue(`stateSub.${state}`, 'en')),
-        `stateSub.${state} sub-line must stay CJK in both locales`,
+        /^[A-Z]/.test(tableValue(`state.${state}`, 'en')),
+        `state.${state} 英文界面的主值必须是大写英文`,
+    );
+    assert.ok(
+        /^[A-Z]/.test(tableValue(`stateSub.${state}`, 'zh')),
+        `stateSub.${state} 中文界面的副行必须是英文对照`,
+    );
+    assert.ok(
+        /[\u4e00-\u9fff]/.test(tableValue(`stateSub.${state}`, 'en')),
+        `stateSub.${state} 英文界面的副行必须是中文对照`,
     );
 }
 

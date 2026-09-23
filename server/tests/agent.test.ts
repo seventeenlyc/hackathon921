@@ -116,6 +116,23 @@ test('战术摘要聚焦战局研判，不复述建塔动作或落点', () => {
     assert.match(AGENT_SYSTEM_PROMPT, /NEVER recite coordinates/);
 });
 
+test('system prompt maps human directions to grid coordinates and enemy bases', () => {
+    assert.match(AGENT_SYSTEM_PROMPT, /zero-based/i);
+    assert.match(AGENT_SYSTEM_PROMPT, /index `i` increases to the right/i);
+    assert.match(AGENT_SYSTEM_PROMPT, /index `j` increases downward/i);
+    assert.match(AGENT_SYSTEM_PROMPT, /\(4,26\).*southwest/i);
+    assert.match(AGENT_SYSTEM_PROMPT, /\(56,4\).*northeast/i);
+    assert.match(AGENT_SYSTEM_PROMPT, /\(56,26\).*southeast/i);
+    assert.match(AGENT_SYSTEM_PROMPT, /\(4,4\).*northwest/i);
+    assert.match(AGENT_SYSTEM_PROMPT, /current wave.*`spawns`/i);
+    assert.match(AGENT_SYSTEM_PROMPT, /do not assume.*all four.*active/i);
+    assert.match(AGENT_SYSTEM_PROMPT, /each action.*separate tool call/i);
+    assert.match(AGENT_SYSTEM_PROMPT, /never\s+combine multiple actions into one tool call/i);
+    assert.match(AGENT_SYSTEM_PROMPT, /sequentially in the returned order/i);
+    assert.match(AGENT_SYSTEM_PROMPT, /no more than 8 tool calls/i);
+    assert.match(AGENT_SYSTEM_PROMPT, /defer the rest to later waves/i);
+});
+
 test('extractAgentActions 归一化已注册工具调用', () => {
     const payload = {
         choices: [{

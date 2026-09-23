@@ -110,7 +110,7 @@ for (const key of [
     assert.ok(entries.has(key), `missing required i18n key: ${key}`);
 }
 assert.deepStrictEqual(entries.get('database.tabHostile'),
-    {zh: '敌人情报', en: 'ENEMY INTELLIGENCE'},
+    {zh: '敌方情报', en: 'ENEMY INTELLIGENCE'},
     'the enemy tab label must be correct in both languages');
 for (const key of ['threat.title', 'threat.wave', 'threat.idle']) {
     assert.ok(!entries.has(key), `retired right-rail translation should be removed: ${key}`);

@@ -64,6 +64,7 @@ class Game {
         // strategies, so a hand-played wave would not be comparable (see §9).
         waveManager.onWaveReached = wave => this.recordReachedWave(wave);
         waveManager.onWaveStarted = wave => {
+            audioManager.setWave(wave);
             for (const item of battlefield.takePendingModelItems()) {
                 const result = actions.useItem(item);
                 decisionLog.add({
@@ -81,6 +82,7 @@ class Game {
         // Entering PLANNING is the moment a queued prompt is locked in: the AI
         // plans the upcoming wave with exactly this version (issue #17).
         gameLoop.onChange(state => {
+            audioManager.setPaused(state === 'paused');
             if (state === 'planning') {
                 if (playMode === 'ai') decisionSummary?.setThinking(t('reasoning.status.planning'));
                 const before = strategyStore.active().version;
@@ -100,8 +102,10 @@ class Game {
     recordReachedWave(wave: number = waveManager.waveCounter) {
         if (wave > this.lastSoundWave) {
             this.lastSoundWave = wave;
-            audioManager.playWaveReached();
-            audioManager.setWave(wave + 1);
+            if (!this.gameOverScheduled) {
+                audioManager.playWaveReached();
+                if (wave === 200) audioManager.duckForMissionComplete();
+            }
         }
         const username = getSessionUsername();
         // 开发对局既不写共享榜也不写本地榜（服务端 dev_sessions 是最终保险）。
@@ -251,8 +255,7 @@ export const game = new Game();
 
 export function startHumanRun(username: string): void {
     if (!gameLoop.isIdle()) return;
-    audioManager.setWave(waveManager.waveCounter);
-    audioManager.startMusic();
+    audioManager.beginRun(waveManager.waveCounter);
     runSync.prepareRun(username, 'human');
     gameLoop.start();
     void waveManager.start();
