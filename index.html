@@ -28,7 +28,7 @@
         <div class="header-side header-left">
           <span class="eyebrow" data-i18n="shell.eyebrow">公安九课 // 战术网络</span>
           <span class="header-sub" data-i18n="header.subtitle">公安九课 · 塔奇克马防御协议</span>
-          <span id="version" class="header-ver">v0.2.0</span>
+          <span id="version" class="header-ver">v0.2.1</span>
         </div>
         <h1 class="header-title" data-i18n="app.name">保护笑脸男</h1>
         <div class="header-side header-right">
@@ -86,16 +86,6 @@
 
         <aside class="rail rail-right">
           <div id="leaderboard-slot" class="leaderboard-slot"></div>
-
-          <section class="control-card threat-panel" aria-labelledby="threat-heading">
-            <h2 id="threat-heading" class="panel-title" data-i18n="threat.title">敌性体情报</h2>
-            <div class="threat-wave">
-              <span data-i18n="threat.wave">当前波次</span>
-              <strong id="threat-wave">—</strong>
-            </div>
-            <ul id="threat-list" class="threat-list"></ul>
-            <div id="threat-idle" class="threat-idle" data-i18n="threat.idle">待机 — 未捕获敌性体信号</div>
-          </section>
 
           <section class="control-card neural-panel" aria-labelledby="neural-heading" data-i18n-aria-label="aria.gameControls" aria-label="作战控制">
             <h2 id="neural-heading" class="panel-title" data-i18n="neural.title">神经链接</h2>
@@ -160,7 +150,7 @@
           <div class="database-header">
             <div class="database-tabs">
               <button id="db-tab-tachikoma" class="db-tab active" type="button" aria-selected="true" data-i18n="towers.heading">塔奇克马部署</button>
-              <button id="db-tab-hostile" class="db-tab" type="button" aria-selected="false" data-i18n="database.tabHostile">敌性体</button>
+              <button id="db-tab-hostile" class="db-tab" type="button" aria-selected="false" data-i18n="database.tabHostile">敌人情报</button>
             </div>
           </div>
           <section class="tower-panel db-view active" id="db-view-tachikoma">
@@ -168,7 +158,7 @@
             <div id="towers-stats" class="tower-stats" aria-live="polite">选择塔奇克马机体以查看战术参数。</div>
           </section>
           <section class="hostile-panel db-view" id="db-view-hostile" aria-labelledby="hostile-heading" hidden>
-            <h2 id="hostile-heading" class="visually-hidden" data-i18n="database.tabHostile">敌性体 // 属性库</h2>
+            <h2 id="hostile-heading" class="visually-hidden" data-i18n="database.tabHostile">敌人情报</h2>
             <div class="hostile-grid">
               <div class="hostile-card"><img data-enemy-img="simple" alt=""/><span class="hostile-name" data-i18n="enemy.simple.name">傀儡型</span><span class="hostile-code">PUPPET</span><span class="hostile-desc" data-i18n="enemy.simple.desc">数量最多的基础敌性体，成群涌向核心。</span></div>
               <div class="hostile-card"><img data-enemy-img="fast" alt=""/><span class="hostile-name" data-i18n="enemy.fast.name">猎袭型</span><span class="hostile-code">HUNTER</span><span class="hostile-desc" data-i18n="enemy.fast.desc">高速突进型，行动最快，需要提前拦截。</span></div>
