@@ -96,7 +96,15 @@ export class StrategyPanel {
 
         this.count.textContent = `${length} / ${STRATEGY_MAX_LENGTH}`;
         this.count.classList.toggle('over', over);
-        this.applyButton.textContent = idle ? t('strategy.start') : t('strategy.apply');
+        // 主文案写入 .btn-main，保留按钮里的装饰性副行（.btn-sub）不被 textContent 覆盖；
+        // 元素缺失时回退到整体 textContent，兼容无 DOM 的测试桩。
+        const applyMain = this.applyButton.querySelector('.btn-main');
+        const applyText = idle ? t('strategy.start') : t('strategy.apply');
+        if (applyMain) applyMain.textContent = applyText;
+        else this.applyButton.textContent = applyText;
+        const randomMain = this.randomButton.querySelector('.btn-main');
+        if (randomMain) randomMain.textContent = t('strategy.random');
+        else this.randomButton.textContent = t('strategy.random');
         this.applyButton.disabled = over || (idle && empty);
 
         if (over) {

@@ -443,13 +443,40 @@ body {
       }
     }
 
+    // 设计稿：青色描边面板 + 左上/右下 L 形角标刻线。
     .chatbox-panel {
+      position: relative;
       flex: 0 0 auto;
       min-height: 0;
       display: flex;
       flex-direction: column;
       padding: 14px;
       overflow-y: auto;
+      border-color: rgba(53, 226, 255, 0.42);
+      border-radius: 6px;
+
+      &::before,
+      &::after {
+        content: '';
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        pointer-events: none;
+      }
+
+      &::before {
+        top: -1px;
+        left: -1px;
+        border-top: 2px solid var(--accent);
+        border-left: 2px solid var(--accent);
+      }
+
+      &::after {
+        bottom: -1px;
+        right: -1px;
+        border-bottom: 2px solid var(--accent);
+        border-right: 2px solid var(--accent);
+      }
     }
 
     .panel-heading {
@@ -457,7 +484,9 @@ body {
       align-items: flex-start;
       justify-content: space-between;
       gap: 20px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(53, 226, 255, 0.28);
 
       .eyebrow {
         color: var(--accent);
@@ -559,15 +588,23 @@ body {
       }
 
       .strategy-count {
+        position: absolute;
+        right: 10px;
+        bottom: 8px;
         color: var(--dim);
         font-size: 9px;
         font-weight: 400;
         letter-spacing: 0.08em;
         text-transform: none;
+        pointer-events: none;
 
         &.over {
           color: #e07a7a;
         }
+      }
+
+      .strategy-inputwrap {
+        position: relative;
       }
 
       .strategy-input {
@@ -575,9 +612,9 @@ body {
         width: 100%;
         min-height: 94px;
         resize: vertical;
-        padding: 11px 12px;
-        border: 1px solid var(--line);
-        border-radius: 10px;
+        padding: 11px 12px 24px;
+        border: 1px solid rgba(53, 226, 255, 0.38);
+        border-radius: 8px;
         background: var(--surface-deep);
         color: var(--ink);
         font-family: inherit;
@@ -596,48 +633,45 @@ body {
 
       .strategy-actions {
         display: flex;
-        align-items: center;
+        align-items: stretch;
         gap: 10px;
-        margin-top: 8px;
+        margin-top: 10px;
       }
 
-      .strategy-apply {
-        border: 1px solid var(--line);
-        border-radius: 9px;
-        background: rgba(16, 25, 23, 0.72);
-        color: var(--muted);
-        cursor: pointer;
-        font-family: inherit;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease;
-
-        &:hover {
-          border-color: var(--accent);
-          background: var(--accent-soft);
-          color: var(--accent);
-        }
-      }
-
+      // 设计稿：主按钮实心青绿 + 深色字，次按钮青色描边；均为等宽圆角双行布局。
       .strategy-actions button {
-        padding: 8px 10px;
-        border: 1px solid var(--line);
-        border-radius: 9px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        padding: 9px 10px;
+        border: 1px solid rgba(53, 226, 255, 0.45);
+        border-radius: 8px;
         background: transparent;
-        color: var(--muted);
+        color: var(--accent);
         cursor: pointer;
         font-family: inherit;
         font-size: 11px;
         font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
+        letter-spacing: 0.04em;
+
+        .btn-main {
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+
+        .btn-sub {
+          font-size: 8px;
+          font-weight: 700;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          opacity: 0.72;
+        }
 
         &:hover:not(:disabled) {
           border-color: var(--accent);
           background: var(--accent-soft);
-          color: var(--accent);
         }
 
         &:disabled {
@@ -646,14 +680,25 @@ body {
         }
       }
 
-      .strategy-apply {
-        flex: 0 0 auto;
-        padding: 9px 13px;
+      // 主按钮：实心青绿 + 深色字；选择器带 .strategy-actions 抬高优先级，
+      // 避免被上面的 .strategy-actions button 通用描边样式覆盖。
+      .strategy-actions .strategy-apply,
+      .strategy-actions button.strategy-apply {
+        background: #46e3c6;
+        border-color: #46e3c6;
+        color: #052731;
+      }
+
+      .strategy-actions .strategy-apply:hover:not(:disabled) {
+        background: #5ff0d4;
+        border-color: #5ff0d4;
+        color: #052731;
       }
 
       .strategy-status {
+        display: block;
         min-height: 15px;
-        flex: 1;
+        margin-top: 8px;
         color: var(--dim);
         font-size: 11px;
         line-height: 1.35;

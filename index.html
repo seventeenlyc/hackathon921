@@ -121,12 +121,15 @@
               <button id="controls-collapse" class="icon-button" type="button" data-i18n-aria-label="aria.hideControls" aria-label="隐藏作战终端" data-i18n-title="title.hideControls" title="隐藏终端">×</button>
             </div>
             <div class="strategy">
-              <label class="strategy-label" for="strategy-input"><span data-i18n="strategy.label">作战命令</span><span id="strategy-count" class="strategy-count"></span></label>
-              <textarea id="strategy-input" class="strategy-input" rows="5" spellcheck="false" data-i18n-placeholder="strategy.placeholder" placeholder="向塔奇克马下达自然语言作战命令…"></textarea>
+              <label class="strategy-label" for="strategy-input"><span data-i18n="strategy.label">作战命令</span></label>
+              <div class="strategy-inputwrap">
+                <textarea id="strategy-input" class="strategy-input" rows="5" spellcheck="false" data-i18n-placeholder="strategy.placeholder" placeholder="向塔奇克马下达自然语言作战命令…"></textarea>
+                <span id="strategy-count" class="strategy-count"></span>
+              </div>
+              <div id="strategy-status" class="strategy-status" aria-live="polite"></div>
               <div class="strategy-actions">
-                <div id="strategy-status" class="strategy-status" aria-live="polite"></div>
-                <button id="strategy-apply" class="strategy-apply" type="button" disabled>下达命令并开始行动</button>
-                <button id="strategy-random" class="strategy-random" type="button" data-i18n="strategy.random">参谋模板</button>
+                <button id="strategy-apply" class="strategy-apply" type="button" disabled><span class="btn-main">下达命令并开始行动</span><span class="btn-sub">COMMIT DIRECTIVE</span></button>
+                <button id="strategy-random" class="strategy-random" type="button"><span class="btn-main">参谋模板</span><span class="btn-sub">PRESETS</span></button>
               </div>
             </div>
           </section>
