@@ -51,7 +51,6 @@ class InterfaceManager {
     private cashElement = document.getElementById('cash')!;
     private towersWrapperElement = document.getElementById('towers-wrapper')!;
     private stateElement = document.getElementById('state')!;
-    private stateSubElement = document.getElementById('state-sub')!;
     private speedElement = document.getElementById('speed')!;
     private gameOverElement = document.getElementById('game-over')!;
     private pauseButton = document.getElementById('pause') as HTMLButtonElement;
@@ -73,7 +72,6 @@ class InterfaceManager {
         this.pauseButton.onclick = () => gameLoop.pause();
         this.resumeButton.onclick = () => {
             gameLoop.resume();
-            this.controlLayer.hide();
         };
         this.speedElement.onclick = () => {
             gameLoop.setSpeed(nextSpeed(gameLoop.speed));
@@ -162,6 +160,18 @@ class InterfaceManager {
         this.waveElement.textContent = String(wave).padStart(3, '0');
         setText('map-wave', tag);
         this.updateHostileStats(wave);
+        this.updateWaveProgress(wave);
+    }
+
+    /** 波次进度条：100% = 200 波，每关 0.5%；200 波之后封顶。 */
+    private updateWaveProgress(wave: number): void {
+        const pct = Math.round(Math.min(wave, 200) / 200 * 1000) / 10;
+        const fill = document.getElementById('status-progress-fill');
+        if (fill) fill.style.width = `${pct}%`;
+        const pctLabel = document.getElementById('status-progress-pct');
+        if (pctLabel) pctLabel.textContent = `${pct}%`;
+        const bar = fill?.parentElement;
+        bar?.setAttribute('aria-valuenow', String(pct));
     }
 
     /** Human mode's `delayBetweenWaves` countdown, shown next to the wave number. */
@@ -176,7 +186,6 @@ class InterfaceManager {
     setState(state: GameState) {
         // `idle` is the not-started state shown before the player presses Start.
         this.stateElement.textContent = t(`state.${state}`);
-        this.stateSubElement.textContent = t(`stateSub.${state}`);
         this.pauseButton.hidden = state === 'paused';
         this.pauseButton.disabled = state === 'idle' || state === 'planning' || state === 'narrative';
         this.resumeButton.hidden = state !== 'paused';

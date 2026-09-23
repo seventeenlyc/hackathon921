@@ -280,7 +280,9 @@ body {
     }
   }
 
-  // 战场中央的地图装饰框（纯装饰，不拦截任何点击）。
+  // 战场中央的作战扇区框（纯装饰，不拦截任何点击）。
+  // 大扩散不透明投影把扇区以外的地图全部遮住，防止地图外溢到面板后面；
+  // 控制面板整层收起时本元素带 is-hidden，遮罩与边框一并消失，露出全图。
   .map-frame {
     position: absolute;
     top: 64px;
@@ -293,6 +295,7 @@ body {
     justify-content: space-between;
     pointer-events: none;
     border: 1px solid rgba(120, 160, 175, 0.18);
+    box-shadow: 0 0 0 9999px var(--bg);
 
     .map-corner-label {
       position: absolute;
@@ -469,6 +472,42 @@ body {
       margin-top: 12px;
     }
 
+    // 缩位后的资源值（≥ 10 万）用小一号字保证完整显示。
+    .status-metric strong .compact {
+      font-size: 15px;
+    }
+
+    // 设计稿：波次进度条（100% = 200 波，每关 0.5%）。
+    .status-progress {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .status-progress-bar {
+      flex: 1;
+      height: 10px;
+      border-radius: 2px;
+      overflow: hidden;
+      background: repeating-linear-gradient(90deg, rgba(53, 226, 255, 0.16) 0 3px, transparent 3px 6px);
+    }
+
+    .status-progress-fill {
+      display: block;
+      height: 100%;
+      border-radius: 2px;
+      background: repeating-linear-gradient(90deg, var(--accent) 0 3px, rgba(53, 226, 255, 0.55) 3px 5px, transparent 5px 6px);
+    }
+
+    .status-progress-pct {
+      flex: none;
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
     // 设计稿：青色描边卡片、暗底、小号青色标签、大号亮青数值。
     .status-metric {
       display: flex;
@@ -516,12 +555,6 @@ body {
         letter-spacing: 0;
         text-shadow: none;
       }
-
-      .status-sub {
-        color: var(--muted);
-        font-size: 10px;
-        letter-spacing: 0.06em;
-      }
     }
 
     // 设计稿：青色描边面板 + 左上/右下 L 形角标刻线。
@@ -536,28 +569,6 @@ body {
       border-color: rgba(53, 226, 255, 0.42);
       border-radius: 6px;
 
-      &::before,
-      &::after {
-        content: '';
-        position: absolute;
-        width: 12px;
-        height: 12px;
-        pointer-events: none;
-      }
-
-      &::before {
-        top: -1px;
-        left: -1px;
-        border-top: 2px solid var(--accent);
-        border-left: 2px solid var(--accent);
-      }
-
-      &::after {
-        bottom: -1px;
-        right: -1px;
-        border-bottom: 2px solid var(--accent);
-        border-right: 2px solid var(--accent);
-      }
     }
 
     .panel-heading {
@@ -727,14 +738,6 @@ body {
           white-space: nowrap;
         }
 
-        .btn-sub {
-          font-size: 8px;
-          font-weight: 700;
-          letter-spacing: 0.18em;
-          text-transform: uppercase;
-          opacity: 0.72;
-        }
-
         &:hover:not(:disabled) {
           border-color: var(--accent);
           background: var(--accent-soft);
@@ -750,14 +753,14 @@ body {
       // 避免被上面的 .strategy-actions button 通用描边样式覆盖。
       .strategy-actions .strategy-apply,
       .strategy-actions button.strategy-apply {
-        background: #46e3c6;
-        border-color: #46e3c6;
+        background: #52eacd;
+        border-color: #52eacd;
         color: #052731;
       }
 
       .strategy-actions .strategy-apply:hover:not(:disabled) {
-        background: #5ff0d4;
-        border-color: #5ff0d4;
+        background: #66f0d8;
+        border-color: #66f0d8;
         color: #052731;
       }
 
@@ -2704,4 +2707,24 @@ body {
       padding: 14px 16px 8px;
     }
   }
+}
+
+// 面板四角刻线装饰：所有工作区面板（.control-card 系列 / 作战记录 / 战力数据库）
+// 的边框四角各绘一枚 L 形角标。放在元素自身 background 上——
+// 相比伪元素，内容滚动时角标始终贴合面板边框（attachment 默认不随内容滚动）。
+#inert .controls .control-card,
+#inert .leaderboard-panel,
+#inert .database-panel {
+  background-image:
+    linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent));
+  background-position: left top, left top, left bottom, left bottom, right top, right top, right bottom, right bottom;
+  background-size: 14px 2px, 2px 14px, 14px 2px, 2px 14px, 14px 2px, 2px 14px, 14px 2px, 2px 14px;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
 }

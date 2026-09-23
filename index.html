@@ -82,7 +82,7 @@
         <div class="header-side header-left">
           <span class="eyebrow" data-i18n="shell.eyebrow">公安九课 // 战术网络</span>
           <span class="header-sub" data-i18n="header.subtitle">公安九课 · 塔奇克马防御协议</span>
-          <span id="version" class="header-ver">v0.2.21</span>
+          <span id="version" class="header-ver">v0.2.22</span>
         </div>
         <h1 class="header-title" data-i18n="app.name">保护笑脸男</h1>
         <div class="header-side header-right">
@@ -113,7 +113,11 @@
             <div class="status-grid" data-i18n-aria-label="aria.battlefieldStatus" aria-label="战场状态">
               <div class="status-metric"><span class="status-label" data-i18n="label.cash">战术资源</span><strong><span id="cash">200</span></strong></div>
               <div class="status-metric"><span class="status-label" data-i18n="label.wave">防御波次</span><strong><span id="wave">001</span> <span id="delay"></span></strong></div>
-              <div class="status-metric"><span class="status-label" data-i18n="label.state">作战状态</span><strong id="state">STANDBY</strong><span class="status-sub" id="state-sub">待机</span></div>
+              <div class="status-metric"><span class="status-label" data-i18n="label.state">作战状态</span><strong id="state">STANDBY</strong></div>
+            </div>
+            <div class="status-progress" role="progressbar" data-i18n-aria-label="aria.waveProgress" aria-label="波次进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0.5">
+              <span class="status-progress-bar"><span id="status-progress-fill" class="status-progress-fill" style="width: 0.5%;"></span></span>
+              <span id="status-progress-pct" class="status-progress-pct">0.5%</span>
             </div>
           </section>
 
@@ -132,8 +136,8 @@
               </div>
               <div id="strategy-status" class="strategy-status" aria-live="polite"></div>
               <div class="strategy-actions">
-                <button id="strategy-apply" class="strategy-apply" type="button" disabled><span class="btn-main">下达命令并开始行动</span><span class="btn-sub">COMMIT DIRECTIVE</span></button>
-                <button id="strategy-random" class="strategy-random" type="button"><span class="btn-main">参谋模板</span><span class="btn-sub">PRESETS</span></button>
+                <button id="strategy-apply" class="strategy-apply" type="button" disabled><span class="btn-main">下达命令并开始行动</span></button>
+                <button id="strategy-random" class="strategy-random" type="button"><span class="btn-main">参谋模板</span></button>
               </div>
             </div>
           </section>
@@ -271,12 +275,7 @@
                 </svg>
               </span>
               <span id="narrative-portrait-tachikoma" class="narrative-portrait-art" hidden>
-                <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-                  <path d="M14 30c0-8 6-14 18-14s18 6 18 14v10c0 6-6 10-18 10s-18-4-18-10z" fill="currentColor"/>
-                  <rect x="18" y="30" width="28" height="9" rx="4.5" fill="#0b0e13"/>
-                  <circle cx="32" cy="34.5" r="3.2" fill="#35e2ff"/>
-                  <path d="M12 44l-6 8M52 44l6 8M22 50l-3 10M42 50l3 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-                </svg>
+                <img src="./src/assets/narrative/tachikoma.png" alt="" />
               </span>
             </div>
             <div class="narrative-body">
