@@ -34,8 +34,7 @@ export class SniperTower extends Tower {
     }
 
     draw(ctx: CanvasRenderingContext2D) {
-        this.drawTexture(ctx, this.angle);
-
+        this.drawTexture(ctx);
         super.draw(ctx);
     }
 

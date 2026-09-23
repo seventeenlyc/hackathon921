@@ -30,6 +30,12 @@ export abstract class Enemy extends Renderable implements Point {
         borderRadius: 2
     }
 
+    // Display size is independent of the collision radius. Only Simple needs
+    // more screen space; the remaining enemies retain their original size.
+    protected get textureSize(): number {
+        return this.radius * 2;
+    }
+
     constructor(base: Base) {
         super(base.center.x, base.center.y);
         this.base = base;
@@ -87,7 +93,7 @@ export abstract class Enemy extends Renderable implements Point {
     draw(ctx: CanvasRenderingContext2D): void {
         this.effects.forEach(e => e.draw(ctx));
 
-        textureManager.draw(ctx, this.texturePath, this.x, this.y, this.radius * 2, this.radius * 2);
+        textureManager.draw(ctx, this.texturePath, this.x, this.y, this.textureSize, this.textureSize);
 
         if (this.damageTaken > 0) {
             this.drawHealthBar(ctx);

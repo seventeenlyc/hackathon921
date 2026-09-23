@@ -1001,10 +1001,12 @@ body {
         background: rgba(8, 16, 22, 0.72);
         text-align: center;
 
+        // 非正方形敌人插画需要 contain 与平滑采样。
         img {
           width: 34px;
           height: 34px;
-          image-rendering: pixelated;
+          object-fit: contain;
+          image-rendering: auto;
         }
 
         .hostile-name {
