@@ -57,3 +57,11 @@ overshoot.update(6000, true);
 assert.deepStrictEqual(overshoot.state, {kind: 'cooldown', remainingMs: 9000});
 overshoot.update(9001, true);
 assert.deepStrictEqual(overshoot.state, {kind: 'ready'});
+
+const isolated = new NaturalOilController();
+assert.deepStrictEqual(isolated.activate(true, cash(2000)), {ok: true});
+const exposed = isolated.state;
+exposed.remainingMs = 1;
+exposed.kind = 'ready';
+assert.deepStrictEqual(isolated.state, {kind: 'active', remainingMs: 5000});
+assert.strictEqual(isolated.attackSpeedMultiplier, 1.5);

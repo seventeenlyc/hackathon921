@@ -20,7 +20,7 @@ export class NaturalOilController {
     private currentState: NaturalOilState = {kind: 'ready'};
 
     get state(): NaturalOilState {
-        return this.currentState;
+        return {...this.currentState};
     }
 
     get attackSpeedMultiplier(): number {
