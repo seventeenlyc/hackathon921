@@ -7,11 +7,15 @@
 
 export const STORAGE_KEY = 'pd_leaderboard_v1';
 
+export type PlayMode = 'ai' | 'human';
+export type LeaderboardMode = PlayMode | 'total';
+
 export interface LeaderboardEntry {
     username: string;
     wave: number;
     /* 产生时间戳（毫秒）：用于平局时更早达成者靠前、以及将来展示。 */
     timestamp: number;
+    mode: PlayMode;
 }
 
 /* 用户名合法字符：中英文、数字、下划线、短横线（限制展示/校验，非安全边界）。非法返回 null。 */
@@ -37,7 +41,8 @@ export function readStoredLeaderboard(): LeaderboardEntry[] | null {
         return valid.map(e => ({
             username: sanitizeUsername(e.username) || '???',
             wave: Math.max(0, Math.floor(e.wave)),
-            timestamp: e.timestamp
+            timestamp: e.timestamp,
+            mode: (e.mode === 'human' ? 'human' : 'ai') as PlayMode,
         }));
     } catch (e) {
         return null;
@@ -62,30 +67,45 @@ export function sortEntries(entries: LeaderboardEntry[]): LeaderboardEntry[] {
     });
 }
 
-/* 合并同一用户名的多条记录为最佳成绩（取最高分，平手取更早）。 */
+/* 合并同一用户名在同一模式下的多条记录为最佳成绩（取最高分，平手取更早）。 */
 export function dedupeByUser(entries: LeaderboardEntry[]): LeaderboardEntry[] {
-    const byName: { [name: string]: LeaderboardEntry } = {};
+    const byKey: { [key: string]: LeaderboardEntry } = {};
     for (const e of entries) {
-        const key = e.username.toLowerCase();
-        const prev = byName[key];
+        const mode: PlayMode = e.mode === 'human' ? 'human' : 'ai';
+        const key = `${e.username.toLowerCase()}#${mode}`;
+        const prev = byKey[key];
         if (!prev || e.wave > prev.wave || (e.wave === prev.wave && e.timestamp < prev.timestamp)) {
-            byName[key] = e;
+            byKey[key] = { ...e, mode };
         }
     }
-    return Object.keys(byName).map(k => byName[k]);
+    return Object.keys(byKey).map(k => byKey[k]);
 }
 
-/* 提交一局成绩，返回 { entries, rank }：rank 为 1-based 全局名次（该用户名最佳成绩所在排名），未找到返回 null。 */
-export function submitScore(username: string, score: number, stored: LeaderboardEntry[] | null): { entries: LeaderboardEntry[]; rank: number | null } {
+/* 根据榜单模式筛选条目（AI / Human 视图或 Total 全榜），并完成去重与排序。 */
+export function entriesForBoard(entries: LeaderboardEntry[], mode: LeaderboardMode = 'ai'): LeaderboardEntry[] {
+    const deduped = dedupeByUser(entries);
+    const filtered = mode === 'total' ? deduped : deduped.filter(e => e.mode === mode);
+    return sortEntries(filtered);
+}
+
+/* 提交一局成绩，返回 { entries, rank }：rank 为 1-based 在当前模式榜单中的名次，未找到返回 null。 */
+export function submitScore(
+    username: string,
+    score: number,
+    stored: LeaderboardEntry[] | null,
+    mode: PlayMode = 'ai'
+): { entries: LeaderboardEntry[]; rank: number | null } {
     const clean = sanitizeUsername(username);
     const safeScore = Math.max(1, Math.floor(score));
+    const safeMode: PlayMode = mode === 'human' ? 'human' : 'ai';
     const entries = stored && stored.length ? stored.slice() : [];
     const ts = Date.now();
-    entries.push({ username: clean || '???', wave: safeScore, timestamp: ts });
+    entries.push({ username: clean || '???', wave: safeScore, timestamp: ts, mode: safeMode });
     let merged = dedupeByUser(entries);
     merged = sortEntries(merged);
+    const boardEntries = entriesForBoard(merged, safeMode);
     const lower = clean ? clean.toLowerCase() : '';
-    const idx = clean ? merged.findIndex(e => e.username.toLowerCase() === lower) : -1;
+    const idx = clean ? boardEntries.findIndex(e => e.username.toLowerCase() === lower && e.mode === safeMode) : -1;
     const rank = idx >= 0 ? idx + 1 : null;
     return { entries: merged, rank };
 }

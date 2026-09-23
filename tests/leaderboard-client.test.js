@@ -97,4 +97,27 @@ async function test(name, fn) {
         assert.strictEqual(calls.filter(call => call.url.endsWith('/runs')).length, 1);
         assert.strictEqual(calls.filter(call => call.url.endsWith('/waves')).length, 1);
     });
+
+    await test('run creation sends requested mode and wave sync does not send mode override', async () => {
+        const calls = [];
+        const client = loadClient(async (url, init) => {
+            calls.push({ url, init });
+            if (url.endsWith('/session')) return response({ token: 'alice-token', username: 'Alice' });
+            if (url.endsWith('/runs')) return response({ runId: 'run-human-1' }, 201);
+            if (url.endsWith('/waves')) return response({ accepted: true, bestWave: 10 });
+            throw new Error('unexpected request: ' + url);
+        });
+        const runId = await client.ensureRun('Alice', 'human');
+        assert.strictEqual(runId, 'run-human-1');
+        const runCall = calls.find(call => call.url.endsWith('/runs'));
+        assert.ok(runCall, 'must call /runs');
+        assert.deepStrictEqual(JSON.parse(runCall.init.body), { mode: 'human' });
+
+        await client.syncReachedWave('Alice', 10, 'human');
+        const waveCall = calls.find(call => call.url.endsWith('/waves'));
+        assert.ok(waveCall, 'must call /waves');
+        const waveBody = JSON.parse(waveCall.init.body);
+        assert.strictEqual(waveBody.wave, 10);
+        assert.strictEqual(waveBody.mode, undefined, 'wave sync should not send mode override');
+    });
 })();

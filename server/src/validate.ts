@@ -37,3 +37,17 @@ export function sanitizeLimit(raw: unknown): number {
     if (n < 1) return DEFAULT_LIMIT;
     return Math.min(n, MAX_LIMIT);
 }
+
+/** 校验开局模式：缺失默认 'ai'，合法值 'ai' | 'human'，其他返回 null。 */
+export function sanitizeRunMode(raw: unknown): 'ai' | 'human' | null {
+    if (raw === undefined || raw === null) return 'ai';
+    if (raw === 'ai' || raw === 'human') return raw;
+    return null;
+}
+
+/** 校验排行榜查询模式：缺失或空串默认 'ai'，合法值 'ai' | 'human' | 'total'，其他返回 null。 */
+export function sanitizeLeaderboardMode(raw: unknown): 'ai' | 'human' | 'total' | null {
+    if (raw === undefined || raw === null || raw === '') return 'ai';
+    if (raw === 'ai' || raw === 'human' || raw === 'total') return raw;
+    return null;
+}

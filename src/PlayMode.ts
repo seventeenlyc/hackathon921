@@ -50,9 +50,10 @@ export function otherMode(mode: PlayMode): PlayMode {
     return mode === 'ai' ? 'human' : 'ai';
 }
 
-/** The URL to reload into `mode`, preserving every other query param. */
+/** The URL to reload into `mode`, discarding the obsolete lane override. */
 export function modeUrl(href: string, mode: PlayMode): string {
     const url = new URL(href);
+    url.searchParams.delete('spawners');
     url.searchParams.set('mode', mode);
     return url.toString();
 }

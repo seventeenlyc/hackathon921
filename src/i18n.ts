@@ -84,7 +84,17 @@ const STRINGS: { [key: string]: Entry } = {
     'state.planning': {zh: '战术分析中', en: 'TACTICAL ANALYSIS'},
 
     'speed.label': {zh: '演算速度 x{speed}', en: 'Simulation x{speed}'},
-    'spawner.pending': {zh: '{applied} → {requested}（下一波生效）', en: '{applied} → {requested} effective next wave'},
+
+    'oil.label': {zh: '天然机油', en: 'Natural Oil'},
+    'oil.button': {zh: '天然机油，花费 {cost} 金币，攻速提高 50% 持续 5 秒', en: 'Natural Oil, costs {cost} cash, increases attack speed by 50% for 5 seconds'},
+    'oil.ready': {zh: '可使用 · 2000 ¢', en: 'Ready · 2000 ¢'},
+    'oil.notRunning': {zh: '仅运行时可使用', en: 'Available while running'},
+    'oil.active': {zh: '生效中 · 剩余 {seconds} 秒', en: 'Active · {seconds}s left'},
+    'oil.cooldown': {zh: '冷却中 · 剩余 {seconds} 秒', en: 'Cooldown · {seconds}s left'},
+    'oil.failure.NOT_RUNNING': {zh: '仅运行时可使用', en: 'Available while running'},
+    'oil.failure.ALREADY_ACTIVE': {zh: '机油正在生效', en: 'Natural Oil is already active'},
+    'oil.failure.COOLDOWN': {zh: '机油仍在冷却', en: 'Natural Oil is cooling down'},
+    'oil.failure.INSUFFICIENT_FUNDS': {zh: '金币不足，需要 2000 ¢', en: 'Insufficient cash: 2000 ¢ required'},
 
     'result.gameOver': {zh: '防御终止', en: 'DEFENSE TERMINATED'},
     'result.wave': {zh: '防御波次', en: 'Wave Reached'},
@@ -122,6 +132,12 @@ const STRINGS: { [key: string]: Entry } = {
     'tower.cardDetailsTitle': {zh: '{name} · {cost} 战术资源 · 点击查看战术参数', en: '{name} · {cost} resources · click to view tactical specifications'},
     'tower.dpsTitle': {zh: '每秒持续火力', en: 'Damage Per Second'},
     'tower.summary': {zh: '{name} × {count}', en: '{name} × {count}'},
+
+    'lb.boardAi': {zh: 'AI 榜', en: 'AI'},
+    'lb.boardHuman': {zh: '人类榜', en: 'Human'},
+    'lb.boardTotal': {zh: '总榜', en: 'Total'},
+    'lb.modeAi': {zh: 'AI', en: 'AI'},
+    'lb.modeHuman': {zh: '人类', en: 'Human'},
 
     'snackbar.noMoney': {zh: '战术资源不足，无法部署该机体。', en: 'Insufficient tactical resources to deploy this unit.'},
 

@@ -2,6 +2,7 @@ import "./styles/styles.less";
 // Instantiated for its side effects: constructing the game wires the AI runtime and
 // exposes the programmatic control surface on `window.promptDefense`.
 import './Game';
+import { startHumanRun } from './Game';
 import { strategyPanel } from "./StrategyPanel";
 import { UsernameGate, leaderboardPanel } from './leaderboard/LeaderboardUI';
 import { clearLegacyUsernameCookie } from './leaderboard/SessionIdentity';
@@ -22,13 +23,13 @@ const gate = new UsernameGate((name) => {
     // 服务端第一次记录波次发生在第 1 波真正开始时。
     void ensureSessionToken(name);
     leaderboardPanel.refresh();
+    if (playMode === 'human') {
+        startHumanRun(name);
+    }
 });
 
-// 人类模式不写排行榜，也就不需要昵称；直接开始上游 inert 的玩法。
-if (playMode === 'ai') {
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => gate.show());
-    } else {
-        gate.show();
-    }
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => gate.show());
+} else {
+    gate.show();
 }

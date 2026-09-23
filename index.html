@@ -43,6 +43,12 @@
           <section class="tower-panel" aria-labelledby="towers-heading">
             <h2 id="towers-heading" class="tower-panel-title" data-i18n="towers.heading">塔奇克马部署</h2>
             <div id="towers-wrapper" class="tower-palette" data-i18n-aria-label="aria.deployableUnits" aria-label="可部署塔奇克马机体"></div>
+            <button id="natural-oil" class="natural-oil" type="button" disabled aria-describedby="natural-oil-status">
+              <span class="natural-oil-icon" aria-hidden="true"></span>
+              <span class="natural-oil-label" data-i18n="oil.label">天然机油</span>
+              <span class="natural-oil-cost">2000 ¢</span>
+            </button>
+            <span id="natural-oil-status" class="natural-oil-status" role="status" aria-live="polite"></span>
             <div id="towers-stats" class="tower-stats" aria-live="polite">选择塔奇克马机体以查看战术参数。</div>
           </section>
         </div>
@@ -84,19 +90,8 @@
           </div>
           <details class="settings-panel">
             <summary data-i18n="settings.title">系统设置</summary>
-            <p class="settings-note" data-i18n="settings.spawnerNote">修改攻击路线数量将重新开始当前行动。</p>
-            <div class="spawner-setting">
-              <span data-i18n="label.spawners">攻击路线：</span>
-              <span>
-                <button id="spawner1" class="spawner" data-count="1" type="button">1</button>
-                <button id="spawner2" class="spawner" data-count="2" type="button">2</button>
-                <button id="spawner3" class="spawner" data-count="3" type="button">3</button>
-                <button id="spawner4" class="spawner" data-count="4" type="button">4</button>
-              </span>
-            </div>
-            <div id="spawner-status" class="spawner-status" aria-live="polite"></div>
             <footer>
-              <div><span data-i18n="app.name">保护笑脸男</span> <span id="version" class="accent">v0.1.24</span></div>
+              <div><span data-i18n="app.name">保护笑脸男</span> <span id="version" class="accent">v0.1.25</span></div>
               <div class="code">
                 <span data-i18n="footer.source">源代码：</span>
                 <a href="//github.com/CorentinTh/inert" target="_blank" data-i18n-aria-label="aria.githubRepository" aria-label="GitHub 源代码仓库" rel="noopener">

@@ -145,6 +145,21 @@ test('最佳对局按波次、达成时间和 run id 稳定选择且只读取该
     assert.deepEqual(store.bestRunPrompts('Nobody'), { username: 'Nobody', runId: null, wave: null, prompts: [] });
 });
 
+test('提示词历史只读取 AI 模式对局，忽略人类模式的高波次', () => {
+    const { store } = freshStore();
+    store.createRun('r-ai', 'Alice', T0, 'ai');
+    store.recordPrompt('r-ai', 'Alice', { version: 1, prompt: 'ai prompt', fromWave: 1 }, T0);
+    store.recordWave('r-ai', 'Alice', 10, T0 + 100);
+
+    store.createRun('r-human', 'Alice', T0 + 20, 'human');
+    store.recordWave('r-human', 'Alice', 50, T0 + 200);
+
+    const best = store.bestRunPrompts('Alice');
+    assert.equal(best.runId, 'r-ai', '人类模式虽然波次更高，但提示词历史只选 AI 对局');
+    assert.equal(best.wave, 10);
+    assert.deepEqual(best.prompts.map(p => p.prompt), ['ai prompt']);
+});
+
 test('损坏的提示词链不返回假完整结果', () => {
     const { store, db } = freshStore();
     store.createRun('r1', 'Alice', T0);
