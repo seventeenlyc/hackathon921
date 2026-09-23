@@ -35,48 +35,43 @@ new Function('module', 'exports', 'require', 'document', js)(
 
 const mapWidth = dependencies['./Map'].Map.TILE_SIZE * dependencies['./Map'].Map.GRID_W;
 const mapHeight = dependencies['./Map'].Map.TILE_SIZE * dependencies['./Map'].Map.GRID_H;
-// "Cover" minimum: the map must reach every edge of the frame, so the larger
-// ratio wins (height binds in this fixture: frame is wider than the map).
-const minimumScale = Math.max(frameRect.width / mapWidth, frameRect.height / mapHeight);
+// "Contain" minimum: the whole map must fit inside the frame, so the smaller
+// ratio wins (width binds in this fixture: vertical letterboxing at min zoom).
+const minimumScale = Math.min(frameRect.width / mapWidth, frameRect.height / mapHeight);
 
 const camera = new moduleObj.exports.Camera();
 for (let i = 0; i < 20; i++) listeners['wheel:down']();
 assert.ok(Math.abs(camera.scaleRatio - minimumScale) < 1e-9,
-    'zooming out must stop at the cover scale where the map still touches every frame edge');
-assert.ok(mapHeight * camera.scaleRatio >= frameRect.height - 1e-9,
-    'at minimum zoom the rendered map must not be smaller than the frame vertically');
-assert.ok(mapWidth * camera.scaleRatio >= frameRect.width - 1e-9,
-    'at minimum zoom the rendered map must not be smaller than the frame horizontally');
+    'zooming out must stop exactly at the contain scale where the whole map fits the frame');
+assert.ok(mapWidth * camera.scaleRatio <= frameRect.width + 1e-9,
+    'at minimum zoom the rendered map width must not exceed the frame');
+assert.ok(mapHeight * camera.scaleRatio <= frameRect.height + 1e-9,
+    'at minimum zoom the rendered map height must not exceed the frame');
 
 const translations = [];
 const ctx = { translate: (x, y) => translations.push([x, y]), scale() {}, getTransform: () => ({}) };
 camera.process(ctx);
 assert.deepStrictEqual(translations[0], [480, 310], 'the camera must center on map-frame, not the full canvas');
-// Frame is wider than the map, so height binds: vertical slack is zero at min
-// zoom and horizontal slack is the overflow on each side.
-const horizontalSlack = (mapWidth * camera.scaleRatio - frameRect.width) / 2 / camera.scaleRatio;
+// Contain 最小缩放下地图居中于扇区框，拖拽完全锁定（两轴都没有余量）。
 assert.deepStrictEqual(translations[1], [-500, -250], 'a centered camera stays centered');
 
-// Dragging at minimum zoom must not pull any map edge inside the frame.
 controls.mouse = { x: 100, y: 100 };
 listeners['mousedown']();
 controls.mouse = { x: -100, y: 100 };
 camera.update();
 camera.process(ctx);
-assert.deepStrictEqual(translations.at(-1), [-500 - horizontalSlack, -250],
-    'horizontal drag stops when the map edge reaches the frame edge');
+assert.deepStrictEqual(translations.at(-1), [-500, -250],
+    'horizontal drag is locked at minimum zoom (the whole map already fits)');
 controls.mouse = { x: -100, y: 300 };
 camera.update();
 camera.process(ctx);
-assert.deepStrictEqual(translations.at(-1), [-500 - horizontalSlack, -250],
-    'vertical drag is locked at minimum zoom (zero slack axis)');
+assert.deepStrictEqual(translations.at(-1), [-500, -250],
+    'vertical drag is locked at minimum zoom as well');
 
-// Releasing the mouse folds the drag back into the camera position; the view
-// must not jump because the coverage clamp applies to the folded state too.
 listeners['mouseup']();
 camera.process(ctx);
-assert.deepStrictEqual(translations.at(-1), [-500 - horizontalSlack, -250],
-    'the view stays put after releasing a drag that was clamped');
+assert.deepStrictEqual(translations.at(-1), [-500, -250],
+    'the view stays put after releasing a locked drag');
 
 for (let i = 0; i < 20; i++) listeners['wheel:up']();
 assert.ok(camera.scaleRatio > 1, 'zooming in has no maximum scale cap');
