@@ -188,7 +188,7 @@ async function test(name, fn) {
             './entities/towers/Tower': { Tower: class {} },
             './WavesManager': { waveManager, humanPlanner: { plan: async () => {} } },
             './PlayMode': { playMode: 'ai', switchPlayMode() {} },
-            './leaderboard/LeaderboardUI': { submitRunScore: (name, wave) => submissions.push([name, wave]) },
+            './leaderboard/LeaderboardUI': { submitRunScore: (name, wave, mode = 'ai') => submissions.push([name, wave, mode]) },
             './leaderboard/SessionIdentity': { getSessionUsername: () => username },
             './leaderboard/LeaderboardClient': { getSessionToken: () => null, fetchSharedLeaderboard: async () => null },
             './agent/GameLoop': { gameLoop: { setFocused() {}, onChange() {} } },
@@ -218,6 +218,52 @@ async function test(name, fn) {
         // No automatic wave 1 anymore: the run opens in IDLE, so the first entry is
         // wave 2. Wave 3 is skipped while no username is set, then Bob's manual
         // recordReachedWave() picks the current counter back up.
-        assert.deepStrictEqual(submissions, [['Alice', 2], ['Bob', 3]]);
+        assert.deepStrictEqual(submissions, [['Alice', 2, 'ai'], ['Bob', 3, 'ai']]);
+    });
+
+    await test('human mode records wave and submits with mode human', () => {
+        const submissions = [];
+        const ranksRequested = [];
+        let username = 'Dave';
+        const waveManager = { waveCounter: 5, looping: true, setPlanner() {}, setInterWaveDelay() {}, start() {} };
+        const game = loadSource('Game.ts', {
+            './Canvas': { canvas: {}, ctx: {} },
+            './config.json': { fps: 60 },
+            './Controls': { controls: { on() {}, tabHasFocus: () => true } },
+            './Map': { map: { on() {}, grid: [] } },
+            './Camera': { camera: {} },
+            './EnemyManager': { enemyManager: {} },
+            './MunitionManager': { munitionManager: {} },
+            './TowerPlacer': { towerPlacer: { placing: false, update() {}, draw() {} } },
+            './InterfaceManager': { interfaceManager: { showGameOver() {}, setResultRank() {} } },
+            './CashManager': { cashManager: { getBalance: () => 0 } },
+            './items/NaturalOil': { naturalOilController: { update() {} } },
+            './entities/towers/Tower': { Tower: class {} },
+            './WavesManager': { waveManager, humanPlanner: { plan: async () => {} } },
+            './PlayMode': { playMode: 'human', switchPlayMode() {} },
+            './leaderboard/LeaderboardUI': { submitRunScore: (name, wave, mode) => submissions.push([name, wave, mode]) },
+            './leaderboard/SessionIdentity': { getSessionUsername: () => username },
+            './leaderboard/LeaderboardClient': { getSessionToken: () => null, fetchSharedLeaderboard: async (u, m) => { ranksRequested.push([u, m]); return null; } },
+            './agent/GameLoop': { gameLoop: { setFocused() {}, onChange() {}, start() {}, isIdle: () => false } },
+            './agent/GameActions': { GameActions: class {} },
+            './agent/InertBattlefield': { InertBattlefield: class {} },
+            './agent/AgentRuntime': { AgentRuntime: class {} },
+            './agent/snapshot': { formatSnapshot: () => '' },
+            './agent/StrategyStore': { strategyStore: { active: () => ({ version: 0 }), lock: () => ({ version: 0, text: '' }) } },
+            './StrategyQueue': { queueStrategy: () => ({}), startRun: () => {} },
+            './DecisionLog': { decisionLog: { add() {}, error() {} } },
+            './leaderboard/RunSync': { runSync: { prepareRun() {}, enqueuePrompt() {}, retryPending() {} } },
+            './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, startMusic() {} } },
+        }, {
+            window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {} },
+            setInterval: () => 1,
+            requestAnimationFrame: () => 1,
+            setTimeout: fn => fn(),
+            clearInterval() {},
+        }).game;
+        game.recordReachedWave(5);
+        assert.deepStrictEqual(submissions, [['Dave', 5, 'human']]);
+        game.gameOver();
+        assert.deepStrictEqual(ranksRequested, [['Dave', 'human']]);
     });
 })();

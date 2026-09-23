@@ -72,7 +72,7 @@ class Game {
             audioManager.playWaveReached();
         }
         const username = getSessionUsername();
-        if (playMode === 'ai' && username) submitRunScore(username, wave);
+        if (username) submitRunScore(username, wave, playMode);
     }
 
     start() {
@@ -129,16 +129,16 @@ class Game {
             audioManager.playGameOver();
 
             const wave = waveManager.waveCounter;
-            // 结算时再同步一次，以覆盖停止波次循环的边界时刻。人类模式不入榜。
-            if (playMode === 'ai') this.recordReachedWave(wave);
+            // 结算时再同步一次，以覆盖停止波次循环的边界时刻。
+            this.recordReachedWave(wave);
             runSync.retryPending();
 
             interfaceManager.showGameOver(this.collectStats(wave));
 
             // 名次以服务端为准，异步补齐；拿不到就保持 “—”。
             const username = getSessionUsername();
-            if (username && playMode === 'ai') {
-                void fetchSharedLeaderboard(username).then(result => {
+            if (username) {
+                void fetchSharedLeaderboard(username, playMode).then(result => {
                     interfaceManager.setResultRank(result && result.me ? result.me.rank : null);
                 });
             }
@@ -205,9 +205,10 @@ waveManager.setInterWaveDelay(playMode === 'human' ? HUMAN_INTER_WAVE_MS : 0);
 
 export const game = new Game();
 
-// Human mode is the original inert experience: it plays as soon as it loads.
-// AI mode stays in IDLE until the player writes a prompt and presses Start.
-if (playMode === 'human') {
+export function startHumanRun(username: string): void {
+    if (!gameLoop.isIdle()) return;
+    audioManager.startMusic();
+    runSync.prepareRun(username, 'human');
     gameLoop.start();
     void waveManager.start();
 }

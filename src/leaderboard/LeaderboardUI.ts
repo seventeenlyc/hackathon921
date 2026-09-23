@@ -4,7 +4,7 @@ import {
     writeStoredLeaderboard,
     submitScore,
 } from './LeaderboardStore';
-import type { LeaderboardEntry } from './LeaderboardStore';
+import type { LeaderboardEntry, PlayMode } from './LeaderboardStore';
 import {getSessionUsername, setSessionUsername} from './SessionIdentity';
 import { fetchSharedLeaderboard } from './LeaderboardClient';
 import type { RemoteLeaderboard } from './LeaderboardClient';
@@ -215,15 +215,15 @@ class LeaderboardPanel {
 
 export const leaderboardPanel = new LeaderboardPanel();
 
-export function submitRunScore(name: string, score: number): number | null {
+export function submitRunScore(name: string, score: number, mode: PlayMode = 'ai'): number | null {
     const clean = sanitizeUsername(name);
     if (!clean) return null;
     // 本地立即记录：保证离线时玩家仍能看到自己的成绩与名次。
     const stored = readStoredLeaderboard();
-    const { entries, rank } = submitScore(clean, score, stored);
+    const { entries, rank } = submitScore(clean, score, stored, mode);
     writeStoredLeaderboard(entries);
     leaderboardPanel.refresh();
     // 再异步同步到服务端（共享排行榜的真值来源）；同步完成后刷新一次以拿到全局排名。
-    runSync.enqueueWave(clean, score);
+    runSync.enqueueWave(clean, score, mode);
     return rank;
 }
