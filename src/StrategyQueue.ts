@@ -43,6 +43,7 @@ export function startRun(): void {
     const openingPrompt = strategyStore.activateForRun();
     if (!openingPrompt) return;
 
+    audioManager.setWave(waveManager.waveCounter);
     audioManager.startMusic();
     if (playMode === 'ai') {
         const username = getSessionUsername()!;

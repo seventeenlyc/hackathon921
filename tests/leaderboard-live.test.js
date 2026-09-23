@@ -174,6 +174,7 @@ async function test(name, fn) {
 
     await test('the current player score is submitted at each reached wave and after username entry', () => {
         const submissions = [];
+        const musicWaves = [];
         let username = 'Alice';
         const waveManager = { waveCounter: 1, looping: true, setPlanner() {}, setInterWaveDelay() {}, start() { this.onWaveReached(this.waveCounter); } };
         const game = loadSource('Game.ts', {
@@ -206,7 +207,7 @@ async function test(name, fn) {
             './DecisionSummary': { DecisionSummary: class {} },
             './i18n': { t: key => key },
             './leaderboard/RunSync': { runSync: { enqueuePrompt() {}, retryPending() {} } },
-            './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, startMusic() {} } },
+            './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, startMusic() {}, setWave: wave => musicWaves.push(wave) } },
         }, {
             window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {} },
             setInterval: () => 1,
@@ -225,14 +226,16 @@ async function test(name, fn) {
         // wave 2. Wave 3 is skipped while no username is set, then Bob's manual
         // recordReachedWave() picks the current counter back up.
         assert.deepStrictEqual(submissions, [['Alice', 2, 'ai'], ['Bob', 3, 'ai']]);
+        assert.deepStrictEqual(musicWaves, [3, 4]);
     });
 
     await test('human mode records wave and submits with mode human', () => {
         const submissions = [];
         const ranksRequested = [];
+        const musicWaves = [];
         let username = 'Dave';
-        const waveManager = { waveCounter: 5, looping: true, setPlanner() {}, setInterWaveDelay() {}, start() {} };
-        const game = loadSource('Game.ts', {
+        const waveManager = { waveCounter: 1, looping: true, setPlanner() {}, setInterWaveDelay() {}, start() {} };
+        const gameModule = loadSource('Game.ts', {
             './Canvas': { canvas: {}, ctx: {} },
             './config.json': { fps: 60 },
             './Controls': { controls: { on() {}, tabHasFocus: () => true } },
@@ -251,7 +254,7 @@ async function test(name, fn) {
             './leaderboard/LeaderboardUI': { submitRunScore: (name, wave, mode) => submissions.push([name, wave, mode]) },
             './leaderboard/SessionIdentity': { getSessionUsername: () => username },
             './leaderboard/LeaderboardClient': { getSessionToken: () => null, fetchSharedLeaderboard: async (u, m) => { ranksRequested.push([u, m]); return null; } },
-            './agent/GameLoop': { gameLoop: { setFocused() {}, onChange() {}, start() {}, isIdle: () => false } },
+            './agent/GameLoop': { gameLoop: { setFocused() {}, onChange() {}, start() {}, isIdle: () => true } },
             './agent/GameActions': { GameActions: class {} },
             './agent/InertBattlefield': { InertBattlefield: class {} },
             './agent/AgentRuntime': { AgentRuntime: class {} },
@@ -262,16 +265,21 @@ async function test(name, fn) {
             './DecisionSummary': { DecisionSummary: class {} },
             './i18n': { t: key => key },
             './leaderboard/RunSync': { runSync: { prepareRun() {}, enqueuePrompt() {}, retryPending() {} } },
-            './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, startMusic() {} } },
+            './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, startMusic() {}, setWave: wave => musicWaves.push(wave) } },
         }, {
             window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {} },
             setInterval: () => 1,
             requestAnimationFrame: () => 1,
             setTimeout: fn => fn(),
             clearInterval() {},
-        }).game;
+        });
+        const game = gameModule.game;
+        gameModule.startHumanRun('Dave');
+        assert.deepStrictEqual(musicWaves, [1]);
+        waveManager.waveCounter = 5;
         game.recordReachedWave(5);
         assert.deepStrictEqual(submissions, [['Dave', 5, 'human']]);
+        assert.deepStrictEqual(musicWaves, [1, 6]);
         game.gameOver();
         assert.deepStrictEqual(ranksRequested, [['Dave', 'human']]);
     });
