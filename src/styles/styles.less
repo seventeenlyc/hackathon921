@@ -422,10 +422,10 @@ body {
         text-shadow: 0 0 12px rgba(53, 226, 255, 0.35);
       }
 
-      // 状态词（最长 PLANNING）在 1/3 卡宽内放不下 20px，按设计比例缩小；
-      // 数值卡保持 20px 大字。
+      // 状态值在 1/3 卡宽内放不下 20px：EN 最长 PLANNING，zh 最长「战术分析中」
+      // （5 个全角字符，13px 时会被截断），12px 可完整放下；数值卡保持 20px 大字。
       #state {
-        font-size: 13px;
+        font-size: 12px;
         line-height: 1.2;
       }
 

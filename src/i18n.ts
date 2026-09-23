@@ -90,17 +90,18 @@ const STRINGS: { [key: string]: Entry } = {
     'control.audio': {zh: '音效开', en: 'Sound On'},
     'control.audioMuted': {zh: '音效关', en: 'Sound Off'},
 
-    // 设计稿的状态框是「英文大字 + 汉字小字」双语排布（对照 DEFENSE / 防衛），
-    // 因此主值两种语言都固定英文，副行两种语言都固定中文。
-    // 主值单词必须短（最长 8 字符），才能在 1/3 卡宽内不截断地放下。
-    'state.idle': {zh: 'STANDBY', en: 'STANDBY'},
-    'state.running': {zh: 'ACTION', en: 'ACTION'},
-    'state.paused': {zh: 'PAUSED', en: 'PAUSED'},
-    'state.planning': {zh: 'PLANNING', en: 'PLANNING'},
-    'stateSub.idle': {zh: '待机', en: '待机'},
-    'stateSub.running': {zh: '行动中', en: '行动中'},
-    'stateSub.paused': {zh: '已暂停', en: '已暂停'},
-    'stateSub.planning': {zh: '战术分析中', en: '战术分析中'},
+    // 状态框保持设计稿的「主值大字 + 副行小字」双语排布，但主值随界面语言：
+    // 中文界面主值为中文、副行给英文对照；英文界面主值为英文、副行给中文对照。
+    // 主值必须短——EN 最长 PLANNING（8 字符），zh 最长战术分析中（5 个全角字符），
+    // 才能在 1/3 卡宽内不截断地放下。
+    'state.idle': {zh: '待机', en: 'STANDBY'},
+    'state.running': {zh: '行动中', en: 'ACTION'},
+    'state.paused': {zh: '已暂停', en: 'PAUSED'},
+    'state.planning': {zh: '战术分析中', en: 'PLANNING'},
+    'stateSub.idle': {zh: 'STANDBY', en: '待机'},
+    'stateSub.running': {zh: 'ACTION', en: '行动中'},
+    'stateSub.paused': {zh: 'PAUSED', en: '已暂停'},
+    'stateSub.planning': {zh: 'PLANNING', en: '战术分析中'},
 
     'speed.label': {zh: '演算速度 x{speed}', en: 'Simulation x{speed}'},
 
