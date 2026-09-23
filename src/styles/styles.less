@@ -280,7 +280,9 @@ body {
     }
   }
 
-  // 战场中央的地图装饰框（纯装饰，不拦截任何点击）。
+  // 战场中央的作战扇区框（纯装饰，不拦截任何点击）。
+  // 大扩散不透明投影把扇区以外的地图全部遮住，防止地图外溢到面板后面；
+  // 控制面板整层收起时本元素带 is-hidden，遮罩与边框一并消失，露出全图。
   .map-frame {
     position: absolute;
     top: 64px;
@@ -293,6 +295,7 @@ body {
     justify-content: space-between;
     pointer-events: none;
     border: 1px solid rgba(120, 160, 175, 0.18);
+    box-shadow: 0 0 0 9999px var(--bg);
 
     .map-corner-label {
       position: absolute;
