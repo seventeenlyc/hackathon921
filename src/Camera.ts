@@ -95,6 +95,41 @@ export class Camera {
         canvas.updateTransformMatrix();
     }
 
+    /**
+     * The region of the map (in map-pixel coordinates) currently visible in
+     * the frame. This is the single read seam the minimap uses to draw its
+     * locator rectangle — geometry lives here, next to the clamp that defines it.
+     */
+    getVisibleMapRect(): {x: number, y: number, width: number, height: number} {
+        const viewport = this.getViewport();
+        const mapWidth = Map.TILE_SIZE * Map.GRID_W;
+        const mapHeight = Map.TILE_SIZE * Map.GRID_H;
+        const halfVisibleW = Math.min(viewport.width / (2 * this.scaleRatio), mapWidth / 2);
+        const halfVisibleH = Math.min(viewport.height / (2 * this.scaleRatio), mapHeight / 2);
+        const center = this.clampCenterToViewport(viewport);
+        return {
+            x: center.x - halfVisibleW,
+            y: center.y - halfVisibleH,
+            width: halfVisibleW * 2,
+            height: halfVisibleH * 2,
+        };
+    }
+
+    /**
+     * Move the camera center to a map-pixel coordinate (used by the minimap).
+     * The position is clamped by the same coverage rule as drags, so callers
+     * cannot push the view beyond the map edges.
+     */
+    setCenter(x: number, y: number): void {
+        const viewport = this.getViewport();
+        const mapWidth = Map.TILE_SIZE * Map.GRID_W;
+        const mapHeight = Map.TILE_SIZE * Map.GRID_H;
+        const halfVisibleW = Math.min(viewport.width / (2 * this.scaleRatio), mapWidth / 2);
+        const halfVisibleH = Math.min(viewport.height / (2 * this.scaleRatio), mapHeight / 2);
+        this.x = Math.min(Math.max(x, halfVisibleW), mapWidth - halfVisibleW);
+        this.y = Math.min(Math.max(y, halfVisibleH), mapHeight - halfVisibleH);
+    }
+
     private move(dx: number, dy: number) {
         this.x = Math.min(Math.max(this.x + dx, 0), Map.TILE_SIZE * Map.GRID_W);
         this.y = Math.min(Math.max(this.y + dy, 0), Map.TILE_SIZE * Map.GRID_H);

@@ -324,8 +324,8 @@ test('path-shaping candidates are on-route and ranked by tiles added', () => {
     }));
 
     assert.deepStrictEqual(snapshot.pathShapingCandidates, [
-        {i: 3, j: 0, lane: 0, addedTiles: 4},
-        {i: 1, j: 0, lane: 0, addedTiles: 2},
+        {i: 3, j: 0, lane: 0, addedTiles: 4, zone: 'base'},
+        {i: 1, j: 0, lane: 0, addedTiles: 2, zone: 'frontline'},
     ]);
 });
 
@@ -364,6 +364,135 @@ test('path-shaping candidates are capped', () => {
     }));
 
     assert.ok(snapshot.pathShapingCandidates.length <= MAX_PATH_SHAPING_CANDIDATES);
+});
+
+// --- Region-stratified path shaping (issue #6) -------------------------------
+//
+// The old probe scanned the route from the spawn end and stopped after a few
+// cells, so a legitimate mid-route detour wall was invisible. These regressions
+// pin the new contract: spawn / mid / base regions of every lane each get a
+// chance to be seen, one lane cannot steal the whole budget, and the probe/A*
+// cost stays bounded.
+
+test('path-shaping candidates expose the best mid-route detour, not only spawn-near cells', () => {
+    // 25-tile single route. Cell #12 (the mid-route one) adds 4 tiles; every
+    // other cell adds 2. The old start-biased scan never reached index 12.
+    const cells = [];
+    for (let i = 0; i < 25; ++i) cells.push({i, j: 0});
+
+    const snapshot = buildSnapshot(baseInput({
+        gridWidth: 30,
+        gridHeight: 3,
+        routes: [{spawn: {i: 0, j: 0}, cells}],
+        routeLengthAfterBuilding: (lane, i, j) => cells.length - 1 + (i === 12 ? 4 : 2),
+    }));
+
+    const zones = new Set(snapshot.pathShapingCandidates.map(c => c.zone));
+    assert.ok(zones.has('frontline'), 'a frontline detour cell must be visible');
+    assert.ok(zones.has('midfield'), 'a midfield detour cell must be visible');
+    assert.ok(zones.has('base'), 'a base detour cell must be visible');
+
+    // The mid-route cell is the single best detour on the map; it must appear.
+    assert.ok(
+        snapshot.pathShapingCandidates.some(c => c.i === 12 && c.addedTiles === 4),
+        'the +4 mid-route cell must be offered, not drowned out by spawn-near cells',
+    );
+});
+
+test('path-shaping candidates tag every cell with a region zone', () => {
+    const cells = [];
+    for (let i = 0; i < 25; ++i) cells.push({i, j: 0});
+
+    const snapshot = buildSnapshot(baseInput({
+        gridWidth: 30,
+        gridHeight: 3,
+        routes: [{spawn: {i: 0, j: 0}, cells}],
+        routeLengthAfterBuilding: () => cells.length - 1 + 2,
+    }));
+
+    assert.ok(snapshot.pathShapingCandidates.length > 0);
+    for (const candidate of snapshot.pathShapingCandidates) {
+        assert.ok(
+            candidate.zone === 'frontline' || candidate.zone === 'midfield' || candidate.zone === 'base',
+            `candidate (${candidate.i},${candidate.j}) must carry a zone, got ${candidate.zone}`,
+        );
+    }
+});
+
+test('one lane cannot consume the path-shaping budget and hide every other lane', () => {
+    // Lane 0 is long and every cell adds a big detour; lane 1 is short and only
+    // adds 2. Lane 0 must not fill all four slots before lane 1 is seen at all.
+    const longLane = [];
+    for (let i = 0; i < 25; ++i) longLane.push({i, j: 0});
+    const shortLane = [{i: 0, j: 2}, {i: 1, j: 2}, {i: 2, j: 2}];
+
+    const snapshot = buildSnapshot(baseInput({
+        gridWidth: 30,
+        gridHeight: 4,
+        spawns: [{i: 0, j: 0}, {i: 0, j: 2}],
+        routes: [
+            {spawn: {i: 0, j: 0}, cells: longLane},
+            {spawn: {i: 0, j: 2}, cells: shortLane},
+        ],
+        routeLengthAfterBuilding: (lane, i, j) => (lane === 0 ? longLane.length - 1 + 5 : shortLane.length - 1 + 2),
+    }));
+
+    const lanes = [...new Set(snapshot.pathShapingCandidates.map(c => c.lane))].sort();
+    assert.deepStrictEqual(lanes, [0, 1], 'the short lane must still get a path-shaping slot');
+});
+
+test('path-shaping candidates skip occupied and illegal mid-route cells but still cover regions', () => {
+    const cells = [];
+    for (let i = 0; i < 25; ++i) cells.push({i, j: 0});
+
+    const snapshot = buildSnapshot(baseInput({
+        gridWidth: 30,
+        gridHeight: 3,
+        routes: [{spawn: {i: 0, j: 0}, cells}],
+        // The midfield sample cell is occupied; an illegal cell sits near base.
+        isFree: (i, j) => !(i === 12 && j === 0),
+        routeLengthAfterBuilding: (lane, i, j) => (i === 20 ? null : cells.length - 1 + 2),
+    }));
+
+    assert.ok(!snapshot.pathShapingCandidates.some(c => c.i === 12 && c.j === 0), 'occupied cells are skipped');
+    assert.ok(!snapshot.pathShapingCandidates.some(c => c.i === 20 && c.j === 0), 'engine-rejected cells are skipped');
+
+    // With the prime midfield cell occupied, a different midfield cell still has
+    // to be reachable so the midfield region is not silently dropped.
+    assert.ok(snapshot.pathShapingCandidates.some(c => c.zone === 'midfield'), 'midfield still represented by a fallback cell');
+    assert.ok(snapshot.pathShapingCandidates.some(c => c.zone === 'frontline'));
+    assert.ok(snapshot.pathShapingCandidates.some(c => c.zone === 'base'));
+});
+
+test('path-shaping probe budget stays bounded under realistic load', () => {
+    // 4 lanes, 25 cells each, every center cell a legal +2 detour. Count how
+    // many A* probes the engine is asked to run; it must stay bounded and far
+    // below the full-route scan, even when every zone has a legal answer.
+    let probes = 0;
+    const routes = [];
+    for (let lane = 0; lane < 4; ++lane) {
+        const cells = [];
+        for (let i = 0; i < 25; ++i) cells.push({i, j: lane * 2});
+        routes.push({spawn: {i: 0, j: lane * 2}, cells});
+    }
+
+    const snapshot = buildSnapshot(baseInput({
+        gridWidth: 30,
+        gridHeight: 12,
+        spawns: routes.map(r => r.spawn),
+        routes,
+        routeLengthAfterBuilding: (lane, i, j) => {
+            probes += 1;
+            return routes[lane].cells.length - 1 + 2;
+        },
+    }));
+
+    assert.ok(snapshot.pathShapingCandidates.length > 0);
+    // At most one probe per (lane, zone) sample, plus a bounded retry. 4 lanes
+    // x 3 zones = 12 typical; the retry budget keeps the worst case modest.
+    assert.ok(probes <= 24, `probe count ${probes} exceeded the budget (24)`);
+    const size = JSON.stringify(snapshot).length;
+    assert.ok(size <= MAX_SNAPSHOT_CHARS, `snapshot is ${size} chars, budget is ${MAX_SNAPSHOT_CHARS}`);
 });
 
 console.log('All snapshot tests passed.');
