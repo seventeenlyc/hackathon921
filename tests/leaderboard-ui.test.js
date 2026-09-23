@@ -6,6 +6,7 @@ const projectRoot = path.resolve(__dirname, '..');
 const uiSource = fs.readFileSync(path.join(projectRoot, 'src', 'leaderboard', 'LeaderboardUI.ts'), 'utf8');
 const styles = fs.readFileSync(path.join(projectRoot, 'src', 'styles', 'styles.less'), 'utf8');
 const index = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
+const i18nSource = fs.readFileSync(path.join(projectRoot, 'src', 'i18n.ts'), 'utf8');
 const strategySource = fs.readFileSync(path.join(projectRoot, 'src', 'StrategyPanel.ts'), 'utf8');
 
 assert.match(uiSource, /getElementById\('inert'\)!\.appendChild\(this\.overlay\)/,
@@ -18,6 +19,18 @@ assert.match(uiSource, /getElementById\('inert'\)!\.appendChild\(this\.root\)/,
     'Leaderboard panel must retain an #inert fallback for isolated contexts');
 assert.match(styles, /#inert[\s\S]*\.username-overlay/,
     'Username overlay styles must remain scoped under #inert');
+// 登录浮窗结构：头像网格（radiogroup）、16 字上限的代号输入与计数、随机预选与头像会话写入。
+assert.match(uiSource, /gate-avatar-grid/, 'the gate must render the avatar selection grid');
+assert.match(uiSource, /role="radiogroup"/, 'avatar selection must be exposed as a radiogroup');
+assert.match(uiSource, /maxlength="16"/, 'the codename input keeps the 16-char limit');
+assert.match(uiSource, /gate-counter/, 'the codename input must show a character counter');
+assert.match(uiSource, /randomAvatarId/, 'the gate must preselect a random avatar');
+assert.match(uiSource, /setSessionAvatar/, 'submitting the gate must store the chosen avatar');
+assert.doesNotMatch(uiSource, /gate\.welcome|gate\.prompt/,
+    'retired gate i18n keys must not be referenced anymore');
+for (const copy of ['PROTECT THE LAUGHING MAN', 'TACHIKOMA LINK // STANDBY', 'RANDOM PROFILE', 'OPERATOR IDENTIFICATION']) {
+    assert.ok(i18nSource.includes(copy), `i18n table must carry the fixed bilingual copy: ${copy}`);
+}
 assert.match(styles, /#inert[\s\S]*\.leaderboard-panel/,
     'Leaderboard panel styles must remain scoped under #inert');
 assert.doesNotMatch(uiSource, /No scores yet[\s\S]{0,180}return;/,

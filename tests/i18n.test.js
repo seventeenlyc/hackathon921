@@ -78,6 +78,18 @@ for (const key of [
     'tower.cardDetailsTitle',
     'tower.dpsTitle',
     'tower.summary',
+    // 登录浮窗：固定双语装饰文案与功能性文案。
+    'gate.brand',
+    'gate.title',
+    'gate.identTitle',
+    'gate.placeholder',
+    'gate.random',
+    'gate.continue',
+    'gate.invalid',
+    'gate.footerLeft',
+    'gate.footerRight',
+    'gate.avatar.aramaki',
+    'gate.avatar.boma',
 ]) {
     assert.ok(entries.has(key), `missing required i18n key: ${key}`);
 }

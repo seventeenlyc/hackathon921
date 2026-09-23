@@ -5,7 +5,10 @@ import {
     submitScore,
 } from './LeaderboardStore';
 import type { LeaderboardEntry } from './LeaderboardStore';
-import {getSessionUsername, setSessionUsername} from './SessionIdentity';
+import {getSessionUsername, setSessionUsername, setSessionAvatar} from './SessionIdentity';
+import {AVATARS, isKnownAvatarId, randomAvatarId} from './AvatarCatalog';
+import type {AvatarId} from './AvatarCatalog';
+import {AVATAR_SRC} from './avatarAssets';
 import { fetchSharedLeaderboard } from './LeaderboardClient';
 import type { RemoteLeaderboard } from './LeaderboardClient';
 import {runSync} from './RunSync';
@@ -14,37 +17,105 @@ import {onLangChange, t} from '../i18n';
 
 const TOP_N = 10;
 
-// 用户名弹窗：AI 模式每次页面加载都要求输入昵称；昵称只活在当前页面内存。
+// 登录浮窗：AI 模式每次页面加载都要求确认作战档案；昵称与头像只活在当前页面内存。
+// 浮窗装饰文案（顶部条/标题/分区编号/底条）是固定双语视觉元素，zh/en 同值地收敛在 i18n 表里。
 export class UsernameGate {
     private overlay: HTMLElement;
     private input: HTMLInputElement;
     private errorEl: HTMLElement;
+    private counterEl: HTMLElement;
+    private selectedAvatar: AvatarId;
     private onDone: (name: string) => void;
 
     constructor(onDone: (name: string) => void) {
         this.onDone = onDone;
+        this.selectedAvatar = randomAvatarId();
         this.overlay = document.createElement('div');
         this.overlay.className = 'username-overlay';
-        // 按钮只确认用户名；对局是 IDLE，玩家随后写 Prompt 再点「Start run」。
-        // 不用 "Start" 以免被误认为开始游戏。
-        this.overlay.innerHTML =
-            '<form class="username-card">' +
-                '<h2>' + t('gate.welcome') + '</h2>' +
-                '<p>' + t('gate.prompt') + '</p>' +
-                '<input type="text" maxlength="16" placeholder="' + t('gate.placeholder') + '"/>' +
-                '<p class="error"></p>' +
-                '<button type="submit">' + t('gate.continue') + '</button>' +
-            '</form>';
+        this.overlay.innerHTML = this.buildTemplate();
         this.input = this.overlay.querySelector('input') as HTMLInputElement;
         this.errorEl = this.overlay.querySelector('.error') as HTMLElement;
+        this.counterEl = this.overlay.querySelector('.gate-counter') as HTMLElement;
         const form = this.overlay.querySelector('form') as HTMLFormElement;
         form.addEventListener('submit', (e) => { e.preventDefault(); this.handleSubmit(); });
-        this.input.addEventListener('input', () => { this.errorEl.textContent = ''; });
+        this.input.addEventListener('input', () => {
+            this.errorEl.textContent = '';
+            this.updateCounter();
+        });
+        const grid = this.overlay.querySelector('.gate-avatar-grid') as HTMLElement;
+        grid.addEventListener('click', (e) => {
+            const target = (e.target as HTMLElement).closest('.gate-avatar') as HTMLElement | null;
+            const id = target?.getAttribute('data-avatar-id');
+            if (id && isKnownAvatarId(id)) this.selectAvatar(id);
+        });
+        const randomButton = this.overlay.querySelector('.gate-random') as HTMLButtonElement;
+        randomButton.addEventListener('click', () => this.selectAvatar(randomAvatarId()));
+        this.selectAvatar(this.selectedAvatar);
+    }
+
+    // 全部走受控 i18n 字典与代码常量；用户输入只经 value/textContent，不进 innerHTML。
+    private buildTemplate(): string {
+        const cards = AVATARS.map((avatar) =>
+            '<button type="button" class="gate-avatar" role="radio" aria-checked="false"'
+            + ' data-avatar-id="' + avatar.id + '"'
+            + ' aria-label="' + t(avatar.nameKey) + ' ' + avatar.romaji + '">'
+            + '<img src="' + AVATAR_SRC[avatar.id] + '" alt=""/>'
+            + '<span class="gate-avatar-name">' + t(avatar.nameKey) + '</span>'
+            + '<span class="gate-avatar-romaji">' + avatar.romaji + '</span>'
+            + '</button>').join('');
+        return (
+            '<form class="username-card">'
+            + '<header class="gate-topbar">'
+            + '<div class="gate-topbar-brand"><span class="gate-brand">' + t('gate.brand') + '</span>'
+            + '<span class="gate-brand-sub">' + t('gate.brandSub') + '</span></div>'
+            + '<span class="gate-online">' + t('gate.systemOnline') + '</span>'
+            + '</header>'
+            + '<div class="gate-heading"><h2>' + t('gate.title') + '</h2><p>' + t('gate.titleSub') + '</p></div>'
+            + '<div class="gate-intro"><h3>' + t('gate.identTitle') + '</h3>'
+            + '<p>' + t('gate.identEn') + '</p>'
+            + '<p>' + t('gate.identZh') + '</p></div>'
+            + '<section class="gate-section"><h3 class="gate-section-title">' + t('gate.profileTitle') + '</h3>'
+            + '<p class="gate-section-sub">' + t('gate.profileSub') + '</p>'
+            + '<div class="gate-avatar-grid" role="radiogroup" aria-label="' + t('gate.profileSub') + '">' + cards + '</div>'
+            + '</section>'
+            + '<section class="gate-section"><h3 class="gate-section-title">' + t('gate.codenameTitle') + '</h3>'
+            + '<p class="gate-section-sub">' + t('gate.codenameSub') + '</p>'
+            + '<div class="gate-codename-row">'
+            + '<input type="text" maxlength="16" placeholder="' + t('gate.placeholder') + '"/>'
+            + '<span class="gate-counter">0 / 16</span>'
+            + '</div></section>'
+            + '<p class="error"></p>'
+            + '<div class="gate-actions">'
+            + '<button type="button" class="gate-random">' + t('gate.random') + '</button>'
+            // 按钮只确认档案；对局是 IDLE，玩家随后写 Prompt 再点「下达命令并开始行动」。
+            + '<button type="submit" class="gate-submit">' + t('gate.continue') + '</button>'
+            + '</div>'
+            + '<footer class="gate-footer"><span>' + t('gate.footerLeft') + '</span>'
+            + '<span>' + t('gate.footerRight') + '</span></footer>'
+            + '</form>');
+    }
+
+    private selectAvatar(id: AvatarId) {
+        this.selectedAvatar = id;
+        this.overlay.querySelectorAll('.gate-avatar').forEach((el) => {
+            const button = el as HTMLButtonElement;
+            const active = button.getAttribute('data-avatar-id') === id;
+            button.classList.toggle('is-selected', active);
+            button.setAttribute('aria-checked', active ? 'true' : 'false');
+        });
+    }
+
+    private updateCounter() {
+        this.counterEl.textContent = this.input.value.length + ' / 16';
     }
 
     private handleSubmit() {
         const name = sanitizeUsername(this.input.value);
         if (!name) {
+            this.errorEl.textContent = t('gate.invalid');
+            return;
+        }
+        if (!setSessionAvatar(this.selectedAvatar)) {
             this.errorEl.textContent = t('gate.invalid');
             return;
         }
@@ -56,7 +127,12 @@ export class UsernameGate {
         this.onDone(name);
     }
 
-    show() { document.getElementById('inert')!.appendChild(this.overlay); this.input.focus(); }
+    // 浮窗每次打开都随机预选一个头像；样式必须保持 scoped 在 #inert 下（见 leaderboard-ui 测试）。
+    show() {
+        this.selectAvatar(randomAvatarId());
+        document.getElementById('inert')!.appendChild(this.overlay);
+        this.input.focus();
+    }
     hide() { if (this.overlay.parentNode) this.overlay.remove(); }
     get visible(): boolean { return !!this.overlay.parentNode; }
 }
