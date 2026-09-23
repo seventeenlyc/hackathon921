@@ -243,8 +243,9 @@ export class NarrativeOverlay {
             ? t('narrative.finish')
             : t('narrative.next');
 
-        // Portraits: character avatars reuse the original gate silhouettes; the
-        // system and the Tachikoma use the project's inline original art.
+        // Reuse the existing character-profile slots only for human speakers;
+        // the terminal and Tachikoma have separate inline icons, not a ninth
+        // character portrait. Profile-art provenance still needs review.
         const terminal = speaker.portrait.kind === 'terminal';
         const tachikoma = speaker.portrait.kind === 'tachikoma';
         elements.portraitTerminal.hidden = !terminal;
