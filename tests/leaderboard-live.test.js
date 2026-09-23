@@ -203,6 +203,8 @@ async function test(name, fn) {
             './agent/StrategyStore': { strategyStore: { active: () => ({ version: 0 }), lock: () => ({ version: 0, text: '' }) } },
             './StrategyQueue': { queueStrategy: () => ({}), startRun: () => {} },
             './DecisionLog': { decisionLog: { add() {}, error() {} } },
+            './DecisionSummary': { DecisionSummary: class {} },
+            './i18n': { t: key => key },
             './leaderboard/RunSync': { runSync: { enqueuePrompt() {}, retryPending() {} } },
             './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, startMusic() {} } },
         }, {
@@ -257,6 +259,8 @@ async function test(name, fn) {
             './agent/StrategyStore': { strategyStore: { active: () => ({ version: 0 }), lock: () => ({ version: 0, text: '' }) } },
             './StrategyQueue': { queueStrategy: () => ({}), startRun: () => {} },
             './DecisionLog': { decisionLog: { add() {}, error() {} } },
+            './DecisionSummary': { DecisionSummary: class {} },
+            './i18n': { t: key => key },
             './leaderboard/RunSync': { runSync: { prepareRun() {}, enqueuePrompt() {}, retryPending() {} } },
             './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, startMusic() {} } },
         }, {

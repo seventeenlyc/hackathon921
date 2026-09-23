@@ -417,7 +417,7 @@ body {
     }
 
     .chatbox-panel {
-      flex: 1 1 auto;
+      flex: 0 0 auto;
       min-height: 0;
       display: flex;
       flex-direction: column;
@@ -641,6 +641,51 @@ body {
       }
     }
 
+    .reasoning-panel {
+      display: flex;
+      flex: 1 1 260px;
+      min-height: 150px;
+      flex-direction: column;
+      padding: 12px 14px;
+
+      .reasoning-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .reasoning-status {
+        color: var(--dim);
+        font-family: var(--font-mono);
+        font-size: 9px;
+        letter-spacing: 0.08em;
+        text-align: right;
+        text-transform: uppercase;
+      }
+
+      &[data-state='planning'] .reasoning-status {
+        color: var(--accent);
+      }
+
+      &[data-state='unavailable'] .reasoning-status {
+        color: var(--warn);
+      }
+
+      .reasoning-content {
+        flex: 1;
+        min-height: 0;
+        margin-top: 12px;
+        overflow-y: auto;
+        color: var(--ink);
+        font-family: var(--font-mono);
+        font-size: 12px;
+        line-height: 1.65;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+    }
+
     .flux-panel {
       display: flex;
       flex: none;
@@ -690,6 +735,21 @@ body {
     .items-panel {
       flex: none;
       padding: 12px 14px;
+    }
+
+    @media (max-height: 760px) {
+      .chatbox-panel .strategy-input {
+        min-height: 72px;
+      }
+
+      .reasoning-panel {
+        flex-basis: 130px;
+        min-height: 100px;
+      }
+
+      .flux-panel {
+        height: 150px;
+      }
     }
 
     // BATTLE ITEMS：天然机油是当前唯一道具，单槽展示（不做新道具玩法）。
@@ -1787,6 +1847,7 @@ body {
 /* One side controls a run, so the other side's controls are hidden outright:
    tower cards are informational in AI mode and actionable in human mode. */
 #inert.mode-human .chatbox-panel,
+#inert.mode-human .reasoning-panel,
 #inert.mode-human .flux-panel {
   display: none;
 }

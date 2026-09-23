@@ -60,7 +60,13 @@ const STRINGS: { [key: string]: Entry } = {
     'strategy.active': {zh: 'EXECUTING ORDER · 第 {wave} 波起', en: 'EXECUTING ORDER · Active from wave {wave}'},
     'strategy.tooLong': {zh: '命令 {length} 个字符，超过终端上限 {max}。', en: 'Order is {length} characters; terminal limit is {max}.'},
 
-    'decisions.label': {zh: '塔奇克马判断', en: 'Tachikoma Decisions'},
+    'reasoning.title': {zh: '塔奇克马判断', en: 'AI DECISION TERMINAL'},
+    'reasoning.status.waiting': {zh: '等待分析', en: 'AWAITING ANALYSIS'},
+    'reasoning.status.planning': {zh: '战术分析中', en: 'ANALYZING BATTLEFIELD'},
+    'reasoning.status.ready': {zh: '本轮决策摘要', en: 'WAVE DECISION SUMMARY'},
+    'reasoning.status.unavailable': {zh: '摘要不可用', en: 'SUMMARY UNAVAILABLE'},
+    'reasoning.empty': {zh: '等待塔奇克马对下一波做出决策…', en: 'Awaiting the next tactical decision…'},
+    'decisions.label': {zh: '执行日志', en: 'EXECUTION LOG'},
     'decisions.empty': {zh: '等待塔奇克马自主判断。', en: 'Awaiting Tachikoma decisions.'},
     'decision.entry': {zh: 'WAVE {wave} · {action} // {detail}{message}', en: 'WAVE {wave} · {action} // {detail}{message}'},
 

@@ -41,6 +41,7 @@ export function completionsUrl(baseUrl: string): string {
  * (`src/agent/StrategyLimits.ts`) and never truncates.
  */
 export const MAX_ACTIONS_PER_DECISION = 8;
+export const MAX_DECISION_SUMMARY_LENGTH = 240;
 export const PROVIDER_TIMEOUT_MS = 12000;
 
 const TOWER_TYPES = ['canon', 'gatling', 'slow', 'sniper', 'laser'];
@@ -170,7 +171,10 @@ export const AGENT_SYSTEM_PROMPT = [
     '  * `evomap`: 2% max HP AOE damage to ALL enemies on the map, 10s cooldown. First 2 uses are FREE, then 1000 cash. Great against large waves.',
     '  * `hypershell`: repairs base by +25% max life, costs 1000 cash, 10s cooldown. Use when base is damaged or in critical danger.',
     '  * `natural_oil`: 5s 150% attack speed, costs 1000 cash, 10s cooldown.',
-    '- Return tool calls only. Do not explain.',
+    '- Alongside your tool calls, provide one concise, player-facing decision summary',
+    '  in the assistant message content, at most 240 characters. State the conclusion',
+    '  and key observed battlefield factors. Do not show hidden chain-of-thought,',
+    '  private deliberation, or step-by-step internal reasoning.',
 ].join('\n');
 
 export interface AgentValidationOk {
@@ -251,6 +255,16 @@ export function extractAgentActions(payload: any): AgentAction[] {
             return { name: fn && fn.name, arguments: parseArguments(fn && fn.arguments) };
         })
         .filter((action: any) => typeof action.name === 'string' && AGENT_TOOL_NAMES.indexOf(action.name) !== -1);
+}
+
+/** Expose only the bounded assistant content intended for players, never provider reasoning fields. */
+export function extractAgentSummary(payload: any): string | null {
+    const choice = payload && Array.isArray(payload.choices) ? payload.choices[0] : undefined;
+    const message = choice && choice.message;
+    if (!message || typeof message.content !== 'string') return null;
+
+    const summary = message.content.trim().replace(/\s+/g, ' ');
+    return summary.length > 0 && summary.length <= MAX_DECISION_SUMMARY_LENGTH ? summary : null;
 }
 
 export function mapProviderError(status: number, payload: any): { error: string; message: string } {
@@ -362,6 +376,7 @@ export async function handleAgentDecide(deps: ApiDeps, req: ApiRequest): Promise
     }
 
     const actions = extractAgentActions(result.payload);
+    const summary = extractAgentSummary(result.payload);
     const usage = result.payload && result.payload.usage ? result.payload.usage : undefined;
-    return { status: 200, body: { ok: true, actions, usage } };
+    return { status: 200, body: { ok: true, summary, actions, usage } };
 }
