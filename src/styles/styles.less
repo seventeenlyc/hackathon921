@@ -841,57 +841,6 @@ body {
 
     // BATTLE ITEMS：四件战术道具复用既有右栏，不覆盖战场。
     .items-panel {
-      .natural-oil {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        width: 100%;
-        margin-top: 10px;
-        padding: 7px 9px;
-        border: 1px solid var(--line);
-        border-radius: 2px;
-        background: rgba(8, 16, 22, 0.72);
-        color: var(--ink);
-        cursor: pointer;
-        font: inherit;
-        font-size: 11px;
-
-        &:hover:not(:disabled),
-        &:focus-visible {
-          border-color: var(--accent);
-          outline: 2px solid var(--accent-soft);
-        }
-
-        &:disabled {
-          cursor: default;
-          opacity: 0.65;
-        }
-
-        .natural-oil-icon {
-          flex: 0 0 20px;
-          width: 20px;
-          height: 20px;
-          border-radius: 4px;
-          background: linear-gradient(135deg, #d5a73b, #70541b);
-          box-shadow: inset 0 0 0 2px rgba(255, 237, 165, 0.25);
-        }
-
-        .natural-oil-cost {
-          margin-left: auto;
-          color: var(--accent);
-          font-family: var(--font-mono);
-          white-space: nowrap;
-        }
-      }
-
-      .natural-oil-status {
-        display: block;
-        min-height: 1.3em;
-        margin-top: 4px;
-        color: var(--muted);
-        font-size: 10px;
-      }
-
       .tactical-items-grid {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));

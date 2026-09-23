@@ -15,12 +15,9 @@ import {getControlLayer} from "./ControlLayer";
 import {applyStaticTranslations, onLangChange, t, toggleLang} from './i18n';
 import {audioManager} from './AudioManager';
 import {cashManager} from './CashManager';
-import {naturalOilController, OilActivationResult} from './items/NaturalOil';
 import {tacticalItemsController} from './items/TacticalItems';
 import {isEnemyTypeId} from './tools/enemyCatalog';
 import {texturePaths} from './tools/texturePaths';
-
-type OilFailureReason = Extract<OilActivationResult, {ok: false}>['reason'];
 
 /** Summary shown on the settlement screen after the base falls. */
 export interface RunStats {
@@ -58,9 +55,6 @@ class InterfaceManager {
     private pauseButton = document.getElementById('pause') as HTMLButtonElement;
     private resumeButton = document.getElementById('resume') as HTMLButtonElement;
     private audioButton = document.getElementById('audio-toggle') as HTMLButtonElement | null;
-    private naturalOilButton = document.getElementById('natural-oil') as HTMLButtonElement;
-    private naturalOilStatus = document.getElementById('natural-oil-status')!;
-    private naturalOilFailure: OilFailureReason | null = null;
     private tripoButton = document.getElementById('item-tripo') as HTMLButtonElement | null;
     private seeedButton = document.getElementById('item-seeed') as HTMLButtonElement | null;
     private evomapButton = document.getElementById('item-evomap') as HTMLButtonElement | null;
@@ -97,13 +91,6 @@ class InterfaceManager {
         gameLoop.onChange(state => {
             this.setState(state);
         });
-        this.naturalOilButton.addEventListener('click', () => {
-            const result = naturalOilController.activate(gameLoop.state === 'running', cashManager);
-            this.naturalOilFailure = result.ok ? null : result.reason;
-            this.updateNaturalOil();
-        });
-
-        this.bindItemHover(this.naturalOilButton, t('oil.label'), 'oil.desc');
         this.bindItemHover(this.tripoButton, 'Tripo', 'item.tripo.desc');
         this.bindItemHover(this.seeedButton, 'Seeed Studio', 'item.seeed.desc');
         this.bindItemHover(this.evomapButton, 'EvoMap', 'item.evomap.desc');
@@ -118,14 +105,14 @@ class InterfaceManager {
             button?.addEventListener('click', () => {
                 const result = tacticalItemsController.activate(key, gameLoop.state === 'running', cashManager);
                 this.snackbar.toast(t(result.ok ? 'item.used' : `item.failure.${result.reason}`, {name: brand}));
-                this.updateNaturalOil();
+                this.updateTacticalItems();
             });
         }
 
         this.setState(gameLoop.state);
         this.updateSpeedLabel();
         this.updateAudioLabel();
-        this.updateNaturalOil();
+        this.updateTacticalItems();
         this.setupDatabaseTabs();
         this.setupHostileImages();
         this.setupHostileStats();
@@ -142,7 +129,7 @@ class InterfaceManager {
             this.setState(gameLoop.state);
             this.updateSpeedLabel();
             this.updateAudioLabel();
-            this.updateNaturalOil();
+            this.updateTacticalItems();
             this.setupModeButton();
             this.setupHostileStats();
             if (this.lastWave > 0) {
@@ -195,22 +182,10 @@ class InterfaceManager {
         // red stays reserved for the settlement screen (issue #66 palette).
         const alert = document.getElementById('map-alert');
         if (alert) alert.hidden = state !== 'running';
-        this.updateNaturalOil();
+        this.updateTacticalItems();
     }
 
-    updateNaturalOil() {
-        const state = naturalOilController.state;
-        this.naturalOilButton.disabled = state.kind !== 'ready' || gameLoop.state !== 'running';
-        this.naturalOilButton.setAttribute('aria-label', t('oil.button', {cost: 1000}));
-        if (state.kind === 'active' || state.kind === 'cooldown') {
-            const seconds = Math.ceil(state.remainingMs / 1000);
-            this.naturalOilStatus.textContent = t(`oil.${state.kind}`, {seconds});
-        } else {
-            this.naturalOilStatus.textContent = this.naturalOilFailure
-                ? t(`oil.failure.${this.naturalOilFailure}`)
-                : t(gameLoop.state === 'running' ? 'oil.ready' : 'oil.notRunning');
-        }
-
+    updateTacticalItems() {
         const running = gameLoop.state === 'running';
         for (const [key, id, button, brand] of [
             ['evomap', 'evomap', this.evomapButton, 'EvoMap'],

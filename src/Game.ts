@@ -130,7 +130,7 @@ class Game {
             enemyManager.update()
             if (playMode === 'human') towerPlacer.update();
         }
-        interfaceManager.updateNaturalOil();
+        interfaceManager.updateTacticalItems();
     }
 
     drawLoop() {
