@@ -889,6 +889,7 @@ body {
     }
 
     // 战术数据库：底部居中面板，含我方兵力 / 敌方情报两个 tab。
+    // 设计稿：青色外框、标题在左、页签在右，激活页签为实心青底深色字。
     .database-panel {
       position: absolute;
       bottom: 12px;
@@ -898,8 +899,8 @@ body {
       transform: translateX(-50%);
       pointer-events: auto;
       background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: 2px;
+      border: 1px solid rgba(53, 226, 255, 0.42);
+      border-radius: 6px;
       box-shadow: var(--shadow);
 
       .database-header {
@@ -908,7 +909,15 @@ body {
         justify-content: space-between;
         gap: 12px;
         padding-bottom: 8px;
-        border-bottom: 1px solid rgba(120, 160, 175, 0.14);
+        border-bottom: 1px solid rgba(53, 226, 255, 0.28);
+      }
+
+      .database-title {
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
       }
 
       .database-tabs {
@@ -916,10 +925,11 @@ body {
         gap: 6px;
 
         .db-tab {
-          padding: 5px 12px;
-          border: 1px solid var(--line);
+          padding: 5px 14px;
+          border: 1px solid rgba(53, 226, 255, 0.45);
+          border-radius: 4px;
           background: transparent;
-          color: var(--muted);
+          color: var(--accent);
           cursor: pointer;
           font-size: 10px;
           font-weight: 700;
@@ -929,13 +939,13 @@ body {
 
           &:hover {
             border-color: var(--accent);
-            color: var(--accent);
+            background: var(--accent-soft);
           }
 
           &.active {
             border-color: var(--accent);
-            background: var(--accent-soft);
-            color: var(--accent);
+            background: rgba(53, 226, 255, 0.85);
+            color: #052731;
           }
         }
       }
@@ -959,32 +969,100 @@ body {
       .tower-palette {
         display: flex;
         flex-wrap: wrap;
-        gap: 7px;
+        gap: 8px;
 
+        // 设计稿卡片：头部立绘 + 型号名，中部 COST/DMG/RATE/RANGE 分段条，底部描述行。
         .tower-card {
           display: flex;
           flex: 1;
-          width: calc((100% - 28px) / 5);
-          min-width: 48px;
-          min-height: 78px;
+          width: calc((100% - 32px) / 5);
+          min-width: 118px;
           flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 2px;
-          padding: 4px 3px;
-          border: 1px solid var(--line);
-          border-radius: 2px;
-          background: rgba(8, 16, 22, 0.72);
+          gap: 7px;
+          padding: 8px 9px;
+          border: 1px solid rgba(53, 226, 255, 0.32);
+          border-radius: 6px;
+          background: rgba(6, 13, 19, 0.78);
           color: var(--muted);
           cursor: pointer;
           font-family: inherit;
-          font-size: 9px;
-          line-height: 1.15;
+          text-align: left;
           transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
 
+          .tower-card-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+
           canvas {
-            width: 38px;
-            height: 38px;
+            width: 40px;
+            height: 40px;
+            flex: none;
+          }
+
+          .tower-card-name {
+            color: var(--accent);
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1.25;
+          }
+
+          .tower-card-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+          }
+
+          .tower-stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-family: var(--font-mono);
+            font-size: 9px;
+            line-height: 1;
+
+            .stat-label {
+              width: 30px;
+              flex: none;
+              color: rgba(53, 226, 255, 0.72);
+              letter-spacing: 0.06em;
+              text-transform: uppercase;
+            }
+
+            .stat-value {
+              width: 36px;
+              flex: none;
+              overflow: hidden;
+              color: #dff7ff;
+              font-weight: 700;
+              text-align: right;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+
+            .stat-bar {
+              flex: 1;
+              height: 6px;
+              border-radius: 2px;
+              background: repeating-linear-gradient(90deg, rgba(53, 226, 255, 0.16) 0 3px, transparent 3px 6px);
+
+              .stat-fill {
+                display: block;
+                height: 100%;
+                border-radius: 2px;
+                background: repeating-linear-gradient(90deg, var(--accent) 0 3px, rgba(53, 226, 255, 0.55) 3px 5px, transparent 5px 6px);
+              }
+            }
+          }
+
+          .tower-card-flavor {
+            padding-top: 6px;
+            border-top: 1px solid rgba(53, 226, 255, 0.16);
+            color: var(--dim);
+            font-size: 9px;
+            line-height: 1.4;
+            text-align: center;
           }
 
           &:hover,
@@ -995,19 +1073,6 @@ body {
             box-shadow: 0 0 0 2px rgba(53, 226, 255, 0.12);
             color: var(--ink);
             outline: none;
-          }
-
-          .tower-card-label {
-            overflow: hidden;
-            max-width: 100%;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-          }
-
-          .tower-card-cost {
-            color: var(--accent);
-            font-family: var(--font-mono);
-            font-size: 9px;
           }
         }
       }
@@ -1129,7 +1194,8 @@ body {
         align-items: center;
         gap: 3px;
         padding: 8px 6px;
-        border: 1px solid rgba(120, 160, 175, 0.16);
+        border: 1px solid rgba(53, 226, 255, 0.28);
+        border-radius: 6px;
         background: rgba(8, 16, 22, 0.72);
         text-align: center;
 

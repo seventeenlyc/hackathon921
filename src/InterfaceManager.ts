@@ -330,8 +330,36 @@ class InterfaceManager {
         const canvasSize = Map.TILE_SIZE + pad;
         let selectedCard: HTMLButtonElement | null = null;
 
-        towers.forEach(TowerClass => {
-            const tower = new TowerClass(0, 0, Map.TILE_SIZE);
+        const instances = towers.map(TowerClass => new TowerClass(0, 0, Map.TILE_SIZE));
+        // 设计稿的属性条按各机体中的最大值归一化。
+        const maxDamageOf = (tower: Tower): number =>
+            typeof tower.damage === 'object' ? tower.damage.max : tower.damage;
+        const maxCost = Math.max(...instances.map(tower => tower.cost));
+        const maxDamage = Math.max(...instances.map(maxDamageOf));
+        const maxRange = Math.max(...instances.map(tower => tower.aimRadius));
+        const maxRate = Math.max(...instances.map(tower => 1000 / tower.reloadDurationMs));
+
+        const statRow = (label: string, value: string, ratio: number): HTMLElement => {
+            const row = document.createElement('span');
+            row.className = 'tower-stat';
+            const labelSpan = document.createElement('span');
+            labelSpan.className = 'stat-label';
+            labelSpan.textContent = label;
+            const valueSpan = document.createElement('span');
+            valueSpan.className = 'stat-value';
+            valueSpan.textContent = value;
+            const bar = document.createElement('span');
+            bar.className = 'stat-bar';
+            const fill = document.createElement('span');
+            fill.className = 'stat-fill';
+            fill.style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`;
+            bar.appendChild(fill);
+            row.append(labelSpan, valueSpan, bar);
+            return row;
+        };
+
+        instances.forEach((tower, index) => {
+            const TowerClass = towers[index];
             const card = document.createElement('button');
             card.type = 'button';
             card.className = 'tower-card';
@@ -340,19 +368,41 @@ class InterfaceManager {
                 ? t('tower.cardPlaceTitle', {name: tower.displayName, cost: tower.cost})
                 : t('tower.cardDetailsTitle', {name: tower.displayName, cost: tower.cost});
 
+            const head = document.createElement('span');
+            head.className = 'tower-card-head';
             const canvas = document.createElement('canvas');
             canvas.width = canvasSize;
             canvas.height = canvasSize;
             canvas.setAttribute('aria-hidden', 'true');
-            card.appendChild(canvas);
+            const name = document.createElement('span');
+            name.className = 'tower-card-name';
+            name.textContent = tower.displayName;
+            head.append(canvas, name);
 
-            const label = document.createElement('span');
-            label.className = 'tower-card-label';
-            label.textContent = tower.displayName;
-            const cost = document.createElement('span');
-            cost.className = 'tower-card-cost';
-            cost.textContent = String(tower.cost);
-            card.append(label, cost);
+            const damage = typeof tower.damage === 'object' ? tower.damage.max : tower.damage;
+            const hasDamage = damage > 0;
+            const continuous = tower.reloadDurationMs === 0;
+            const rate = continuous ? 0 : 1000 / tower.reloadDurationMs;
+            const stats = document.createElement('span');
+            stats.className = 'tower-card-stats';
+            stats.append(
+                statRow(t('tower.stat.cost'), String(tower.cost), tower.cost / maxCost),
+                statRow(t('tower.stat.dmg'), hasDamage
+                    ? typeof tower.damage === 'object'
+                        ? `${tower.damage.min}–${tower.damage.max}`
+                        : String(tower.damage)
+                    : '—', hasDamage ? damage / maxDamage : 0),
+                statRow(t('tower.stat.rate'), continuous
+                    ? t('tower.rateContinuous')
+                    : `${rate.toFixed(1)}/s`, continuous ? 1 : rate / maxRate),
+                statRow(t('tower.stat.range'), String(tower.aimRadius), tower.aimRadius / maxRange),
+            );
+
+            const flavor = document.createElement('span');
+            flavor.className = 'tower-card-flavor';
+            flavor.textContent = tower.displayDescription;
+
+            card.append(head, stats, flavor);
             this.towersWrapperElement.appendChild(card);
 
             const ctx = canvas.getContext('2d')!;
