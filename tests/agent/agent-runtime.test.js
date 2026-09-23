@@ -43,6 +43,8 @@ class FakeActions {
         this.upgradeResult = options.upgradeResult;
         this.buildCalls = [];
         this.upgradeCalls = [];
+        this.itemCalls = [];
+        this.useItemResult = options.useItemResult;
     }
 
     getState() {
@@ -57,6 +59,11 @@ class FakeActions {
     upgradeTower(id) {
         this.upgradeCalls.push(id);
         return this.upgradeResult || {ok: true, data: {level: 2, upgradeCost: 30}, message: `Upgraded ${id}.`};
+    }
+
+    useItem(item) {
+        this.itemCalls.push(item);
+        return this.useItemResult || {ok: true, data: {item}, message: `Used ${item}.`};
     }
 }
 
@@ -100,6 +107,30 @@ function makeStore(text = 'hold the base') {
         assert.deepStrictEqual(decisions.map(d => d.wave), [5, 5], 'decisions govern the wave the snapshot names');
         assert.strictEqual(decisions[0].ok, true);
         assert.strictEqual(decisions[0].action, 'build_tower');
+    });
+
+    await test('executes use_item action returned by proxy', async () => {
+        const actions = new FakeActions({state: {wave: 5, cash: 2500, baseLife: 15, towers: []}});
+        const decisions = [];
+        const runtime = new AgentRuntime({
+            actions,
+            store: makeStore('use oil when in danger'),
+            fetchImpl: async () => jsonResponse(200, {
+                ok: true,
+                actions: [
+                    {name: 'use_item', arguments: {item: 'natural_oil'}},
+                ],
+            }),
+            onDecision: entry => decisions.push(entry),
+        });
+
+        await runtime.plan();
+
+        assert.deepStrictEqual(actions.itemCalls, ['natural_oil']);
+        assert.strictEqual(decisions.length, 1);
+        assert.strictEqual(decisions[0].action, 'use_item');
+        assert.strictEqual(decisions[0].ok, true);
+        assert.strictEqual(decisions[0].detail, 'natural_oil');
     });
 
     await test('ignores unknown action names without executing them', async () => {

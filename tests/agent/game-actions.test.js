@@ -248,4 +248,52 @@ test('getState returns the snapshot the battlefield provides', () => {
     assert.strictEqual(new GameActions(field).getState(), snapshot);
 });
 
+test('useItem rejects unknown item', () => {
+    const field = new FakeBattlefield();
+    const actions = new GameActions(field);
+    const result = actions.useItem('super_bomb');
+    assert.strictEqual(result.ok, false);
+    assert.strictEqual(result.error, 'UNKNOWN_ITEM');
+});
+
+test('useItem passes through engine errors', () => {
+    const field = new FakeBattlefield();
+    field.useItem = () => ({ok: false, error: 'INSUFFICIENT_FUNDS'});
+    const actions = new GameActions(field);
+    const result = actions.useItem('natural_oil');
+    assert.strictEqual(result.ok, false);
+    assert.strictEqual(result.error, 'INSUFFICIENT_FUNDS');
+
+    field.useItem = () => ({ok: false, error: 'COOLDOWN'});
+    assert.strictEqual(actions.useItem('natural_oil').error, 'COOLDOWN');
+
+    field.useItem = () => ({ok: false, error: 'ALREADY_ACTIVE'});
+    assert.strictEqual(actions.useItem('natural_oil').error, 'ALREADY_ACTIVE');
+});
+
+test('useItem succeeds when battlefield accepts', () => {
+    let called = null;
+    const field = new FakeBattlefield();
+    field.useItem = (item) => { called = item; return {ok: true}; };
+    const actions = new GameActions(field);
+    const result = actions.useItem('natural_oil');
+    assert.strictEqual(result.ok, true);
+    assert.strictEqual(result.data.item, 'natural_oil');
+    assert.strictEqual(called, 'natural_oil');
+});
+
+test('useItem accepts all registered item keys', () => {
+    const field = new FakeBattlefield();
+    const actions = new GameActions(field);
+    const called = [];
+    field.useItem = (item) => { called.push(item); return {ok: true}; };
+
+    for (const key of ['natural_oil', 'tripo', 'seeed_studio', 'evomap', 'hypershell']) {
+        const res = actions.useItem(key);
+        assert.strictEqual(res.ok, true);
+        assert.strictEqual(res.data.item, key);
+    }
+    assert.deepStrictEqual(called, ['natural_oil', 'tripo', 'seeed_studio', 'evomap', 'hypershell']);
+});
+
 console.log('All GameActions tests passed.');

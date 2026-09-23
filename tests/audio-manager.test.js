@@ -50,6 +50,7 @@ async function test(name, fn) {
         created[0].currentTime = 12;
         manager.startMusic();
         assert.strictEqual(created.length, 1);
+        assert.strictEqual(created[0].src, '/audio/background.mp3');
         assert.strictEqual(created[0].loop, true);
         assert.strictEqual(created[0].playCount, 1);
         assert.strictEqual(created[0].currentTime, 12);
@@ -87,8 +88,14 @@ async function test(name, fn) {
         assert.strictEqual(created[0].playCount, 1);
     });
 
-    await test('placeholder assets are valid PCM WAV files', () => {
-        for (const name of ['background.wav', 'wave.wav', 'game-over.wav']) {
+    await test('background asset is MP3 and cue assets remain valid PCM WAV files', () => {
+        const background = fs.readFileSync(path.join(__dirname, '..', 'public', 'audio', 'background.mp3'));
+        const startsWithId3 = background.toString('ascii', 0, 3) === 'ID3';
+        const startsWithMpegFrame = background.length > 1 && background[0] === 0xff && (background[1] & 0xe0) === 0xe0;
+        assert.ok(startsWithId3 || startsWithMpegFrame);
+        assert.ok(background.length > 0);
+
+        for (const name of ['wave.wav', 'game-over.wav']) {
             const file = fs.readFileSync(path.join(__dirname, '..', 'public', 'audio', name));
             assert.strictEqual(file.toString('ascii', 0, 4), 'RIFF');
             assert.strictEqual(file.toString('ascii', 8, 12), 'WAVE');

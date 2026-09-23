@@ -117,7 +117,7 @@ assert.ok(itemsHeading >= 0 && item > itemsHeading,
 assert.ok(palette >= 0 && stats > palette,
     'the tower catalogue and its stats must keep their order in the database');
 assert.match(index.slice(item, item + 400), /天然机油/);
-assert.match(index.slice(item, item + 400), /2000/);
+assert.match(index.slice(item, item + 400), /1000/);
 assert.match(index.slice(item, item + 600), /aria-live="polite"/);
 assert.match(styles, /\.natural-oil-icon[\s\S]*background:/,
     'the item needs a CSS color-block icon');
@@ -132,12 +132,12 @@ assert.strictEqual(ui.naturalOilController.attackSpeedMultiplier, 1, 'idle click
 ui.gameLoop.change('running');
 assert.strictEqual(ui.button.disabled, false, 'running makes ready item usable');
 ui.button.click();
-assert.strictEqual(ui.cashManager.getBalance(), 200, 'click charges exactly 2000');
+assert.strictEqual(ui.cashManager.getBalance(), 1200, 'click charges exactly 1000');
 assert.strictEqual(ui.naturalOilController.attackSpeedMultiplier, 1.5);
 assert.strictEqual(ui.button.disabled, true, 'active item cannot be bought again');
 assert.match(ui.status.textContent, /生效中/);
 ui.button.click();
-assert.strictEqual(ui.cashManager.getBalance(), 200, 'active click cannot charge again');
+assert.strictEqual(ui.cashManager.getBalance(), 1200, 'active click cannot charge again');
 ui.naturalOilController.update(5000, true);
 ui.interfaceManager.updateNaturalOil();
 assert.strictEqual(ui.button.disabled, true, 'cooldown keeps item disabled');
@@ -148,10 +148,11 @@ ui.gameLoop.change('planning');
 assert.strictEqual(ui.button.disabled, true, 'ready item stays disabled during PLANNING');
 ui.gameLoop.change('running');
 assert.strictEqual(ui.button.disabled, false, 'item enables again when ready during RUNNING');
-assert.strictEqual(ui.cashManager.withdraw(2000), false, 'rejected withdrawal reports failure');
-assert.strictEqual(ui.cashManager.getBalance(), 200, 'rejected withdrawal leaves balance alone');
+ui.cashManager.withdraw(1100);
+assert.strictEqual(ui.cashManager.withdraw(1000), false, 'rejected withdrawal reports failure');
+assert.strictEqual(ui.cashManager.getBalance(), 100, 'rejected withdrawal leaves balance alone');
 ui.button.click();
-assert.strictEqual(ui.cashManager.getBalance(), 200, 'insufficient funds cannot charge');
+assert.strictEqual(ui.cashManager.getBalance(), 100, 'insufficient funds cannot charge');
 assert.strictEqual(ui.naturalOilController.attackSpeedMultiplier, 1);
 assert.match(ui.status.textContent, /金币不足/);
 
@@ -173,7 +174,7 @@ assert.deepStrictEqual(oil.activate(false, cash), {ok: false, reason: 'NOT_RUNNI
 assert.strictEqual(cash.balance, 4000);
 assert.strictEqual(oil.attackSpeedMultiplier, 1);
 assert.deepStrictEqual(oil.activate(true, cash), {ok: true});
-assert.strictEqual(cash.balance, 2000);
+assert.strictEqual(cash.balance, 3000);
 oil.update(16, false);
 assert.deepStrictEqual(oil.state, {kind: 'active', remainingMs: 5000});
 oil.update(16, true);

@@ -1,12 +1,13 @@
-# Audio placeholders
+# Audio assets
 
-These three WAV files are deliberately short, low-volume placeholders:
+The game loads these files through `AudioManager`:
 
-- `background.wav` — a quiet looping two-tone bed;
-- `wave.wav` — a short wave-reached chime;
-- `game-over.wav` — a short descending result cue.
+- `background.mp3` - the looping background track supplied for this build;
+- `wave.wav` - a short wave-reached chime;
+- `game-over.wav` - a short descending result cue.
 
-They were generated locally as uncompressed PCM WAV files for development and
-may be replaced in this directory without changing the game code. Replacements
-must be browser-playable audio and must carry their own compatible license; the
-generated placeholders contain no third-party recording or sample.
+The two WAV cue files are deliberately short, low-volume, locally generated
+uncompressed PCM placeholders. The previous `background.wav` placeholder is
+retained as a legacy file but is not loaded by the game. Any replacement must
+be browser-playable and carry its own compatible license; redistribution rights
+for the supplied MP3 must be confirmed before publishing it outside this repo.

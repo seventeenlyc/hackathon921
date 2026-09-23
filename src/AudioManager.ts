@@ -9,7 +9,7 @@ export interface AudioLike {
 export type AudioFactory = (src: string) => AudioLike;
 
 const AUDIO_PATHS = {
-    music: '/audio/background.wav',
+    music: '/audio/background.mp3',
     wave: '/audio/wave.wav',
     gameOver: '/audio/game-over.wav',
 } as const;

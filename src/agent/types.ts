@@ -24,6 +24,10 @@ export const ACTION_ERRORS = [
     'TOWER_NOT_FOUND',
     'ALREADY_MAX_LEVEL',
     'UPGRADE_FAILED',
+    'UNKNOWN_ITEM',
+    'ITEM_NOT_READY',
+    'COOLDOWN',
+    'ALREADY_ACTIVE',
 ] as const;
 
 export type ActionError = typeof ACTION_ERRORS[number];
@@ -137,6 +141,23 @@ export interface LaneInfo {
     path: PathInfo;
 }
 
+/** Tactical item status in the snapshot. */
+export const ITEM_KEYS = ['natural_oil', 'tripo', 'seeed_studio', 'evomap', 'hypershell'] as const;
+export type ItemKey = typeof ITEM_KEYS[number];
+
+export function isItemKey(value: string): value is ItemKey {
+    return (ITEM_KEYS as readonly string[]).includes(value);
+}
+
+export interface ItemStateSnapshot {
+    name: string;
+    cost: number;
+    ready: boolean;
+    active: boolean;
+    cooldownRemainingMs?: number;
+    activeRemainingMs?: number;
+}
+
 /**
  * Compressed battlefield snapshot handed to the LLM. Kept deliberately small:
  * the model reasons about the situation, it does not need every entity.
@@ -160,4 +181,6 @@ export interface GameSnapshot {
      * Empty when the engine cannot answer the hypothetical (see snapshot.ts).
      */
     pathShapingCandidates: PathShapingCandidate[];
+    /** Tactical items available to the AI. */
+    items?: ItemStateSnapshot[];
 }

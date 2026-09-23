@@ -99,6 +99,7 @@ test('extractAgentActions 归一化工具调用、丢弃未知工具、限制数
                     { function: { name: 'build_tower', arguments: '{"type":"canon","i":1,"j":2}' } },
                     { function: { name: 'delete_everything', arguments: '{}' } },
                     { function: { name: 'upgrade_tower', arguments: 'not json' } },
+                    { function: { name: 'use_item', arguments: '{"item":"natural_oil"}' } },
                 ],
             },
         }],
@@ -107,6 +108,7 @@ test('extractAgentActions 归一化工具调用、丢弃未知工具、限制数
     assert.deepEqual(extractAgentActions(payload), [
         { name: 'build_tower', arguments: { type: 'canon', i: 1, j: 2 } },
         { name: 'upgrade_tower', arguments: {} },
+        { name: 'use_item', arguments: { item: 'natural_oil' } },
     ]);
 });
 
@@ -176,7 +178,16 @@ test('成功时下发给 provider 的是服务端系统指令与工具 schema，
     assert.ok(sent.body.messages[0].content.indexOf('hold the base') === -1);
     assert.ok(sent.body.messages[1].content.indexOf('hold the base') !== -1);
     assert.equal(sent.body.model, 'deepseek-chat');
-    assert.ok(Array.isArray(sent.body.tools) && sent.body.tools.length === 2);
+    assert.ok(Array.isArray(sent.body.tools) && sent.body.tools.length === 3);
+    const itemTool = sent.body.tools.find((t: any) => t.function.name === 'use_item');
+    assert.ok(itemTool);
+    assert.deepEqual(itemTool.function.parameters.properties.item.enum, [
+        'natural_oil',
+        'tripo',
+        'seeed_studio',
+        'evomap',
+        'hypershell',
+    ]);
     assert.equal(sent.init.headers.authorization, 'Bearer secret-key');
 });
 
