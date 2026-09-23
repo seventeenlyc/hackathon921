@@ -1,5 +1,6 @@
 import {Munition} from "./Munition";
 import {PI2} from "../../tools/constants";
+import {tacticalItemsController} from "../../items/TacticalItems";
 
 export class BasicBulletMunition extends Munition {
     speed: number = 6;
@@ -33,7 +34,7 @@ export class BasicBulletMunition extends Munition {
 
     dealDamage() {
         if (typeof this.emitter.damage !== 'object') {
-            this.target.takeDamage(this.emitter.damage);
+            this.target.takeDamage(this.emitter.damage * tacticalItemsController.damageMultiplier);
         }
     }
 }

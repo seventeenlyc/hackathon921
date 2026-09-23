@@ -49,6 +49,10 @@ export class Base extends GridRenderable {
         return this.maxLife;
     }
 
+    heal(amount: number) {
+        this.life = Math.min(this.maxLife, this.life + Math.round(amount));
+    }
+
     private drawHealthBar(ctx: CanvasRenderingContext2D) {
         const ratio = this.life / this.maxLife;
         ctx.fillStyle = '#4a4a4e'
