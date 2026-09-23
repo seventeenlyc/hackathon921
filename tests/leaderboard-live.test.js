@@ -84,7 +84,8 @@ async function test(name, fn) {
         './tools/enemyScaling': {
             waveLifeRatio: wave => 1 + wave / 10,
             waveSpeedMultiplier: (wave, cap) => Math.min(1 + wave / 30, cap),
-            earlyWaveReliefFactor: wave => (wave <= 200 ? 0.4 : 1),
+            earlyWaveReliefFactor: (wave, isBoss) => (wave <= 200 || isBoss ? 0.4 : 1),
+            bossLifeRatio: wave => (wave >= 201 ? 1 + 152 / 10 : 1 + wave / 10),
         },
             './agent/GameLoop': { gameLoop: {
                 sleep: async () => {},
@@ -132,7 +133,8 @@ async function test(name, fn) {
         './tools/enemyScaling': {
             waveLifeRatio: wave => 1 + wave / 10,
             waveSpeedMultiplier: (wave, cap) => Math.min(1 + wave / 30, cap),
-            earlyWaveReliefFactor: wave => (wave <= 200 ? 0.4 : 1),
+            earlyWaveReliefFactor: (wave, isBoss) => (wave <= 200 || isBoss ? 0.4 : 1),
+            bossLifeRatio: wave => (wave >= 201 ? 1 + 152 / 10 : 1 + wave / 10),
         },
             './agent/GameLoop': { gameLoop: {
                 sleep: async () => {},
@@ -174,7 +176,8 @@ async function test(name, fn) {
         './tools/enemyScaling': {
             waveLifeRatio: wave => 1 + wave / 10,
             waveSpeedMultiplier: (wave, cap) => Math.min(1 + wave / 30, cap),
-            earlyWaveReliefFactor: wave => (wave <= 200 ? 0.4 : 1),
+            earlyWaveReliefFactor: (wave, isBoss) => (wave <= 200 || isBoss ? 0.4 : 1),
+            bossLifeRatio: wave => (wave >= 201 ? 1 + 152 / 10 : 1 + wave / 10),
         },
             './agent/GameLoop': { gameLoop: {
                 sleep: async () => {},
@@ -205,6 +208,7 @@ async function test(name, fn) {
     await test('the current player score is submitted at each reached wave and after username entry', () => {
         const submissions = [];
         const musicWaves = [];
+        let missionDucks = 0;
         let username = 'Alice';
         const waveManager = { waveCounter: 1, looping: true, setPlanner() {}, setInterWaveDelay() {}, start() { this.onWaveReached(this.waveCounter); } };
         const game = loadSource('Game.ts', {
@@ -229,7 +233,7 @@ async function test(name, fn) {
             './leaderboard/LeaderboardClient': { getSessionToken: () => null, fetchSharedLeaderboard: async () => null },
             './agent/GameLoop': { gameLoop: { setFocused() {}, onChange() {} } },
             './agent/GameActions': { GameActions: class {} },
-            './agent/InertBattlefield': { InertBattlefield: class {} },
+            './agent/InertBattlefield': { InertBattlefield: class { takePendingModelItems() { return []; } } },
             './agent/AgentRuntime': { AgentRuntime: class {} },
             './agent/snapshot': { formatSnapshot: () => '' },
             './agent/StrategyStore': { strategyStore: { active: () => ({ version: 0 }), lock: () => ({ version: 0, text: '' }) } },
@@ -238,7 +242,7 @@ async function test(name, fn) {
             './DecisionSummary': { DecisionSummary: class {} },
             './i18n': { t: key => key, onLangChange() {} },
             './leaderboard/RunSync': { runSync: { enqueuePrompt() {}, retryPending() {} } },
-            './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, startMusic() {}, setWave: wave => musicWaves.push(wave) } },
+            './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, setPaused() {}, duckForMissionComplete() { missionDucks++; }, beginRun: wave => musicWaves.push(wave), setWave: wave => musicWaves.push(wave) } },
         }, {
             window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {} },
             setInterval: () => 1,
@@ -247,9 +251,11 @@ async function test(name, fn) {
             clearInterval() {},
         }).game;
         waveManager.waveCounter = 2;
+        waveManager.onWaveStarted(2);
         waveManager.onWaveReached(2);
         username = null;
         waveManager.waveCounter = 3;
+        waveManager.onWaveStarted(3);
         waveManager.onWaveReached(3);
         username = 'Bob';
         game.recordReachedWave();
@@ -257,7 +263,10 @@ async function test(name, fn) {
         // wave 2. Wave 3 is skipped while no username is set, then Bob's manual
         // recordReachedWave() picks the current counter back up.
         assert.deepStrictEqual(submissions, [['Alice', 2, 'ai'], ['Bob', 3, 'ai']]);
-        assert.deepStrictEqual(musicWaves, [3, 4]);
+        assert.deepStrictEqual(musicWaves, [2, 3], 'music changes when each wave starts, not while the previous wave is ending');
+        game.recordReachedWave(200);
+        game.recordReachedWave(200);
+        assert.strictEqual(missionDucks, 1, 'wave 200 allows one quiet mission-complete beat before wave 201');
     });
 
     await test('human mode records wave and submits with mode human', () => {
@@ -288,7 +297,7 @@ async function test(name, fn) {
             './leaderboard/LeaderboardClient': { getSessionToken: () => null, fetchSharedLeaderboard: async (u, m) => { ranksRequested.push([u, m]); return null; } },
             './agent/GameLoop': { gameLoop: { setFocused() {}, onChange() {}, start() {}, isIdle: () => true } },
             './agent/GameActions': { GameActions: class {} },
-            './agent/InertBattlefield': { InertBattlefield: class {} },
+            './agent/InertBattlefield': { InertBattlefield: class { takePendingModelItems() { return []; } } },
             './agent/AgentRuntime': { AgentRuntime: class {} },
             './agent/snapshot': { formatSnapshot: () => '' },
             './agent/StrategyStore': { strategyStore: { active: () => ({ version: 0 }), lock: () => ({ version: 0, text: '' }) } },
@@ -297,7 +306,7 @@ async function test(name, fn) {
             './DecisionSummary': { DecisionSummary: class {} },
             './i18n': { t: key => key, onLangChange() {} },
             './leaderboard/RunSync': { runSync: { prepareRun() {}, enqueuePrompt() {}, retryPending() {} } },
-            './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, startMusic() {}, setWave: wave => musicWaves.push(wave) } },
+            './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, setPaused() {}, beginRun: wave => musicWaves.push(wave), setWave: wave => musicWaves.push(wave) } },
         }, {
             window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {} },
             setInterval: () => 1,
@@ -309,9 +318,10 @@ async function test(name, fn) {
         gameModule.startHumanRun('Dave');
         assert.deepStrictEqual(musicWaves, [1]);
         waveManager.waveCounter = 5;
+        waveManager.onWaveStarted(5);
         game.recordReachedWave(5);
         assert.deepStrictEqual(submissions, [['Dave', 5, 'human']]);
-        assert.deepStrictEqual(musicWaves, [1, 6]);
+        assert.deepStrictEqual(musicWaves, [1, 5]);
         game.gameOver();
         assert.deepStrictEqual(ranksRequested, [['Dave', 'human']]);
     });

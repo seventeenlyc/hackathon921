@@ -72,8 +72,7 @@ export function startRun(): void {
     const openingPrompt = strategyStore.activateForRun();
     if (!openingPrompt) return;
 
-    audioManager.setWave(waveManager.waveCounter);
-    audioManager.startMusic();
+    audioManager.beginRun(waveManager.waveCounter);
     // 开发对局不计入排行榜：客户端跳过 RunSync/成绩提交；服务端 dev_sessions
     // 表是最终保险——即便客户端伪造，POST /api/runs 也会被拒 403。
     if (playMode === 'ai' && !devController.isUnlocked) {

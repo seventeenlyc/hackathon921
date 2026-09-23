@@ -303,11 +303,15 @@ class InterfaceManager {
         const cards = Array.from(document.querySelectorAll<HTMLElement>('.hostile-card[data-life]'));
         if (!cards.length) return;
         this.hostileStatsWave = wave;
-        const stats = cards.map(card => ({
-            life: enemyLifeAtWave(Number(card.dataset.life), wave),
-            speed: enemySpeedAtWave(Number(card.dataset.speed), wave, Number(card.dataset.speedCap)),
-            cash: Number(card.dataset.cash),
-        }));
+        const stats = cards.map(card => {
+            // Boss 卡在 201 波起会冻结属性，标记在 data-boss 上以便与引擎同源换算。
+            const isBoss = card.dataset.boss === '1';
+            return {
+                life: enemyLifeAtWave(Number(card.dataset.life), wave, isBoss),
+                speed: enemySpeedAtWave(Number(card.dataset.speed), wave, Number(card.dataset.speedCap), isBoss),
+                cash: Number(card.dataset.cash),
+            };
+        });
         const rows: Array<[string, number[], number]> = [
             [t('enemy.stat.hp'), stats.map(s => s.life), Math.max(...stats.map(s => s.life))],
             [t('enemy.stat.speed'), stats.map(s => s.speed), Math.max(...stats.map(s => s.speed))],

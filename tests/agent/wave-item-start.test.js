@@ -14,7 +14,8 @@ function loadWaveManager(dependencies) {
             return {
                 waveLifeRatio: wave => 1 + wave / 10,
                 waveSpeedMultiplier: (wave, cap) => Math.min(1 + wave / 30, cap),
-                earlyWaveReliefFactor: wave => (wave <= 200 ? 0.4 : 1),
+                earlyWaveReliefFactor: (wave, isBoss) => (wave <= 200 || isBoss ? 0.4 : 1),
+                bossLifeRatio: wave => (wave >= 201 ? 1 + 152 / 10 : 1 + wave / 10),
             };
         }
         if (!(name in dependencies)) throw new Error('Unexpected dependency: ' + name);

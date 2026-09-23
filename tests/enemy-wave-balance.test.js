@@ -10,7 +10,7 @@ function loadWaveManager(randomValue = 0) {
     }).outputText;
     const moduleObj = { exports: {} };
     const classes = {
-        BossEnemy: class BossEnemy {},
+        BossEnemy: class BossEnemy { life = 2000; speed = 2.5; cash = 100; radius = 16; },
         SimpleEnemy: class SimpleEnemy {},
         ArmoredEnemy: class ArmoredEnemy {},
         FastEnemy: class FastEnemy {},
@@ -33,7 +33,8 @@ function loadWaveManager(randomValue = 0) {
         './tools/enemyScaling': {
             waveLifeRatio: wave => 1 + wave / 10,
             waveSpeedMultiplier: (wave, cap) => Math.min(1 + wave / 30, cap),
-            earlyWaveReliefFactor: wave => (wave <= 200 ? 0.4 : 1),
+            earlyWaveReliefFactor: (wave, isBoss) => (wave <= 200 || isBoss ? 0.4 : 1),
+            bossLifeRatio: wave => (wave >= 201 ? 1 + 152 / 10 : 1 + wave / 10),
         },
     };
     const math = Object.create(Math);
@@ -78,6 +79,25 @@ function loadWaveManager(randomValue = 0) {
     assert.equal(wave201.length, 1, 'wave 201 contains no ordinary or support enemies');
     assert.equal(wave201[0].enemyClass, classes.BossEnemy, 'wave 201 uses bosses as elite enemies');
     assert.equal(wave201[0].quantity, 211, 'elite count matches the regular armored group count');
+}
+
+{
+    const { waveManager } = loadWaveManager();
+    const stats = enemy => ({ life: enemy.life, speed: enemy.speed, cash: enemy.cash, radius: enemy.radius });
+
+    waveManager.waveCounter = 152;
+    const wave152BossGroup = waveManager.generateWave()[0];
+    const wave152Boss = waveManager.enemyFactory(wave152BossGroup.enemyClass, wave152BossGroup.enemySpecsMultiplier, {});
+    const wave152Stats = { life: 12960, speed: 1, cash: 100, radius: 16 };
+    assert.deepEqual(stats(wave152Boss), wave152Stats, 'wave 152 provides the fixed boss attributes');
+
+    for (const wave of [201, 202, 300]) {
+        waveManager.waveCounter = wave;
+        const bossGroup = waveManager.generateWave()[0];
+        const boss = waveManager.enemyFactory(bossGroup.enemyClass, bossGroup.enemySpecsMultiplier, {});
+        assert.deepEqual(stats(boss), wave152Stats, `wave ${wave} bosses keep wave 152 attributes`);
+        assert.equal(bossGroup.quantity, 10 + wave, `wave ${wave} boss quantity continues increasing`);
+    }
 }
 
 console.log('PASS: enemy wave balance');
