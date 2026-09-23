@@ -52,6 +52,7 @@ class InterfaceManager {
     private towersWrapperElement = document.getElementById('towers-wrapper')!;
     private towersStatsElement = document.getElementById('towers-stats')!;
     private stateElement = document.getElementById('state')!;
+    private stateSubElement = document.getElementById('state-sub')!;
     private speedElement = document.getElementById('speed')!;
     private gameOverElement = document.getElementById('game-over')!;
     private pauseButton = document.getElementById('pause') as HTMLButtonElement;
@@ -176,7 +177,8 @@ class InterfaceManager {
     setWave(wave: number) {
         this.lastWave = wave;
         const tag = t('map.waveTag', {wave: String(wave).padStart(3, '0')});
-        this.waveElement.textContent = String(wave);
+        // 设计稿的波次为三位补零样式（037 / 200 中的前半），与地图 livebar 的 waveTag 一致。
+        this.waveElement.textContent = String(wave).padStart(3, '0');
         setText('map-wave', tag);
     }
 
@@ -192,6 +194,7 @@ class InterfaceManager {
     setState(state: GameState) {
         // `idle` is the not-started state shown before the player presses Start.
         this.stateElement.textContent = t(`state.${state}`);
+        this.stateSubElement.textContent = t(`stateSub.${state}`);
         this.pauseButton.hidden = state === 'paused';
         this.pauseButton.disabled = state === 'idle' || state === 'planning';
         this.resumeButton.hidden = state !== 'paused';
