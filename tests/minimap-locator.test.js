@@ -38,23 +38,17 @@ const GH = camDeps['./Map'].Map.GRID_H;
 const mapWidth = TILE * GW;
 const mapHeight = TILE * GH;
 
-// Zoom out to minimum so the cover clamp is the binding constraint.
+// Zoom out to minimum: under contain semantics the whole map fits the frame.
 for (let i = 0; i < 40; i++) camListeners['wheel:down']();
-const minimumScale = Math.max(frameRect.width / mapWidth, frameRect.height / mapHeight);
+const minimumScale = Math.min(frameRect.width / mapWidth, frameRect.height / mapHeight);
 
-// getVisibleMapRect at minimum zoom: on the binding axis the visible rect equals
-// the whole map; on the slack axis it is a sub-rect centered on the camera.
+// getVisibleMapRect at minimum zoom: the visible rect equals the whole map —
+// the entire battlefield is visible inside the sector frame.
 const rect0 = camera.getVisibleMapRect();
 assert.ok(rect0.width <= mapWidth + 1e-6, 'visible width never exceeds the map');
 assert.ok(rect0.height <= mapHeight + 1e-6, 'visible height never exceeds the map');
-const boundAxisIsHeight = minimumScale === frameRect.height / mapHeight;
-if (boundAxisIsHeight) {
-    assert.ok(Math.abs(rect0.height - mapHeight) < 1e-6, 'on the binding axis the visible rect == whole map');
-    assert.ok(rect0.width < mapWidth, 'on the slack axis the visible rect is a sub-rect');
-} else {
-    assert.ok(Math.abs(rect0.width - mapWidth) < 1e-6, 'on the binding axis the visible rect == whole map');
-    assert.ok(rect0.height < mapHeight, 'on the slack axis the visible rect is a sub-rect');
-}
+assert.ok(Math.abs(rect0.width - mapWidth) < 1e-6, 'at minimum zoom the whole map width is visible');
+assert.ok(Math.abs(rect0.height - mapHeight) < 1e-6, 'at minimum zoom the whole map height is visible');
 assert.ok(rect0.x >= -1e-6 && rect0.y >= -1e-6, 'visible rect never starts before the map origin');
 assert.ok(rect0.x + rect0.width <= mapWidth + 1e-6, 'visible rect never ends past the map edge');
 assert.ok(rect0.y + rect0.height <= mapHeight + 1e-6, 'visible rect never ends past the map edge');
