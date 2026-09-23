@@ -258,6 +258,7 @@ const STRINGS: { [key: string]: Entry } = {
     'dev.passwordLabel': {zh: '开发密码', en: 'Developer passphrase'},
     'dev.passwordPlaceholder': {zh: '输入开发密码', en: 'Enter developer passphrase'},
     'dev.unlock': {zh: '解锁', en: 'Unlock'},
+    'dev.confirm': {zh: '确认', en: 'Confirm'},
     'dev.cancel': {zh: '关闭', en: 'Close'},
     'dev.humanOnly': {zh: '开发模式仅在 AI 指挥模式下可用。人类模式确认档案后会立即开始计榜对局，无法在开局前设置开发参数。请切换到 AI 模式后再试。', en: 'Developer mode is available in AI mode only. Human mode starts a ranked run immediately after profile confirmation, so dev parameters cannot be set before the run begins. Switch to AI mode first.'},
     'dev.unlockedIntro': {zh: '已解锁。在开局前设置起始波次与战术资源，随后按正常流程下达作战命令并开始行动。', en: 'Unlocked. Set the starting wave and tactical resources before deployment, then issue your order and deploy as usual.'},
