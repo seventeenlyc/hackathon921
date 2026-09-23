@@ -18,9 +18,63 @@
     <link rel="icon" href="/img/icons/favicon.ico" sizes="any" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#0a121a" />
+    <!-- Critical boot CSS must precede the JS-imported Less: otherwise refresh paints raw HTML and an oversized SVG. -->
+    <style id="boot-style">
+      html, body { margin: 0; min-height: 100%; background: #0a121a; }
+      html:not(.app-ready) #inert { visibility: hidden; }
+      #loading-screen {
+        position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center;
+        box-sizing: border-box; padding: 18px; overflow: hidden;
+        background: radial-gradient(circle at 50% 40%, #183744 0, #0a1b25 48%, #070e15 100%);
+        color: #dfe9ec; font-family: system-ui, -apple-system, sans-serif;
+      }
+      #loading-screen::before {
+        content: ''; position: absolute; inset: 0; pointer-events: none;
+        background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(53, 226, 255, .025) 3px 4px);
+      }
+      .boot-terminal {
+        position: relative; box-sizing: border-box; width: min(440px, 100%);
+        padding: clamp(22px, 5vw, 34px); border: 1px solid rgba(53, 226, 255, .35);
+        background: rgba(7, 18, 25, .92); box-shadow: 0 18px 65px rgba(0, 0, 0, .5);
+      }
+      .boot-eyebrow, .boot-meta {
+        color: #8aa0aa; font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+        letter-spacing: .12em;
+      }
+      .boot-eyebrow { color: #35e2ff; }
+      .boot-terminal h1 { margin: 22px 0 8px; color: #dfe9ec; font-size: clamp(24px, 6vw, 32px); line-height: 1.25; }
+      .boot-message { margin: 0 0 25px; color: #a6b9c1; font-size: 13px; line-height: 1.6; }
+      .boot-track { position: relative; height: 3px; overflow: hidden; background: rgba(53, 226, 255, .14); }
+      .boot-track::after {
+        content: ''; position: absolute; left: 0; top: 0; width: 36%; height: 100%;
+        background: #35e2ff; box-shadow: 0 0 12px rgba(53, 226, 255, .75);
+        animation: boot-scan 1.5s ease-in-out infinite alternate;
+      }
+      .boot-meta { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; }
+      .boot-retry {
+        display: inline-block; margin-top: 24px; color: #8aa0aa; font-size: 11px;
+        text-decoration: underline; visibility: hidden;
+        animation: boot-show-retry 0s 8s forwards;
+      }
+      .boot-retry:focus-visible { outline: 2px solid #35e2ff; outline-offset: 4px; }
+      @keyframes boot-scan { to { transform: translateX(180%); } }
+      @keyframes boot-show-retry { to { visibility: visible; } }
+      @media (prefers-reduced-motion: reduce) { .boot-track::after { animation: none; } }
+      html.app-ready #loading-screen { display: none; }
+    </style>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet" />
   </head>
   <body>
+    <div id="loading-screen" role="status" aria-live="polite">
+      <div class="boot-terminal">
+        <div class="boot-eyebrow">公安九课 // TACTICAL NETWORK</div>
+        <h1>保护笑脸男</h1>
+        <p class="boot-message">正在建立战术链路，请稍候…</p>
+        <div class="boot-track" aria-hidden="true"></div>
+        <div class="boot-meta"><span>SECURE CHANNEL</span><span>INITIALIZING</span></div>
+        <a class="boot-retry" href="">等待过久？点击重新加载</a>
+      </div>
+    </div>
     <div id="inert">
       <canvas id="canvas" tabindex="0" data-i18n-aria-label="aria.battlefield" aria-label="塔奇克马战术防御区域。双击打开作战终端。"></canvas>
 
@@ -28,7 +82,7 @@
         <div class="header-side header-left">
           <span class="eyebrow" data-i18n="shell.eyebrow">公安九课 // 战术网络</span>
           <span class="header-sub" data-i18n="header.subtitle">公安九课 · 塔奇克马防御协议</span>
-          <span id="version" class="header-ver">v0.2.2</span>
+          <span id="version" class="header-ver">v0.2.3</span>
         </div>
         <h1 class="header-title" data-i18n="app.name">保护笑脸男</h1>
         <div class="header-side header-right">
