@@ -310,6 +310,20 @@ MVP 必须建立：
 
 需要自行补齐的能力：防御塔升级 / 出售（inert 原版没有）。
 
+**战场贴图（issue #67，2026-09-23）**：仅替换既有五种塔与五种敌人的视觉资源，内部 ID、敌人类别、Agent 动作及模拟数值保持不变。运行时图片置于 `src/assets/entities/towers/` 和 `src/assets/entities/enemies/`，`src/assets/design/5种炮台.png` 与 `5种敌人.png` 参考图保持原样。独立素材按以下对应关系以英文运行时文件名接入：
+
+| 原独立素材 | 运行时文件 | 原独立素材 | 运行时文件 |
+|---|---|---|---|
+| 01 基础炮台 | `towers/canon.png` | 06 傀儡义体 | `enemies/simple.png` |
+| 02 高速炮台 | `towers/gatling.png` | 07 高速无人机 | `enemies/fast.png` |
+| 03 减速炮台 | `towers/slow.png` | 08 装甲执行机 | `enemies/armored.png` |
+| 04 狙击炮台 | `towers/sniper.png` | 09 网络支援节点 | `enemies/healer.png` |
+| 05 激光炮台 | `towers/laser.png` | 10 情报消去者 BOSS | `enemies/boss.png` |
+
+炮台整机贴图在战场、放置预览和机体卡片中始终保持正向，不跟随索敌角度旋转；弹丸和激光仍沿各自的目标逻辑运动。敌人贴图也保持正向，移动与路径不受影响。普通敌人（`simple`）以 30×30 游戏单位的显示框绘制（单格为 40×40），等比缩放、血条置于图像下方格内；碰撞半径、移动速度及其他四类敌人的显示尺寸不变。
+
+**阶段纪律例外**：#6 的 Prompt 行为验证仍未通过；本次依 issue #67 的明确视觉改造请求，仅允许在既有底座渲染中替换上述贴图及其等比显示、验证，不因此开放新玩法或底座以外系统。
+
 ### LLM 供应商
 
 采用 **DeepSeek**。

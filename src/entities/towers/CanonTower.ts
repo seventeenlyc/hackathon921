@@ -55,12 +55,7 @@ export class CanonTower extends Tower {
     }
 
     draw(ctx: CanvasRenderingContext2D): void {
-        const rotation = Math.atan2(
-            this.canonExtremity.y - this.center.y,
-            this.canonExtremity.x - this.center.x
-        );
-        this.drawTexture(ctx, rotation);
-
+        this.drawTexture(ctx);
         super.draw(ctx);
     }
 
