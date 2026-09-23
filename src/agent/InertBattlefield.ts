@@ -13,11 +13,12 @@ import {HealerEnemy} from '../entities/enemies/HealerEnemy';
 import {BossEnemy} from '../entities/enemies/BossEnemy';
 import {Enemy} from '../entities/enemies/Enemy';
 import {Point} from '../interfaces/Point';
-import {ActionError, EnemyType, GameSnapshot, isItemKey, TowerInfo, TowerOption} from './types';
+import {ActionError, EnemyType, GameSnapshot, TowerInfo, TowerOption} from './types';
 import {Battlefield} from './GameActions';
 import {buildSnapshot, EnemySample, LaneRoute} from './snapshot';
 import {naturalOilController, NATURAL_OIL_COST} from '../items/NaturalOil';
 import {tacticalItemsController} from '../items/TacticalItems';
+import {useModelItem} from './modelItemActivation';
 
 function numericDamage(tower: Tower): number {
     const damage = tower.damage;
@@ -120,18 +121,10 @@ export class InertBattlefield implements Battlefield {
     }
 
     useItem(item: string): { ok: true } | { ok: false; error: ActionError } {
-        if (!isItemKey(item)) return { ok: false, error: 'UNKNOWN_ITEM' };
-
-        const result = tacticalItemsController.activate(item, true, cashManager, {
+        return useModelItem(item, tacticalItemsController, cashManager, {
             enemyManager,
             homeBase: map.homeBase,
         });
-
-        if (result.ok) return { ok: true };
-        if (result.reason === 'INSUFFICIENT_FUNDS') return { ok: false, error: 'INSUFFICIENT_FUNDS' };
-        if (result.reason === 'ALREADY_ACTIVE') return { ok: false, error: 'ALREADY_ACTIVE' };
-        if (result.reason === 'COOLDOWN') return { ok: false, error: 'COOLDOWN' };
-        return { ok: false, error: 'ITEM_NOT_READY' };
     }
 
     /**
