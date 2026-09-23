@@ -202,6 +202,7 @@ function loadUI(document, currentPlayMode, remoteData = null) {
             onLangChange: () => {},
         },
         '../PlayMode': { playMode: currentPlayMode },
+        '../narrative/StoryReader': { storyReader: { open() {}, close() {}, isOpen: false } },
     };
     new Function('module', 'exports', 'require', 'document', js)(
         moduleObj,

@@ -20,6 +20,7 @@ import {enemyLifeAtWave, enemySpeedAtWave} from './tools/enemyScaling';
 import {isEnemyTypeId} from './tools/enemyCatalog';
 import {texturePaths} from './tools/texturePaths';
 import {DevPanel} from './DevPanel';
+import {storyReader} from './narrative/StoryReader';
 
 /** Summary shown on the settlement screen after the base falls. */
 export interface RunStats {
@@ -90,6 +91,9 @@ class InterfaceManager {
             toggleLang();
             applyStaticTranslations();
         });
+        // 背景故事（issue #99）：纯阅读视图，不冻结演算，也不改动任何对局状态。
+        const storyButton = document.getElementById('story-open') as HTMLButtonElement | null;
+        storyButton?.addEventListener('click', () => storyReader.open(storyButton));
 
         gameLoop.onChange(state => {
             this.setState(state);
