@@ -154,7 +154,9 @@ class Game {
                 const cell = map.grid[i][j];
                 if (cell instanceof Tower) {
                     total += 1;
-                    byType.set(cell.name, (byType.get(cell.name) || 0) + 1);
+                    // Group by the stable protocol type, not the localized display
+                    // name, so the breakdown is consistent across languages.
+                    byType.set(cell.towerType, (byType.get(cell.towerType) || 0) + 1);
                 }
             }
         }

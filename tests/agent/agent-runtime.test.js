@@ -161,7 +161,7 @@ function makeStore(text = 'hold the base') {
 
         assert.deepStrictEqual(actions.buildCalls, []);
         assert.strictEqual(errors.length, 1);
-        assert.ok(errors[0].includes('agent proxy'));
+        assert.ok(errors[0].includes('Tactical network unreachable'));
     });
 
     await test('fail-closed: a non-OK HTTP status reports without acting', async () => {
@@ -311,7 +311,7 @@ function makeStore(text = 'hold the base') {
 
         await runtime.plan();
         assert.strictEqual(errors.length, 1);
-        assert.ok(errors[0].includes('did not answer within 20ms'));
+        assert.ok(errors[0].includes('timed out after 20ms'));
     });
 
     console.log('All AgentRuntime tests passed.');

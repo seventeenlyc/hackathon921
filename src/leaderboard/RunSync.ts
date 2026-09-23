@@ -109,7 +109,9 @@ export class RunSync {
     }
 
     private fail(result: { reason: string }): void {
-        this.setStatus({ state: 'failed', message: '记录未同步', reason: result.reason });
+        // The panel renders its own localized text from `state`; this field is
+        // kept empty rather than carrying a hardcoded, untranslated string.
+        this.setStatus({ state: 'failed', message: '', reason: result.reason });
     }
 
     private ensureRunFor(username: string, mode: PlayMode = 'ai'): Promise<ClientResult<string>> {
