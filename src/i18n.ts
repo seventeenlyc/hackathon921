@@ -24,7 +24,7 @@ const STRINGS: { [key: string]: Entry } = {
 
     // Shell / battlefield UI (previously hardcoded in index.html).
     'shell.eyebrow': {zh: '公安九课 // 战术网络', en: 'SECTION 9 // TACTICAL NETWORK'},
-    'towers.heading': {zh: '塔奇克马部署', en: 'TACHIKOMA UNITS'},
+    'towers.heading': {zh: '我方兵力', en: 'TACHIKOMA UNITS'},
     'towers.selectHint': {zh: '选择塔奇克马机体以查看战术参数。', en: 'Select a Tachikoma unit to view tactical specifications.'},
     'console.eyebrow': {zh: '塔奇克马指挥网络', en: 'TACHIKOMA COMMAND NETWORK'},
     'console.heading': {zh: '战术命令终端', en: 'TACTICAL ORDER TERMINAL'},
@@ -197,7 +197,7 @@ const STRINGS: { [key: string]: Entry } = {
     'map.waveTag': {zh: '波次 {wave}', en: 'WAVE {wave}'},
     'neural.title': {zh: '神经链接', en: 'NEURAL LINK'},
     'items.title': {zh: '支援道具', en: 'BATTLE ITEMS'},
-    'database.tabHostile': {zh: '敌人情报', en: 'ENEMY INTELLIGENCE'},
+    'database.tabHostile': {zh: '敌方情报', en: 'ENEMY INTELLIGENCE'},
     'enemy.simple.name': {zh: '傀儡型', en: 'PUPPET'},
     'enemy.simple.desc': {zh: '数量最多的基础敌性体，成群涌向核心。', en: 'The most common hostile; swarms the core in numbers.'},
     'enemy.fast.name': {zh: '猎袭型', en: 'HUNTER'},
