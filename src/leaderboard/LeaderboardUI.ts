@@ -172,7 +172,8 @@ export class LeaderboardPanel {
     private footerEl: HTMLElement;
     private statusEl: HTMLElement;
     private retryButton: HTMLButtonElement;
-    public modeButton: HTMLButtonElement;
+    /** 三个榜 Tab：AI 榜 / 人类榜 / 混合榜，点击即切换，激活态高亮。 */
+    public modeTabs: HTMLButtonElement[];
     public currentMode: LeaderboardMode = playMode === 'human' ? 'human' : 'ai';
     private username: string | null;
     private remote: RemoteLeaderboard | null = null;
@@ -191,10 +192,17 @@ export class LeaderboardPanel {
         title.id = 'leaderboard-title';
         title.className = 'leaderboard-title';
         title.textContent = t('lb.title');
-        this.modeButton = document.createElement('button');
-        this.modeButton.type = 'button';
-        this.modeButton.className = 'leaderboard-mode-toggle';
-        this.modeButton.addEventListener('click', () => this.cycleMode());
+        this.modeTabs = (['ai', 'human', 'total'] as const).map(mode => {
+            const tab = document.createElement('button');
+            tab.type = 'button';
+            tab.className = 'leaderboard-tab';
+            tab.dataset.mode = mode;
+            tab.addEventListener('click', () => this.selectMode(mode));
+            return tab;
+        });
+        const tabsRow = document.createElement('div');
+        tabsRow.className = 'leaderboard-tabs';
+        this.modeTabs.forEach(tab => tabsRow.appendChild(tab));
         this.statusEl = document.createElement('div');
         this.statusEl.className = 'leaderboard-status';
         this.retryButton = document.createElement('button');
@@ -207,7 +215,7 @@ export class LeaderboardPanel {
         this.footerEl = document.createElement('div');
         this.footerEl.className = 'leaderboard-footer';
         this.root.appendChild(title);
-        this.root.appendChild(this.modeButton);
+        this.root.appendChild(tabsRow);
         this.root.appendChild(this.statusEl);
         this.root.appendChild(this.retryButton);
         this.root.appendChild(this.listEl);
@@ -229,15 +237,9 @@ export class LeaderboardPanel {
         void this.refreshRemote();
     }
 
-    private cycleMode(): void {
-        if (playMode === 'human') {
-            // human -> ai -> total -> human
-            this.currentMode = this.currentMode === 'human' ? 'ai' : this.currentMode === 'ai' ? 'total' : 'human';
-        } else {
-            // ai -> human -> total -> ai
-            this.currentMode = this.currentMode === 'ai' ? 'human' : this.currentMode === 'human' ? 'total' : 'ai';
-        }
-        this.refresh(this.currentMode);
+    private selectMode(mode: LeaderboardMode): void {
+        this.currentMode = mode;
+        this.refresh(mode);
     }
 
     setUsername(name: string) { this.username = name; this.render(); void this.refreshRemote(); }
@@ -266,13 +268,19 @@ export class LeaderboardPanel {
     }
 
     // 转义后以 textContent 渲染，禁止 innerHTML 直出不可信文本。
+    // 头像 src 只取自 AVATAR_SRC 常量表（按已校验的 avatarId 查表），不拼接任何输入。
     private render() {
-        const modeLabel = this.currentMode === 'ai'
-            ? t('lb.boardAi')
-            : this.currentMode === 'human'
-              ? t('lb.boardHuman')
-              : t('lb.boardTotal');
-        this.modeButton.textContent = modeLabel;
+        for (const tab of this.modeTabs) {
+            const mode = tab.dataset.mode as LeaderboardMode;
+            tab.textContent = mode === 'ai'
+                ? t('lb.boardAi')
+                : mode === 'human'
+                  ? t('lb.boardHuman')
+                  : t('lb.boardTotal');
+            const active = mode === this.currentMode;
+            tab.classList.toggle('is-active', active);
+            tab.setAttribute('aria-pressed', active ? 'true' : 'false');
+        }
 
         const shared = this.remote != null;
         const local: LeaderboardEntry[] = entriesForBoard(readStoredLeaderboard() || [], this.currentMode);
@@ -300,8 +308,20 @@ export class LeaderboardPanel {
             modeSpan.className = 'mode-tag mode-' + e.mode;
             modeSpan.textContent = e.mode === 'human' ? t('lb.modeHuman') : t('lb.modeAi');
 
+            const avatarSpan = document.createElement('span');
+            avatarSpan.className = 'avatar';
+            if (e.avatarId && isKnownAvatarId(e.avatarId)) {
+                const img = document.createElement('img');
+                img.src = AVATAR_SRC[e.avatarId];
+                img.alt = '';
+                avatarSpan.appendChild(img);
+            } else {
+                avatarSpan.classList.add('is-empty');
+            }
+
             li.appendChild(rankSpan);
             li.appendChild(modeSpan);
+            li.appendChild(avatarSpan);
 
             if (e.mode === 'ai') {
                 const nameButton = document.createElement('button');

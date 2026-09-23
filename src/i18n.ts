@@ -160,7 +160,7 @@ const STRINGS: { [key: string]: Entry } = {
 
     'lb.boardAi': {zh: 'AI 榜', en: 'AI'},
     'lb.boardHuman': {zh: '人类榜', en: 'Human'},
-    'lb.boardTotal': {zh: '总榜', en: 'Total'},
+    'lb.boardTotal': {zh: '混合榜', en: 'Mixed'},
     'lb.modeAi': {zh: 'AI', en: 'AI'},
     'lb.modeHuman': {zh: '人类', en: 'Human'},
 
