@@ -28,7 +28,7 @@
         <div class="header-side header-left">
           <span class="eyebrow" data-i18n="shell.eyebrow">公安九课 // 战术网络</span>
           <span class="header-sub" data-i18n="header.subtitle">公安九课 · 塔奇克马防御协议</span>
-          <span id="version" class="header-ver">v0.1.28</span>
+          <span id="version" class="header-ver">v0.2.0</span>
         </div>
         <h1 class="header-title" data-i18n="app.name">保护笑脸男</h1>
         <div class="header-side header-right">
@@ -49,7 +49,7 @@
           <section class="control-card status-panel" aria-labelledby="status-heading">
             <div class="ghost-lockup">
               <div class="ghost-avatar" aria-hidden="true"></div>
-              <h2 id="status-heading" class="panel-title" data-i18n="ghost.title">幽灵状态</h2>
+              <h2 id="status-heading" class="panel-title" data-i18n="aria.battlefieldStatus">战场状态</h2>
             </div>
             <div class="status-grid" data-i18n-aria-label="aria.battlefieldStatus" aria-label="战场状态">
               <div class="status-metric"><span data-i18n="label.cash">战术资源：</span><strong><span id="cash">200</span></strong></div>
@@ -61,8 +61,8 @@
           <section class="control-card chatbox-panel" aria-labelledby="chatbox-heading">
             <div class="panel-heading">
               <div>
-                <div class="eyebrow" data-i18n="directive.eyebrow">战术指令</div>
-                <h2 id="chatbox-heading" data-i18n="directive.title">幽灵指令</h2>
+                <div class="eyebrow" data-i18n="console.eyebrow">塔奇克马指挥网络</div>
+                <h2 id="chatbox-heading" data-i18n="console.heading">战术命令终端</h2>
               </div>
               <button id="controls-collapse" class="icon-button" type="button" data-i18n-aria-label="aria.hideControls" aria-label="隐藏作战终端" data-i18n-title="title.hideControls" title="隐藏终端">×</button>
             </div>
@@ -78,7 +78,7 @@
           </section>
 
           <section class="control-card flux-panel" aria-labelledby="flux-heading">
-            <h2 id="flux-heading" class="panel-title" data-i18n="flux.title">幽灵变动日志</h2>
+            <h2 id="flux-heading" class="panel-title" data-i18n="decisions.label">塔奇克马判断</h2>
             <ul id="decision-log" class="decision-log"></ul>
             <div id="decision-empty" class="decision-empty" data-i18n="decisions.empty">等待塔奇克马自主判断。</div>
           </section>
@@ -134,12 +134,11 @@
           </section>
         </aside>
 
-        <section class="database-panel" aria-labelledby="database-heading">
+        <section class="database-panel">
           <div class="database-header">
-            <h2 id="database-heading" class="panel-title" data-i18n="database.title">战术数据库</h2>
             <div class="database-tabs">
-              <button id="db-tab-tachikoma" class="db-tab active" type="button" aria-selected="true" data-i18n="database.tabTachikoma">塔奇克马 // 思考战车</button>
-              <button id="db-tab-hostile" class="db-tab" type="button" aria-selected="false" data-i18n="database.tabHostile">敌性体 // 属性库</button>
+              <button id="db-tab-tachikoma" class="db-tab active" type="button" aria-selected="true" data-i18n="towers.heading">塔奇克马部署</button>
+              <button id="db-tab-hostile" class="db-tab" type="button" aria-selected="false" data-i18n="database.tabHostile">敌性体</button>
             </div>
           </div>
           <section class="tower-panel db-view active" id="db-view-tachikoma">

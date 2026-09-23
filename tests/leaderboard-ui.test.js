@@ -30,8 +30,8 @@ assert.match(uiSource, /gate-lang/, 'the gate must expose a language toggle butt
 assert.match(uiSource, /toggleLang/, 'the language toggle must switch the i18n language');
 assert.match(uiSource, /onLangChange\(\(\) => this\.render\(\)\)/,
     'the gate must re-render its copy when the language changes');
-assert.doesNotMatch(uiSource, /gate\.welcome|gate\.prompt|gate\.brand\b|gate\.brandSub|gate\.title\b|gate\.titleSub|gate\.identEn|gate\.identZh|gate\.profileSub|gate\.codenameSub/,
-    'retired gate i18n keys must not be referenced anymore');
+assert.doesNotMatch(uiSource, /gate\.welcome|gate\.prompt|gate\.brand\b|gate\.brandSub|gate\.title\b|gate\.titleSub|gate\.identEn|gate\.identZh|gate\.profileSub|gate\.codenameSub|directive\.|flux\.title|ghost\.title|database\.title|database\.tabTachikoma/,
+    'retired i18n keys must not be referenced anymore');
 for (const copy of ['PROTECT AOI', 'OPERATOR IDENTIFICATION', 'RANDOM PROFILE', 'TACHIKOMA LINK // STANDBY']) {
     assert.ok(i18nSource.includes(copy), `i18n table must carry the gate copy: ${copy}`);
 }

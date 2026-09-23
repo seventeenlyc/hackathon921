@@ -78,21 +78,16 @@ for (const key of [
     'tower.cardDetailsTitle',
     'tower.dpsTitle',
     'tower.summary',
-    // 战术工作站位壳层（issue #66）：Header / 地图框 / 面板 / 数据库 / 威胁情报 / 敌性体图鉴。
+    // 战术工作站位壳层（issue #66）：Header / 地图框装饰与新增面板文案；
+    // 既有面板沿用 console.* / towers.heading / decisions.label / aria.battlefieldStatus 原文案。
     'map.sector',
     'map.intrusion',
     'map.liveBar',
     'map.waveTag',
-    'ghost.title',
-    'directive.eyebrow',
-    'directive.title',
-    'flux.title',
     'threat.title',
     'threat.idle',
     'neural.title',
     'items.title',
-    'database.title',
-    'database.tabTachikoma',
     'database.tabHostile',
     'enemy.simple.name',
     'enemy.simple.desc',
