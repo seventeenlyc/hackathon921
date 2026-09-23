@@ -71,11 +71,13 @@ assert.doesNotMatch(
 assert.match(hiddenViewBlock[1], /display:\s*block/, 'hidden view must stay a layout participant');
 assert.match(hiddenViewBlock[1], /visibility:\s*hidden/, 'hidden view must stay visually hidden');
 
-// --- tower stats: fixed height so selecting a unit cannot resize the panel ----
-const towerStatsBlock = extractBlock(stylesSource, /\.tower-stats\s*\{/);
-assert.ok(towerStatsBlock, '.tower-stats block missing from styles.less');
-assert.doesNotMatch(towerStatsBlock, /min-height:/, 'min-height lets the populated stats grow the panel');
-assert.match(towerStatsBlock, /height:\s*110px/, 'stats box must keep the measured populated height');
-assert.match(towerStatsBlock, /overflow-y:\s*auto/, 'stats overflow must scroll inside the fixed box');
+// --- tower stats: the redundant detail block is gone -------------------------
+// 2026-09-24: the selected-unit detail block duplicated the cost/damage/rate/
+// range figures already printed on every tower card, so it was removed outright
+// on zuohaisu/ui-update-05. With no block left to grow, PR #117's user-facing
+// invariant (selecting a unit must not resize the panel) holds trivially; the
+// tab-switch guards above still cover the remaining height-jump source.
+assert.doesNotMatch(stylesSource, /\.tower-stats\s*\{/, '.tower-stats block must stay removed from styles.less');
+assert.doesNotMatch(index, /id="towers-stats"/, 'the redundant tower stats node must stay removed from index.html');
 
 console.log('Database panel fixed-height guards passed.');

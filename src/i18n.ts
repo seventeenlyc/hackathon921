@@ -25,7 +25,6 @@ const STRINGS: { [key: string]: Entry } = {
     // Shell / battlefield UI (previously hardcoded in index.html).
     'shell.eyebrow': {zh: '公安九课 // 战术网络', en: 'SECTION 9 // TACTICAL NETWORK'},
     'towers.heading': {zh: '我方兵力', en: 'TACHIKOMA UNITS'},
-    'towers.selectHint': {zh: '选择塔奇克马机体以查看战术参数。', en: 'Select a Tachikoma unit to view tactical specifications.'},
     'console.eyebrow': {zh: '塔奇克马指挥网络', en: 'TACHIKOMA COMMAND NETWORK'},
     'console.heading': {zh: '战术命令终端', en: 'TACTICAL ORDER TERMINAL'},
     'settings.title': {zh: '系统设置', en: 'SYSTEM CONFIG'},

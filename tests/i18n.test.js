@@ -54,7 +54,6 @@ for (const key of [
     'app.name',
     'shell.eyebrow',
     'towers.heading',
-    'towers.selectHint',
     'console.eyebrow',
     'console.heading',
     'settings.title',
@@ -111,7 +110,7 @@ for (const key of [
 assert.deepStrictEqual(entries.get('database.tabHostile'),
     {zh: '敌方情报', en: 'ENEMY INTELLIGENCE'},
     'the enemy tab label must be correct in both languages');
-for (const key of ['threat.title', 'threat.wave', 'threat.idle']) {
+for (const key of ['threat.title', 'threat.wave', 'threat.idle', 'towers.selectHint']) {
     assert.ok(!entries.has(key), `retired right-rail translation should be removed: ${key}`);
 }
 
