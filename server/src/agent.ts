@@ -116,13 +116,13 @@ export const AGENT_TOOLS = [
         type: 'function',
         function: {
             name: 'use_item',
-            description: 'Use a tactical battle item. Currently available: "natural_oil" (costs 2000 cash, grants all towers 1.5x attack speed for 5s, 10s cooldown).',
+            description: 'Use a tactical battle item. Available items:\n- "tripo": 300% tower damage for 5s (cost 1000, 10s cooldown)\n- "seeed_studio": 150% tower attack speed for 5s (cost 1000, 10s cooldown)\n- "evomap": 2% max HP AOE damage to all living enemies (first 2 uses FREE, then 1000, 10s cooldown)\n- "hypershell": restores 25% base HP (cost 1000, 10s cooldown)\n- "natural_oil": 150% tower attack speed for 5s (cost 1000, 10s cooldown)',
             parameters: {
                 type: 'object',
                 properties: {
                     item: {
                         type: 'string',
-                        enum: ['natural_oil'],
+                        enum: ['natural_oil', 'tripo', 'seeed_studio', 'evomap', 'hypershell'],
                         description: 'Identifier of the item to activate.',
                     },
                 },
@@ -164,11 +164,12 @@ export const AGENT_SYSTEM_PROMPT = [
     '- Enemies can spawn from several lanes; the state lists them in `lanes` and',
     '  `spawns`, and each candidate says which lane it is for. Unless the player',
     '  strategy says otherwise, cover every lane rather than piling up on one.',
-    '- You can use tactical battle items via `use_item`. Currently available:',
-    '  `natural_oil`, which costs 2000 cash and grants all towers 1.5x attack speed',
-    '  for 5 seconds (10s cooldown). Use it when facing dense waves, boss enemies,',
-    '  or urgent threats where burst damage is critical, provided you have enough cash',
-    '  and it is not on cooldown.',
+    '- You can use tactical battle items via `use_item`. Available items:',
+    '  * `tripo`: 5s 300% firepower (x3 tower damage), costs 1000 cash, 10s cooldown. Best against boss or heavy waves.',
+    '  * `seeed_studio`: 5s 150% attack speed, costs 1000 cash, 10s cooldown. Best against swarms.',
+    '  * `evomap`: 2% max HP AOE damage to ALL enemies on the map, 10s cooldown. First 2 uses are FREE, then 1000 cash. Great against large waves.',
+    '  * `hypershell`: repairs base by +25% max life, costs 1000 cash, 10s cooldown. Use when base is damaged or in critical danger.',
+    '  * `natural_oil`: 5s 150% attack speed, costs 1000 cash, 10s cooldown.',
     '- Return tool calls only. Do not explain.',
 ].join('\n');
 

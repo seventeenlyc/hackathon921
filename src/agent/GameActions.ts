@@ -2,6 +2,7 @@ import {
     ActionError,
     ActionResult,
     GameSnapshot,
+    isItemKey,
     TowerInfo,
     TowerOption,
 } from './types';
@@ -171,7 +172,7 @@ export class GameActions {
     }
 
     useItem(rawItem: string): ActionResult<{ item: string }> {
-        if (rawItem !== 'natural_oil') {
+        if (!isItemKey(rawItem)) {
             return failure('UNKNOWN_ITEM', t('action.unknownItem', {item: rawItem}));
         }
 
@@ -180,7 +181,7 @@ export class GameActions {
             if (!result.ok) {
                 const message =
                     result.error === 'INSUFFICIENT_FUNDS'
-                        ? t('action.insufficientItem', {item: rawItem, cost: 2000, cash: this.battlefield.cash()})
+                        ? t('action.insufficientItem', {item: rawItem, cost: 1000, cash: this.battlefield.cash()})
                         : result.error === 'COOLDOWN'
                         ? t('action.itemCooldown', {item: rawItem})
                         : result.error === 'ALREADY_ACTIVE'

@@ -1,5 +1,6 @@
 import {Munition} from "./Munition";
 import {fps} from "../../config.json";
+import {tacticalItemsController} from "../../items/TacticalItems";
 
 const frameDuration = 1000 / fps;
 
@@ -30,7 +31,7 @@ export class LaserMunition extends Munition {
         if (this.target.alive && this.emitter.targetInRange) {
             this.charge = Math.min(1, this.charge + 0.01);
 
-            this.target.takeDamage(this.getDamage(this.charge));
+            this.target.takeDamage(this.getDamage(this.charge) * tacticalItemsController.damageMultiplier);
         } else {
             this.alive = false;
         }

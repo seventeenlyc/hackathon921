@@ -142,6 +142,13 @@ export interface LaneInfo {
 }
 
 /** Tactical item status in the snapshot. */
+export const ITEM_KEYS = ['natural_oil', 'tripo', 'seeed_studio', 'evomap', 'hypershell'] as const;
+export type ItemKey = typeof ITEM_KEYS[number];
+
+export function isItemKey(value: string): value is ItemKey {
+    return (ITEM_KEYS as readonly string[]).includes(value);
+}
+
 export interface ItemStateSnapshot {
     name: string;
     cost: number;

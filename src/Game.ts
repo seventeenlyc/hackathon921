@@ -28,6 +28,7 @@ import {queueStrategy, startRun} from "./StrategyQueue";
 import {humanPlanner} from "./WavesManager";
 import {playMode, switchPlayMode} from "./PlayMode";
 import {naturalOilController} from "./items/NaturalOil";
+import {tacticalItemsController} from "./items/TacticalItems";
 
 // Settlement stats gathered across the run (see the result screen).
 let runStartedAt: number | null = null;
@@ -94,6 +95,7 @@ class Game {
         // frame instead of changing the tick rate, so entity maths is untouched.
         for (let step = 0; step < gameLoop.speed; ++step) {
             naturalOilController.update(1000 / fps, gameLoop.state === 'running');
+            tacticalItemsController.update(1000 / fps, gameLoop.state === 'running');
             map.update();
             munitionManager.update()
             enemyManager.update()

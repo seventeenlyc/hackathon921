@@ -179,7 +179,15 @@ test('成功时下发给 provider 的是服务端系统指令与工具 schema，
     assert.ok(sent.body.messages[1].content.indexOf('hold the base') !== -1);
     assert.equal(sent.body.model, 'deepseek-chat');
     assert.ok(Array.isArray(sent.body.tools) && sent.body.tools.length === 3);
-    assert.ok(sent.body.tools.some((t: any) => t.function.name === 'use_item'));
+    const itemTool = sent.body.tools.find((t: any) => t.function.name === 'use_item');
+    assert.ok(itemTool);
+    assert.deepEqual(itemTool.function.parameters.properties.item.enum, [
+        'natural_oil',
+        'tripo',
+        'seeed_studio',
+        'evomap',
+        'hypershell',
+    ]);
     assert.equal(sent.init.headers.authorization, 'Bearer secret-key');
 });
 

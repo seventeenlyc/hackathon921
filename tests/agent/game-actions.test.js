@@ -282,4 +282,18 @@ test('useItem succeeds when battlefield accepts', () => {
     assert.strictEqual(called, 'natural_oil');
 });
 
+test('useItem accepts all registered item keys', () => {
+    const field = new FakeBattlefield();
+    const actions = new GameActions(field);
+    const called = [];
+    field.useItem = (item) => { called.push(item); return {ok: true}; };
+
+    for (const key of ['natural_oil', 'tripo', 'seeed_studio', 'evomap', 'hypershell']) {
+        const res = actions.useItem(key);
+        assert.strictEqual(res.ok, true);
+        assert.strictEqual(res.data.item, key);
+    }
+    assert.deepStrictEqual(called, ['natural_oil', 'tripo', 'seeed_studio', 'evomap', 'hypershell']);
+});
+
 console.log('All GameActions tests passed.');

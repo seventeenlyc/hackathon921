@@ -1,4 +1,4 @@
-export const NATURAL_OIL_COST = 2000;
+export const NATURAL_OIL_COST = 1000;
 export const NATURAL_OIL_ACTIVE_MS = 5000;
 export const NATURAL_OIL_COOLDOWN_MS = 10000;
 
