@@ -24,6 +24,36 @@ async function test(name, fn) {
 }
 
 (async () => {
+    await test('wave 51 opens route two before planning', async () => {
+        const order = [];
+        let waveManager;
+        waveManager = loadSource('WavesManager.ts', {
+            './EnemyManager': { enemyManager: { add() {} } },
+            './entities/enemies/BossEnemy': { BossEnemy: class {} },
+            './Map': { map: { enemyBases: [], setSpawnCount(count) { order.push(['routes', count]); } } },
+            './tools/helphers': { rand: () => 0 },
+            './agent/SpawnRoutes': loadSource('agent/SpawnRoutes.ts', {}),
+            './agent/GameLoop': { gameLoop: {
+                holdForPlanning: async planner => {
+                    order.push(['plan']);
+                    await planner.plan();
+                    waveManager.looping = false;
+                },
+            } },
+            './InterfaceManager': { interfaceManager: {} },
+            './entities/enemies/Enemy': {},
+            './entities/terrain/Base': {},
+            './entities/enemies/SimpleEnemy': { SimpleEnemy: class {} },
+            './entities/enemies/ArmoredEnemy': { ArmoredEnemy: class {} },
+            './entities/enemies/FastEnemy': { FastEnemy: class {} },
+            './entities/enemies/HealerEnemy': { HealerEnemy: class {} },
+        }).waveManager;
+        waveManager.waveCounter = 51;
+        waveManager.setPlanner({plan: async () => { order.push(['planner']); }});
+        await waveManager.start();
+        assert.deepStrictEqual(order, [['routes', 2], ['plan'], ['planner']]);
+    });
+
     await test('plans before every wave, so the AI acts from wave one', async () => {
         const reached = [];
         const order = [];
@@ -33,9 +63,9 @@ async function test(name, fn) {
         waveManager = loadSource('WavesManager.ts', {
             './EnemyManager': { enemyManager: { add() {} } },
             './entities/enemies/BossEnemy': { BossEnemy: class {} },
-            './Map': { map: { enemyBases: [] } },
+            './Map': { map: { enemyBases: [], setSpawnCount() {} } },
             './tools/helphers': { rand: () => 0 },
-            './SpawnQueue': { applyPendingSpawnCount: () => false },
+            './agent/SpawnRoutes': { spawnCountForWave: () => 1 },
             './agent/GameLoop': { gameLoop: {
                 sleep: async () => {},
                 holdForPlanning: async () => {
@@ -75,9 +105,9 @@ async function test(name, fn) {
         waveManager = loadSource('WavesManager.ts', {
             './EnemyManager': { enemyManager: { add() {} } },
             './entities/enemies/BossEnemy': { BossEnemy: class {} },
-            './Map': { map: { enemyBases: [] } },
+            './Map': { map: { enemyBases: [], setSpawnCount() {} } },
             './tools/helphers': { rand: () => 0 },
-            './SpawnQueue': { applyPendingSpawnCount: () => false },
+            './agent/SpawnRoutes': { spawnCountForWave: () => 1 },
             './agent/GameLoop': { gameLoop: {
                 sleep: async () => {},
                 // Stop the run during the planning window that precedes wave 2.
@@ -111,9 +141,9 @@ async function test(name, fn) {
         waveManager = loadSource('WavesManager.ts', {
             './EnemyManager': { enemyManager: { add() {} } },
             './entities/enemies/BossEnemy': { BossEnemy: class {} },
-            './Map': { map: { enemyBases: [] } },
+            './Map': { map: { enemyBases: [], setSpawnCount() {} } },
             './tools/helphers': { rand: () => 0 },
-            './SpawnQueue': { applyPendingSpawnCount: () => false },
+            './agent/SpawnRoutes': { spawnCountForWave: () => 1 },
             './agent/GameLoop': { gameLoop: {
                 sleep: async () => {},
                 holdForPlanning: async () => {},

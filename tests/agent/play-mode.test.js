@@ -79,10 +79,10 @@ async function test(name, fn) {
         assert.strictEqual(otherMode('human'), 'ai');
     });
 
-    await test('modeUrl keeps other params and sets the mode', () => {
+    await test('modeUrl removes legacy spawners while setting the mode', () => {
         const url = new URL(modeUrl('https://example.test/?mode=ai&spawners=3', 'human'));
         assert.strictEqual(url.searchParams.get('mode'), 'human');
-        assert.strictEqual(url.searchParams.get('spawners'), '3');
+        assert.strictEqual(url.searchParams.has('spawners'), false);
     });
 
     console.log('All PlayMode tests passed.');

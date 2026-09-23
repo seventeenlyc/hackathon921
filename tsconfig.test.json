@@ -18,7 +18,6 @@
     "src/i18n.ts",
     "src/agent/GameActions.ts",
     "src/agent/GameLoop.ts",
-    "src/agent/SpawnSettings.ts",
     "src/agent/SpawnRoutes.ts",
     "src/agent/StrategyLibrary.ts",
     "src/agent/StrategyLimits.ts",

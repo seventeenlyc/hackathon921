@@ -596,25 +596,13 @@ body {
         content: '−';
       }
 
-      .settings-note,
-      .spawner-setting,
       footer {
         margin-top: 10px;
+        border-top: 1px solid rgba(146, 169, 160, 0.14);
+        padding-top: 10px;
         color: var(--muted);
         font-size: 11px;
         line-height: 1.4;
-      }
-
-      .spawner-setting {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-      }
-
-      footer {
-        border-top: 1px solid rgba(146, 169, 160, 0.14);
-        padding-top: 10px;
         text-align: right;
 
         & > div {
@@ -625,27 +613,6 @@ body {
           display: inline-block;
           vertical-align: middle;
         }
-      }
-    }
-
-    .spawner {
-      padding: 3px 6px;
-      border-radius: 5px;
-      color: var(--accent);
-      text-decoration: none;
-      padding: 2px 5px;
-      border-radius: 4px;
-      /* Rendered as a button so a lane change does not reload the page (#40). */
-      background: transparent;
-      border: 0;
-      font-family: inherit;
-      font-size: inherit;
-      line-height: inherit;
-      cursor: pointer;
-
-      &:hover, &.active {
-        background: var(--accent);
-        color: #102018;
       }
     }
 
@@ -789,13 +756,6 @@ body {
     &.is-visible {
       opacity: 1;
       transform: translate(-50%, 0);
-    }
-
-    .spawner-status {
-      margin-top: 4px;
-      font-size: 11px;
-      color: #8b8b8b;
-      min-height: 14px;
     }
   }
 

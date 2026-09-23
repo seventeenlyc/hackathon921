@@ -24,7 +24,6 @@ const STRINGS: { [key: string]: Entry } = {
     'label.wave': {zh: '波次：', en: 'Wave:'},
     'label.state': {zh: '状态：', en: 'State:'},
     'label.cash': {zh: '金币：', en: 'Cash:'},
-    'label.spawners': {zh: '出生点：', en: 'Spawners:'},
 
     'strategy.label': {zh: '你的策略', en: 'Your strategy'},
     'strategy.placeholder': {zh: '告诉 AI 该怎么打…', en: 'Tell your AI how to play…'},
@@ -63,7 +62,6 @@ const STRINGS: { [key: string]: Entry } = {
     'state.planning': {zh: '思考中', en: 'Thinking'},
 
     'speed.label': {zh: '速度 x{speed}', en: 'Speed x{speed}'},
-    'spawner.pending': {zh: '{applied} → {requested}（下一波生效）', en: '{applied} → {requested} at next wave'},
 
     'result.gameOver': {zh: '游戏结束', en: 'Game Over'},
     'result.wave': {zh: '到达波次', en: 'Wave reached'},

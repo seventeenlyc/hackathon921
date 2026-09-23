@@ -5,7 +5,6 @@ import {SlowTower} from "./entities/towers/SlowTower";
 import {textureManager} from "./tools/TextureManager";
 import {gameLoop, GameState, nextSpeed} from "./agent/GameLoop";
 import {otherMode, playMode, switchPlayMode} from "./PlayMode";
-import {requestSpawnCount, spawnSettings} from "./SpawnQueue";
 import {CanonTower} from "./entities/towers/CanonTower";
 import {GatlingTower} from "./entities/towers/GatlingTower";
 import {SniperTower} from "./entities/towers/SniperTower";
@@ -58,15 +57,6 @@ class InterfaceManager {
     constructor() {
         this.versionElement.textContent = 'v' + version;
 
-        // Lane count is queued, not applied here: the change lands at the next wave
-        // boundary so the AI's PLANNING round actually sees the new route (#40).
-        document.querySelectorAll<HTMLButtonElement>('button.spawner').forEach(button => {
-            button.onclick = () => {
-                requestSpawnCount(Number(button.dataset.count));
-                this.renderSpawners();
-            };
-        });
-
         this.pauseButton.onclick = () => gameLoop.pause();
         this.resumeButton.onclick = () => {
             gameLoop.resume();
@@ -90,13 +80,10 @@ class InterfaceManager {
 
         gameLoop.onChange(state => {
             this.setState(state);
-            // A queued lane change is applied at the boundary; refresh the badge.
-            this.renderSpawners();
         });
         this.setState(gameLoop.state);
         this.updateSpeedLabel();
         this.updateAudioLabel();
-        this.renderSpawners();
 
         // The class scopes which half of the UI is visible (see styles.less).
         document.getElementById('inert')!.classList.add('mode-' + playMode);
@@ -108,7 +95,6 @@ class InterfaceManager {
             this.setState(gameLoop.state);
             this.updateSpeedLabel();
             this.updateAudioLabel();
-            this.renderSpawners();
             this.setupModeButton();
             if (this.lastTower) this.showTowerStats(this.lastTower);
         });
@@ -153,17 +139,6 @@ class InterfaceManager {
         if (!this.audioButton) return;
         this.audioButton.textContent = audioManager.isMuted() ? t('control.audioMuted') : t('control.audio');
         this.audioButton.setAttribute('aria-pressed', String(audioManager.isMuted()));
-    }
-
-    renderSpawners() {
-        const requested = spawnSettings.requested;
-        document.querySelectorAll<HTMLButtonElement>('button.spawner').forEach(button => {
-            button.classList.toggle('active', Number(button.dataset.count) === requested);
-        });
-
-        setText('spawner-status', spawnSettings.isPending
-            ? t('spawner.pending', {applied: spawnSettings.applied, requested: spawnSettings.requested})
-            : '');
     }
 
     setCash(cash: number) {
