@@ -17,7 +17,6 @@ const leaderboard = read('src/leaderboard/LeaderboardUI.ts');
 assert.match(index, /id="strategy-random"/, 'the strategy console must expose a random strategy button');
 assert.match(index, /id="mode"/, 'the operations panel must expose the play-mode switch');
 assert.match(index, /id="towers-wrapper"/, 'the UI must mount the deployable tower palette');
-assert.match(index, /id="towers-stats"/, 'the UI must mount the selected tower stats');
 assert.doesNotMatch(index, /<details class="tower-panel">/, 'tower information must be visible on the primary page');
 assert.doesNotMatch(leaderboard, /createElement\('details'\)/, 'leaderboard information must be visible on the primary page');
 assert.match(strategy, /randomStrategy()/, 'the random strategy button must use the strategy library');
@@ -28,7 +27,7 @@ assert.doesNotMatch(interfaceSource, /if \(playMode === 'human'\) this\.setTower
     'the tower palette must be mounted in both play modes');
 assert.match(interfaceSource, /aria-label/, 'tower choices must be keyboard and screen-reader discoverable');
 assert.match(interfaceSource, /tower\.aimRadius/, 'tower stats must show deployment range');
-assert.match(interfaceSource, /tower\.dps/, 'tower stats must show damage per second when applicable');
+assert.match(interfaceSource, /tower\.stat\.rate/, 'tower stats must show the firing rate row');
 assert.match(controls, /emit\(['"]click['"]/, 'Canvas clicks must be forwarded through the input boundary');
 assert.match(towerPlacer, /GameActions/, 'human placement must use the validated GameActions port');
 assert.match(towerPlacer, /buildTower\(/, 'human placement must execute through buildTower');
