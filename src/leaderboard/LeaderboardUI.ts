@@ -3,14 +3,16 @@ import {
     readStoredLeaderboard,
     writeStoredLeaderboard,
     submitScore,
+    entriesForBoard,
 } from './LeaderboardStore';
-import type { LeaderboardEntry, PlayMode } from './LeaderboardStore';
+import type { LeaderboardEntry, PlayMode, LeaderboardMode } from './LeaderboardStore';
 import {getSessionUsername, setSessionUsername} from './SessionIdentity';
 import { fetchSharedLeaderboard } from './LeaderboardClient';
 import type { RemoteLeaderboard } from './LeaderboardClient';
 import {runSync} from './RunSync';
 import {PromptHistoryDialog} from './PromptHistoryDialog';
 import {onLangChange, t} from '../i18n';
+import {playMode} from '../PlayMode';
 
 const TOP_N = 10;
 
@@ -66,12 +68,14 @@ export class UsernameGate {
 // 数据优先来自服务端**共享**排行榜，这样不同设备/浏览器的参与者看到的是同一份排名
 // （docs/PRODUCT_CONCEPT.md §9）。API 不可用时回退到本地 localStorage，并在状态行
 // 明确标注「Offline - local only」，避免把本机成绩误当成全局排名。
-class LeaderboardPanel {
+export class LeaderboardPanel {
     private root: HTMLElement;
     private listEl: HTMLElement;
     private footerEl: HTMLElement;
     private statusEl: HTMLElement;
     private retryButton: HTMLButtonElement;
+    public modeButton: HTMLButtonElement;
+    public currentMode: LeaderboardMode = playMode === 'human' ? 'human' : 'ai';
     private username: string | null;
     private remote: RemoteLeaderboard | null = null;
     private remoteFailed = false;
@@ -89,6 +93,10 @@ class LeaderboardPanel {
         title.id = 'leaderboard-title';
         title.className = 'leaderboard-title';
         title.textContent = t('lb.title');
+        this.modeButton = document.createElement('button');
+        this.modeButton.type = 'button';
+        this.modeButton.className = 'leaderboard-mode-toggle';
+        this.modeButton.addEventListener('click', () => this.cycleMode());
         this.statusEl = document.createElement('div');
         this.statusEl.className = 'leaderboard-status';
         this.retryButton = document.createElement('button');
@@ -101,6 +109,7 @@ class LeaderboardPanel {
         this.footerEl = document.createElement('div');
         this.footerEl.className = 'leaderboard-footer';
         this.root.appendChild(title);
+        this.root.appendChild(this.modeButton);
         this.root.appendChild(this.statusEl);
         this.root.appendChild(this.retryButton);
         this.root.appendChild(this.listEl);
@@ -122,14 +131,30 @@ class LeaderboardPanel {
         void this.refreshRemote();
     }
 
+    private cycleMode(): void {
+        if (playMode === 'human') {
+            // human -> ai -> total -> human
+            this.currentMode = this.currentMode === 'human' ? 'ai' : this.currentMode === 'ai' ? 'total' : 'human';
+        } else {
+            // ai -> human -> total -> ai
+            this.currentMode = this.currentMode === 'ai' ? 'human' : this.currentMode === 'human' ? 'total' : 'ai';
+        }
+        this.refresh(this.currentMode);
+    }
+
     setUsername(name: string) { this.username = name; this.render(); void this.refreshRemote(); }
-    refresh() { this.username = getSessionUsername(); this.render(); void this.refreshRemote(); }
+    async refresh(mode?: LeaderboardMode): Promise<void> {
+        if (mode) this.currentMode = mode;
+        this.username = getSessionUsername();
+        this.render();
+        await this.refreshRemote();
+    }
 
     /** 拉取服务端共享排行榜；失败则标记离线并继续用本地数据渲染。 */
     private async refreshRemote(): Promise<void> {
         const requestNumber = ++this.remoteRequestNumber;
         this.pendingRemote = true;
-        const result = await fetchSharedLeaderboard(this.username, TOP_N);
+        const result = await fetchSharedLeaderboard(this.username, this.currentMode, TOP_N);
         if (requestNumber !== this.remoteRequestNumber) return;
         this.pendingRemote = false;
         if (result) {
@@ -144,8 +169,15 @@ class LeaderboardPanel {
 
     // 转义后以 textContent 渲染，禁止 innerHTML 直出不可信文本。
     private render() {
+        const modeLabel = this.currentMode === 'ai'
+            ? t('lb.boardAi')
+            : this.currentMode === 'human'
+              ? t('lb.boardHuman')
+              : t('lb.boardTotal');
+        this.modeButton.textContent = modeLabel;
+
         const shared = this.remote != null;
-        const local: LeaderboardEntry[] = readStoredLeaderboard() || [];
+        const local: LeaderboardEntry[] = entriesForBoard(readStoredLeaderboard() || [], this.currentMode);
         const entries: LeaderboardEntry[] = shared
             ? this.remote!.entries.map(e => ({ username: e.username, wave: e.wave, timestamp: e.achievedAt, mode: e.mode }))
             : local;
@@ -165,17 +197,32 @@ class LeaderboardPanel {
             const rankSpan = document.createElement('span');
             rankSpan.className = 'rank';
             rankSpan.textContent = String(i + 1);
-            const nameButton = document.createElement('button');
-            nameButton.type = 'button';
-            nameButton.className = 'name';
-            nameButton.textContent = e.username;
-            nameButton.setAttribute('aria-label', t('history.open', {name: e.username}));
-            nameButton.addEventListener('click', () => { void this.historyDialog.open(e.username); });
+
+            const modeSpan = document.createElement('span');
+            modeSpan.className = 'mode-tag mode-' + e.mode;
+            modeSpan.textContent = e.mode === 'human' ? t('lb.modeHuman') : t('lb.modeAi');
+
+            li.appendChild(rankSpan);
+            li.appendChild(modeSpan);
+
+            if (e.mode === 'ai') {
+                const nameButton = document.createElement('button');
+                nameButton.type = 'button';
+                nameButton.className = 'name';
+                nameButton.textContent = e.username;
+                nameButton.setAttribute('aria-label', t('history.open', {name: e.username}));
+                nameButton.addEventListener('click', () => { void this.historyDialog.open(e.username); });
+                li.appendChild(nameButton);
+            } else {
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'name';
+                nameSpan.textContent = e.username;
+                li.appendChild(nameSpan);
+            }
+
             const waveSpan = document.createElement('span');
             waveSpan.className = 'wave';
             waveSpan.textContent = t('lb.wave', {wave: e.wave});
-            li.appendChild(rankSpan);
-            li.appendChild(nameButton);
             li.appendChild(waveSpan);
             this.listEl.appendChild(li);
         });
@@ -205,8 +252,19 @@ class LeaderboardPanel {
                 const idx = entries.findIndex(e => e.username.toLowerCase() === (this.username as string).toLowerCase());
                 rank = idx >= 0 ? idx + 1 : null;
             }
-            this.footerEl.textContent = t('lb.you', {name: this.username})
-                + (rank != null ? t('lb.rank', {rank}) : t('lb.noRun'));
+            let footerText = t('lb.you', {name: this.username});
+            if (rank != null) {
+                footerText += t('lb.rank', {rank});
+                if (this.currentMode === 'total') {
+                    const myMode = shared && this.remote!.me && this.remote!.me.mode
+                        ? this.remote!.me.mode
+                        : (entries.find(e => e.username.toLowerCase() === (this.username as string).toLowerCase())?.mode ?? 'ai');
+                    footerText += ` (${myMode === 'human' ? t('lb.modeHuman') : t('lb.modeAi')})`;
+                }
+            } else {
+                footerText += t('lb.noRun');
+            }
+            this.footerEl.textContent = footerText;
         } else {
             this.footerEl.textContent = '';
         }

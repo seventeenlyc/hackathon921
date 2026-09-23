@@ -94,6 +94,11 @@ const STRINGS: { [key: string]: Entry } = {
     'snackbar.noMoney': {zh: '金币不足，买不起这座塔', en: 'You don\'t have enough money to buy this tower'},
 
     'lb.title': {zh: '排行榜', en: 'Leaderboard'},
+    'lb.boardAi': {zh: 'AI 榜', en: 'AI'},
+    'lb.boardHuman': {zh: '人类榜', en: 'Human'},
+    'lb.boardTotal': {zh: '总榜', en: 'Total'},
+    'lb.modeAi': {zh: 'AI', en: 'AI'},
+    'lb.modeHuman': {zh: '人类', en: 'Human'},
     'lb.empty': {zh: '还没有成绩，先跑一局吧！', en: 'No scores yet - play a run!'},
     'lb.wave': {zh: '{wave} 波', en: 'Wave {wave}'},
     'lb.shared': {zh: '共享', en: 'Shared'},

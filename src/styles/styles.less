@@ -715,6 +715,27 @@ body {
       text-transform: uppercase;
     }
 
+    .leaderboard-mode-toggle {
+      display: inline-block;
+      margin: 4px 0;
+      padding: 2px 8px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: rgba(16, 25, 23, 0.72);
+      color: var(--accent);
+      cursor: pointer;
+      font: inherit;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+
+      &:hover {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+    }
+
     .leaderboard-status {
       margin: 8px 0 5px;
       color: var(--dim);
@@ -748,6 +769,24 @@ body {
           width: 18px;
           color: var(--accent);
           font-weight: 700;
+        }
+
+        .mode-tag {
+          padding: 1px 4px;
+          border-radius: 3px;
+          font-size: 9px;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+
+          &.mode-ai {
+            background: rgba(47, 204, 113, 0.15);
+            color: var(--accent);
+          }
+
+          &.mode-human {
+            background: rgba(224, 160, 60, 0.18);
+            color: #e0a03c;
+          }
         }
 
         .name {

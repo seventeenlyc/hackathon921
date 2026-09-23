@@ -49,4 +49,187 @@ assert.match(strategySource, /getControlLayer\(\)\.hide\(\)/,
 assert.match(strategySource, /showHint\(\)/,
     'valid strategy submission must reveal the first-view gesture hint');
 
-console.log('Validated leaderboard UI mount points and empty-state footer flow.');
+const ts = require('typescript');
+
+class FakeElement {
+    constructor(tagName) {
+        this.tagName = tagName.toUpperCase();
+        this.children = [];
+        this.parentNode = null;
+        this.listeners = {};
+        this._textContent = '';
+        this.className = '';
+        this.classList = {
+            add: cls => { if (!this.className.includes(cls)) this.className += ' ' + cls; },
+            remove: cls => { this.className = this.className.replace(cls, '').trim(); },
+        };
+        this.hidden = false;
+        this.type = 'button';
+    }
+    get textContent() {
+        return this._textContent || '';
+    }
+    set textContent(val) {
+        this._textContent = String(val);
+        if (val === '') {
+            this.children = [];
+        }
+    }
+    appendChild(child) {
+        child.parentNode = this;
+        this.children.push(child);
+        return child;
+    }
+    append(...children) { children.forEach(c => this.appendChild(c)); }
+    remove() {
+        if (!this.parentNode) return;
+        this.parentNode.children = this.parentNode.children.filter(c => c !== this);
+        this.parentNode = null;
+    }
+    setAttribute(name, value) { this[name] = String(value); }
+    addEventListener(name, listener) { (this.listeners[name] ||= []).push(listener); }
+    click() { for (const l of this.listeners.click || []) l(); }
+    querySelector(sel) {
+        if (sel === 'input') return this.children.find(c => c.tagName === 'INPUT');
+        if (sel === '.error') return this.children.find(c => c.className === 'error');
+        if (sel === 'form') return this.children.find(c => c.tagName === 'FORM');
+        return null;
+    }
+}
+
+class FakeDocument {
+    constructor() {
+        this.elements = new Map();
+        this.inert = new FakeElement('div');
+        this.inert.id = 'inert';
+        this.slot = new FakeElement('div');
+        this.slot.id = 'leaderboard-slot';
+        this.elements.set('inert', this.inert);
+        this.elements.set('leaderboard-slot', this.slot);
+    }
+    getElementById(id) { return this.elements.get(id) || null; }
+    createElement(tag) {
+        const el = new FakeElement(tag);
+        el.ownerDocument = this;
+        return el;
+    }
+}
+
+function loadUI(document, currentPlayMode, remoteData = null) {
+    const js = ts.transpileModule(uiSource, {
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2017 },
+    }).outputText;
+    const moduleObj = { exports: {} };
+    const dependencies = {
+        './LeaderboardStore': {
+            sanitizeUsername: v => (typeof v === 'string' ? v.trim() : null),
+            readStoredLeaderboard: () => [],
+            writeStoredLeaderboard: () => {},
+            submitScore: () => ({ entries: [], rank: null }),
+            entriesForBoard: entries => entries,
+        },
+        './SessionIdentity': { getSessionUsername: () => 'Alice', setSessionUsername: () => true },
+        './LeaderboardClient': {
+            fetchSharedLeaderboard: async (u, mode, limit) => remoteData ? remoteData(mode) : null,
+        },
+        './RunSync': {
+            runSync: { onStatus: () => {}, onDrained: () => {}, retryPending: () => {}, enqueueWave: () => {} },
+        },
+        './PromptHistoryDialog': {
+            PromptHistoryDialog: class {
+                constructor() { this.opened = []; }
+                open(name) { this.opened.push(name); }
+            },
+        },
+        '../i18n': {
+            t: (k, v = {}) => {
+                if (k === 'lb.modeAi') return 'AI';
+                if (k === 'lb.modeHuman') return '人类';
+                return k + (v.name ? `:${v.name}` : '') + (v.rank ? `:${v.rank}` : '');
+            },
+            onLangChange: () => {},
+        },
+        '../PlayMode': { playMode: currentPlayMode },
+    };
+    new Function('module', 'exports', 'require', 'document', js)(
+        moduleObj,
+        moduleObj.exports,
+        name => {
+            if (name in dependencies) return dependencies[name];
+            throw new Error('Unexpected dep: ' + name);
+        },
+        document
+    );
+    return moduleObj.exports;
+}
+
+// 1. AI 模式下的切换循环：ai -> human -> total -> ai
+{
+    const doc = new FakeDocument();
+    const { LeaderboardPanel } = loadUI(doc, 'ai');
+    const panel = new LeaderboardPanel();
+    assert.strictEqual(panel.currentMode, 'ai', 'AI 模式初始榜单为 ai');
+    const toggleBtn = panel.modeButton;
+    assert.ok(toggleBtn, '必须提供榜单切换按钮');
+    toggleBtn.click();
+    assert.strictEqual(panel.currentMode, 'human', '第一次点击切换至 human');
+    toggleBtn.click();
+    assert.strictEqual(panel.currentMode, 'total', '第二次点击切换至 total');
+    toggleBtn.click();
+    assert.strictEqual(panel.currentMode, 'ai', '第三次点击循环回 ai');
+}
+
+// 2. 人类模式下的切换循环：human -> ai -> total -> human
+{
+    const doc = new FakeDocument();
+    const { LeaderboardPanel } = loadUI(doc, 'human');
+    const panel = new LeaderboardPanel();
+    assert.strictEqual(panel.currentMode, 'human', '人类模式初始榜单为 human');
+    const toggleBtn = panel.modeButton;
+    assert.ok(toggleBtn, '必须提供榜单切换按钮');
+    toggleBtn.click();
+    assert.strictEqual(panel.currentMode, 'ai', '第一次点击切换至 ai');
+    toggleBtn.click();
+    assert.strictEqual(panel.currentMode, 'total', '第二次点击切换至 total');
+    toggleBtn.click();
+    assert.strictEqual(panel.currentMode, 'human', '第三次点击循环回 human');
+}
+
+// 3. 渲染同一玩家的 AI 与人类记录：两行、两个不同标志、仅 AI 包含 Prompt 历史按钮
+(async () => {
+    const doc = new FakeDocument();
+    const remoteData = mode => ({
+        entries: [
+            { rank: 1, username: 'Alice', wave: 20, achievedAt: 100, mode: 'human' },
+            { rank: 2, username: 'Alice', wave: 10, achievedAt: 50, mode: 'ai' },
+        ],
+        me: { username: 'Alice', rank: 1, wave: 20, mode: 'human' },
+    });
+    const { LeaderboardPanel } = loadUI(doc, 'ai', remoteData);
+    const panel = new LeaderboardPanel();
+    // 渲染总榜
+    await panel.refresh('total');
+    const items = panel.listEl.children;
+    assert.strictEqual(items.length, 2, '总榜应渲染两条记录');
+
+    // 第一条：human
+    const humanItem = items[0];
+    const humanFlag = humanItem.children.find(c => c.className && c.className.includes('mode'));
+    assert.ok(humanFlag, '人类记录必须有模式标识');
+    assert.match(humanFlag.textContent, /人|Human/);
+    const humanButton = humanItem.children.find(c => c.tagName === 'BUTTON' && c.className === 'name');
+    assert.strictEqual(humanButton, undefined, '人类记录不得有 Prompt 历史按钮');
+
+    // 第二条：ai
+    const aiItem = items[1];
+    const aiFlag = aiItem.children.find(c => c.className && c.className.includes('mode'));
+    assert.ok(aiFlag, 'AI 记录必须有模式标识');
+    assert.match(aiFlag.textContent, /AI/);
+    const aiButton = aiItem.children.find(c => c.tagName === 'BUTTON' && c.className === 'name');
+    assert.ok(aiButton, 'AI 记录必须包含 Prompt 历史按钮');
+
+    console.log('Validated leaderboard UI mount points and empty-state footer flow.');
+})().catch(err => {
+    console.error(err);
+    process.exit(1);
+});
