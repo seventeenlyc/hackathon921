@@ -126,6 +126,11 @@ test('system prompt maps human directions to grid coordinates and enemy bases', 
     assert.match(AGENT_SYSTEM_PROMPT, /\(4,4\).*northwest/i);
     assert.match(AGENT_SYSTEM_PROMPT, /current wave.*`spawns`/i);
     assert.match(AGENT_SYSTEM_PROMPT, /do not assume.*all four.*active/i);
+    assert.match(AGENT_SYSTEM_PROMPT, /each action.*separate tool call/i);
+    assert.match(AGENT_SYSTEM_PROMPT, /never\s+combine multiple actions into one tool call/i);
+    assert.match(AGENT_SYSTEM_PROMPT, /sequentially in the returned order/i);
+    assert.match(AGENT_SYSTEM_PROMPT, /no more than 8 tool calls/i);
+    assert.match(AGENT_SYSTEM_PROMPT, /defer the rest to later waves/i);
 });
 
 test('extractAgentActions 归一化已注册工具调用', () => {
