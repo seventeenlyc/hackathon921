@@ -41,9 +41,14 @@ export function completionsUrl(baseUrl: string): string {
  * (`src/agent/StrategyLimits.ts`) and never truncates.
  */
 export const MAX_ACTIONS_PER_DECISION = 8;
+export const MAX_DECISION_SUMMARY_LENGTH = 240;
 export const PROVIDER_TIMEOUT_MS = 12000;
 
 const TOWER_TYPES = ['canon', 'gatling', 'slow', 'sniper', 'laser'];
+const DECISION_SUMMARY_PROPERTY = {
+    type: 'string',
+    description: 'One short player-facing reason for this action (at most 120 characters). State the battlefield factor and intent, never private reasoning.',
+};
 
 /** 提供方响应中我们真正用到的最小面；测试用假实现替换，无需网络。 */
 export interface ProviderResponse {
@@ -93,8 +98,9 @@ export const AGENT_TOOLS = [
                     type: { type: 'string', enum: TOWER_TYPES, description: 'Tower type.' },
                     i: { type: 'integer', description: 'Grid column index.' },
                     j: { type: 'integer', description: 'Grid row index.' },
+                    decision_summary: DECISION_SUMMARY_PROPERTY,
                 },
-                required: ['type', 'i', 'j'],
+                required: ['type', 'i', 'j', 'decision_summary'],
             },
         },
     },
@@ -107,8 +113,9 @@ export const AGENT_TOOLS = [
                 type: 'object',
                 properties: {
                     id: { type: 'string', description: 'Tower id, formatted "i:j".' },
+                    decision_summary: DECISION_SUMMARY_PROPERTY,
                 },
-                required: ['id'],
+                required: ['id', 'decision_summary'],
             },
         },
     },
@@ -125,8 +132,9 @@ export const AGENT_TOOLS = [
                         enum: ['natural_oil', 'tripo', 'seeed_studio', 'evomap', 'hypershell'],
                         description: 'Identifier of the item to activate.',
                     },
+                    decision_summary: DECISION_SUMMARY_PROPERTY,
                 },
-                required: ['item'],
+                required: ['item', 'decision_summary'],
             },
         },
     },
@@ -170,7 +178,12 @@ export const AGENT_SYSTEM_PROMPT = [
     '  * `evomap`: 2% max HP AOE damage to ALL enemies on the map, 10s cooldown. First 2 uses are FREE, then 1000 cash. Great against large waves.',
     '  * `hypershell`: repairs base by +25% max life, costs 1000 cash, 10s cooldown. Use when base is damaged or in critical danger.',
     '  * `natural_oil`: 5s 150% attack speed, costs 1000 cash, 10s cooldown.',
-    '- Return tool calls only. Do not explain.',
+    '- Every tool call must include `decision_summary` in its arguments: a brief',
+    '  player-facing reason tied to the strategy and battlefield, at most 120 characters.',
+    '- If you call no tools, put a concise player-facing decision summary in the',
+    '  assistant message content (at most 240 characters).',
+    '- Do not show hidden chain-of-thought, private deliberation, or step-by-step',
+    '  internal reasoning.',
 ].join('\n');
 
 export interface AgentValidationOk {
@@ -248,9 +261,39 @@ export function extractAgentActions(payload: any): AgentAction[] {
         .slice(0, MAX_ACTIONS_PER_DECISION)
         .map((call: any) => {
             const fn = call && call.function;
-            return { name: fn && fn.name, arguments: parseArguments(fn && fn.arguments) };
+            const args = { ...parseArguments(fn && fn.arguments) };
+            delete args.decision_summary;
+            return { name: fn && fn.name, arguments: args };
         })
         .filter((action: any) => typeof action.name === 'string' && AGENT_TOOL_NAMES.indexOf(action.name) !== -1);
+}
+
+function publicSummary(value: unknown): string | null {
+    if (typeof value !== 'string') return null;
+    const summary = value.trim().replace(/\s+/g, ' ');
+    return summary.length > 0 && summary.length <= MAX_DECISION_SUMMARY_LENGTH ? summary : null;
+}
+
+/** Expose only the bounded assistant content intended for players, never provider reasoning fields. */
+export function extractAgentSummary(payload: any): string | null {
+    const choice = payload && Array.isArray(payload.choices) ? payload.choices[0] : undefined;
+    const message = choice && choice.message;
+    if (!message) return null;
+
+    // Tool-call replies may have null content. Read only the explicit public
+    // explanation in allowed tool arguments, never reasoning_content.
+    const calls = Array.isArray(message.tool_calls) ? message.tool_calls : [];
+    const reasons: string[] = [];
+    for (const call of calls.slice(0, MAX_ACTIONS_PER_DECISION)) {
+        const fn = call && call.function;
+        if (!fn || AGENT_TOOL_NAMES.indexOf(fn.name) === -1) continue;
+        const reason = publicSummary(parseArguments(fn.arguments).decision_summary);
+        if (!reason || reasons.indexOf(reason) !== -1) continue;
+        if ([...reasons, reason].join(' · ').length > MAX_DECISION_SUMMARY_LENGTH) break;
+        reasons.push(reason);
+    }
+
+    return reasons.length ? reasons.join(' · ') : publicSummary(message.content);
 }
 
 export function mapProviderError(status: number, payload: any): { error: string; message: string } {
@@ -362,6 +405,7 @@ export async function handleAgentDecide(deps: ApiDeps, req: ApiRequest): Promise
     }
 
     const actions = extractAgentActions(result.payload);
+    const summary = extractAgentSummary(result.payload);
     const usage = result.payload && result.payload.usage ? result.payload.usage : undefined;
-    return { status: 200, body: { ok: true, actions, usage } };
+    return { status: 200, body: { ok: true, summary, actions, usage } };
 }

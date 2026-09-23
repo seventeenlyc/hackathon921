@@ -52,6 +52,7 @@ async function test(name, fn) {
         assert.strictEqual(created.length, 1);
         assert.strictEqual(created[0].src, '/audio/background.mp3');
         assert.strictEqual(created[0].loop, true);
+        assert.strictEqual(created[0].volume, 0.24);
         assert.strictEqual(created[0].playCount, 1);
         assert.strictEqual(created[0].currentTime, 12);
     });

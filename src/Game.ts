@@ -17,6 +17,7 @@ import {getSessionToken, fetchSharedLeaderboard} from "./leaderboard/Leaderboard
 import {cashManager} from "./CashManager";
 import {Tower} from "./entities/towers/Tower";
 import type {RunStats} from "./InterfaceManager";
+import {t} from "./i18n";
 import {gameLoop, GameSpeed} from "./agent/GameLoop";
 import {GameActions} from "./agent/GameActions";
 import {InertBattlefield} from "./agent/InertBattlefield";
@@ -24,6 +25,7 @@ import {strategyStore} from "./agent/StrategyStore";
 import {AgentRuntime} from "./agent/AgentRuntime";
 import {formatSnapshot} from "./agent/snapshot";
 import {decisionLog} from "./DecisionLog";
+import {DecisionSummary} from "./DecisionSummary";
 import {queueStrategy, startRun} from "./StrategyQueue";
 import {humanPlanner} from "./WavesManager";
 import {playMode, switchPlayMode} from "./PlayMode";
@@ -33,6 +35,14 @@ import {tacticalItemsController} from "./items/TacticalItems";
 // Settlement stats gathered across the run (see the result screen).
 let runStartedAt: number | null = null;
 let decisionsMade = 0;
+function createDecisionSummary(): DecisionSummary | null {
+    if (typeof document === 'undefined') return null;
+    const panel = document.getElementById('decision-summary-panel');
+    const status = document.getElementById('decision-summary-status');
+    const content = document.getElementById('decision-summary');
+    return panel && status && content ? new DecisionSummary(panel, status, content) : null;
+}
+const decisionSummary = createDecisionSummary();
 
 class Game {
     private updateInterval: number = -1;
@@ -58,6 +68,7 @@ class Game {
         // plans the upcoming wave with exactly this version (issue #17).
         gameLoop.onChange(state => {
             if (state === 'planning') {
+                if (playMode === 'ai') decisionSummary?.setThinking(t('reasoning.status.planning'));
                 const before = strategyStore.active().version;
                 const active = strategyStore.lock();
                 const username = getSessionUsername();
@@ -199,7 +210,14 @@ const agentRuntime = new AgentRuntime({
         decisionLog.add(entry);
         decisionsMade += 1;
     },
-    onError: message => decisionLog.error(message),
+    onSummary: summary => {
+        if (summary) decisionSummary?.setSummary(summary, t('reasoning.status.ready'));
+        else decisionSummary?.setUnavailable(t('reasoning.status.unavailable'));
+    },
+    onError: message => {
+        decisionSummary?.setUnavailable(t('reasoning.status.unavailable'));
+        decisionLog.error(message);
+    },
 });
 
 // The AI plays through the same action port as the human console; the loop calls

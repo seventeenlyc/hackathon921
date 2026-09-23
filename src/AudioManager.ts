@@ -38,7 +38,7 @@ export class AudioManager {
         const audio = this.getAudio('music');
         if (!audio) return;
         audio.loop = true;
-        audio.volume = 0.08;
+        audio.volume = 0.24;
         this.musicStarted = true;
         try {
             const result = audio.play();
