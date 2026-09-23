@@ -352,6 +352,10 @@ body {
 
     .rail-right {
       right: 12px;
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      scrollbar-width: thin;
     }
 
     .rail-left > *,
@@ -370,15 +374,15 @@ body {
       gap: 10px;
     }
 
-    // 笑脸男徽记：取自 design/smile-man.png 中央徽记（构建期裁剪好的 128px 图标），
-    // 圆形容器裁掉四角残留的环形文字。
+    // 笑脸男徽记：取自 design/smile-face.png 整枚环形徽记（裁掉白边后缩至 128px），
+    // 自带白底与环形文字，容器按圆形裁切后呈徽章效果。
     .ghost-avatar {
       width: 36px;
       height: 36px;
       flex: none;
       border: 1px solid var(--line);
       border-radius: 50%;
-      background: url('../assets/ui/laughing-man.png') center / contain no-repeat;
+      background: url('../assets/ui/smile-face.png') center / contain no-repeat;
     }
 
     .status-grid {
@@ -388,31 +392,58 @@ body {
       margin-top: 12px;
     }
 
+    // 设计稿：青色描边卡片、暗底、小号青色标签、大号亮青数值。
     .status-metric {
       display: flex;
       min-width: 0;
       flex-direction: column;
-      gap: 5px;
-      padding: 8px 9px;
-      border: 1px solid rgba(120, 160, 175, 0.16);
-      border-radius: 2px;
-      background: rgba(4, 10, 14, 0.4);
+      gap: 6px;
+      padding: 10px 10px 12px;
+      border: 1px solid rgba(53, 226, 255, 0.32);
+      border-radius: 4px;
+      background: rgba(3, 10, 15, 0.78);
+      box-shadow: inset 0 0 14px rgba(53, 226, 255, 0.05);
       font-family: var(--font-mono);
 
-      span {
-        color: var(--dim);
+      .status-label {
+        overflow: hidden;
+        color: rgba(53, 226, 255, 0.72);
         font-size: 9px;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       strong {
         overflow: hidden;
-        color: #eff8f3;
-        font-size: 14px;
+        color: var(--accent);
+        font-size: 20px;
         font-weight: 700;
+        letter-spacing: 0.02em;
         text-overflow: ellipsis;
         white-space: nowrap;
+        text-shadow: 0 0 12px rgba(53, 226, 255, 0.35);
+      }
+
+      // 状态词（最长 PLANNING）在 1/3 卡宽内放不下 20px，按设计比例缩小；
+      // 数值卡保持 20px 大字。
+      #state {
+        font-size: 13px;
+        line-height: 1.2;
+      }
+
+      #delay {
+        color: var(--muted);
+        font-size: 11px;
+        letter-spacing: 0;
+        text-shadow: none;
+      }
+
+      .status-sub {
+        color: var(--muted);
+        font-size: 10px;
+        letter-spacing: 0.06em;
       }
     }
 
@@ -752,7 +783,7 @@ body {
       }
     }
 
-    // BATTLE ITEMS：天然机油是当前唯一道具，单槽展示（不做新道具玩法）。
+    // BATTLE ITEMS：四件战术道具复用既有右栏，不覆盖战场。
     .items-panel {
       .natural-oil {
         display: flex;
@@ -803,6 +834,70 @@ body {
         margin-top: 4px;
         color: var(--muted);
         font-size: 10px;
+      }
+
+      .tactical-items-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 4px;
+        margin-top: 9px;
+
+        .tactical-item-btn {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 3px;
+          min-width: 0;
+          min-height: 126px;
+          padding: 4px;
+          border: 1px solid var(--line);
+          border-radius: 2px;
+          background: rgba(8, 16, 22, 0.72);
+          color: var(--ink);
+          cursor: pointer;
+          font: inherit;
+          text-align: left;
+
+          &:hover:not(:disabled),
+          &:focus-visible {
+            border-color: var(--accent);
+            outline: 2px solid var(--accent-soft);
+          }
+
+          &:disabled {
+            cursor: default;
+            opacity: 0.7;
+          }
+
+          &[data-state='active'] { border-color: var(--accent); }
+
+          .tactical-item-icon {
+            display: block;
+            width: 30px;
+            height: 30px;
+            background-size: cover;
+            background-position: center;
+            border-radius: 2px;
+          }
+          .icon-tripo { background-image: url('../assets/items/icon_fire.png'); }
+          .icon-seeed { background-image: url('../assets/items/icon_gear.png'); }
+          .icon-evomap { background-image: url('../assets/items/icon_crosshair.png'); }
+          .icon-hypershell { background-image: url('../assets/items/icon_medical.png'); }
+
+          .tactical-item-label { font-size: 9px; font-weight: 700; overflow-wrap: anywhere; }
+          .tactical-item-name { color: var(--muted); font-size: 9px; line-height: 1.2; }
+          .tactical-item-footer {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            width: 100%;
+            margin-top: auto;
+            color: var(--accent);
+            font-family: var(--font-mono);
+            font-size: 9px;
+            white-space: nowrap;
+          }
+        }
       }
     }
 
@@ -936,74 +1031,6 @@ body {
             color: var(--accent);
             font-family: var(--font-mono);
             font-size: 9px;
-          }
-        }
-      }
-
-      .tactical-items-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        margin-top: 6px;
-
-        .tactical-item-btn {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          width: 100%;
-          padding: 6px 9px;
-          border: 1px solid var(--line);
-          border-radius: 8px;
-          background: rgba(16, 25, 23, 0.72);
-          color: var(--ink);
-          cursor: pointer;
-          font: inherit;
-          font-size: 11px;
-          transition: border-color 0.15s, background 0.15s;
-
-          &:hover:not(:disabled),
-          &:focus-visible {
-            border-color: var(--accent);
-            outline: 2px solid var(--accent-soft);
-          }
-
-          &:disabled {
-            cursor: default;
-            opacity: 0.65;
-          }
-
-          .tactical-item-icon {
-            flex: 0 0 18px;
-            width: 18px;
-            height: 18px;
-            border-radius: 4px;
-
-            &.icon-tripo {
-              background: linear-gradient(135deg, #ff5722, #b71c1c);
-              box-shadow: inset 0 0 0 1px rgba(255, 180, 160, 0.3);
-            }
-            &.icon-seeed {
-              background: linear-gradient(135deg, #00e5ff, #00838f);
-              box-shadow: inset 0 0 0 1px rgba(160, 240, 255, 0.3);
-            }
-            &.icon-evomap {
-              background: linear-gradient(135deg, #d500f9, #4a148c);
-              box-shadow: inset 0 0 0 1px rgba(230, 160, 255, 0.3);
-            }
-            &.icon-hypershell {
-              background: linear-gradient(135deg, #00e676, #1b5e20);
-              box-shadow: inset 0 0 0 1px rgba(160, 255, 200, 0.3);
-            }
-          }
-
-          .tactical-item-label {
-            font-weight: 500;
-          }
-
-          .tactical-item-cost {
-            margin-left: auto;
-            color: var(--accent);
-            white-space: nowrap;
           }
         }
       }
@@ -1196,14 +1223,19 @@ body {
       text-transform: uppercase;
     }
 
-    .leaderboard-mode-toggle {
-      display: inline-block;
+    .leaderboard-tabs {
+      display: flex;
+      gap: 4px;
       margin: 4px 0;
-      padding: 2px 8px;
+    }
+
+    .leaderboard-tab {
+      flex: 1;
+      padding: 2px 6px;
       border: 1px solid var(--line);
       border-radius: 4px;
       background: rgba(16, 25, 23, 0.72);
-      color: var(--accent);
+      color: var(--muted);
       cursor: pointer;
       font: inherit;
       font-size: 10px;
@@ -1213,7 +1245,13 @@ body {
 
       &:hover {
         border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      &.is-active {
+        border-color: var(--accent);
         background: var(--accent-soft);
+        color: var(--accent);
       }
     }
 
@@ -1237,7 +1275,7 @@ body {
 
       li {
         display: flex;
-        align-items: baseline;
+        align-items: center;
         gap: 7px;
         padding: 5px 0;
         border-bottom: 1px solid rgba(146, 169, 160, 0.1);
@@ -1250,6 +1288,27 @@ body {
           width: 18px;
           color: var(--accent);
           font-weight: 700;
+        }
+
+        .avatar {
+          width: 16px;
+          height: 16px;
+          flex: none;
+          overflow: hidden;
+          border: 1px solid var(--line);
+          border-radius: 50%;
+
+          img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+          }
+
+          // 离线遗留记录或服务端未带头像时的占位。
+          &.is-empty {
+            background: rgba(120, 160, 175, 0.12);
+          }
         }
 
         .mode-tag {
@@ -1813,6 +1872,10 @@ body {
 
     .rail-right {
       right: 8px;
+    }
+
+    .items-panel .tactical-items-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .flux-panel {

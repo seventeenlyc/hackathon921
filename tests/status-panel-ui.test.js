@@ -1,0 +1,82 @@
+/**
+ * Source-level guards for the battlefield status panel.
+ *
+ * The three metric cards (tactical credit / wave / phase) follow the design
+ * mock: cyan bordered card, small cyan label, large bright value, and a
+ * bilingual state sub-line. Like i18n.test.js this reads the TypeScript and
+ * Less sources directly, so it needs no build and no DOM.
+ */
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+
+const projectRoot = path.resolve(__dirname, '..');
+const index = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
+const i18nSource = fs.readFileSync(path.join(projectRoot, 'src', 'i18n.ts'), 'utf8');
+const interfaceSource = fs.readFileSync(path.join(projectRoot, 'src', 'InterfaceManager.ts'), 'utf8');
+const stylesSource = fs.readFileSync(path.join(projectRoot, 'src', 'styles', 'styles.less'), 'utf8');
+
+// --- markup: three metric cards with label / value / state sub-line ---
+const gridMatch = index.match(/<div class="status-grid"[\s\S]*?<\/div>\s*<\/section>/);
+assert.ok(gridMatch, 'status grid missing from index.html');
+const grid = gridMatch[0];
+const metrics = grid.match(/class="status-metric"/g) || [];
+assert.strictEqual(metrics.length, 3, 'expected exactly three status metrics');
+
+for (const key of ['label.cash', 'label.wave', 'label.state']) {
+    assert.ok(
+        grid.includes(`data-i18n="${key}"`),
+        `status metric label must reference ${key}`,
+    );
+    assert.ok(
+        grid.match(new RegExp(`class="status-label" data-i18n="${key}"`)),
+        `${key} label must use the status-label class`,
+    );
+}
+
+assert.ok(grid.includes('<strong id="state">'), 'state value must be the strong element');
+assert.ok(grid.includes('id="state-sub"'), 'state card must render the bilingual sub-line');
+assert.ok(grid.includes('id="wave"'), 'wave card must keep the #wave value slot');
+assert.ok(grid.includes('id="delay"'), 'wave card must keep the inter-wave delay slot');
+
+// --- i18n: state main value is EN in both locales, sub-line is zh in both ---
+function tableValue(key, locale) {
+    const match = i18nSource.match(new RegExp(`'${key}':\\s*\\{zh: '((?:[^'\\\\]|\\\\.)*)',\\s*en: '((?:[^'\\\\]|\\\\.)*)'\\}`));
+    assert.ok(match, `i18n key ${key} missing`);
+    return match[locale === 'zh' ? 1 : 2];
+}
+
+for (const state of ['idle', 'running', 'paused', 'planning']) {
+    assert.ok(
+        /^[A-Z]/.test(tableValue(`state.${state}`, 'zh')) && /^[A-Z]/.test(tableValue(`state.${state}`, 'en')),
+        `state.${state} main value must stay uppercase EN in both locales`,
+    );
+    assert.ok(
+        /[\u4e00-\u9fff]/.test(tableValue(`stateSub.${state}`, 'zh')) && /[\u4e00-\u9fff]/.test(tableValue(`stateSub.${state}`, 'en')),
+        `stateSub.${state} sub-line must stay CJK in both locales`,
+    );
+}
+
+// --- InterfaceManager: zero-padded wave + sub-line updates ---
+assert.ok(
+    /waveElement\.textContent = String\(wave\)\.padStart\(3, '0'\)/.test(interfaceSource),
+    'setWave must render the wave zero-padded to three digits',
+);
+assert.ok(
+    /stateSubElement\.textContent = t\(`stateSub\.\$\{state\}`\)/.test(interfaceSource),
+    'setState must refresh the state sub-line',
+);
+assert.ok(
+    interfaceSource.includes("document.getElementById('state-sub')"),
+    'state sub element must be bound at construction',
+);
+
+// --- styles: the design's cyan card treatment exists ---
+const metricBlock = stylesSource.match(/\.status-metric \{[\s\S]*?\n    \}/);
+assert.ok(metricBlock, '.status-metric block missing from styles.less');
+assert.ok(metricBlock[0].includes('rgba(53, 226, 255'), 'status cards must use the cyan accent border');
+assert.ok(/\.status-label/.test(metricBlock[0]), 'status label must be styled');
+assert.ok(/\.status-sub/.test(metricBlock[0]), 'status sub-line must be styled');
+assert.ok(/#delay/.test(metricBlock[0]), 'wave delay suffix must be styled dimmer than the value');
+
+console.log('Status panel UI assertions passed.');

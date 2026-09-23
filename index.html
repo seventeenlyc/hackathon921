@@ -82,7 +82,7 @@
         <div class="header-side header-left">
           <span class="eyebrow" data-i18n="shell.eyebrow">公安九课 // 战术网络</span>
           <span class="header-sub" data-i18n="header.subtitle">公安九课 · 塔奇克马防御协议</span>
-          <span id="version" class="header-ver">v0.2.6</span>
+          <span id="version" class="header-ver">v0.2.9</span>
         </div>
         <h1 class="header-title" data-i18n="app.name">保护笑脸男</h1>
         <div class="header-side header-right">
@@ -106,9 +106,9 @@
               <h2 id="status-heading" class="panel-title" data-i18n="aria.battlefieldStatus">战场状态</h2>
             </div>
             <div class="status-grid" data-i18n-aria-label="aria.battlefieldStatus" aria-label="战场状态">
-              <div class="status-metric"><span data-i18n="label.cash">战术资源：</span><strong><span id="cash">200</span></strong></div>
-              <div class="status-metric"><span data-i18n="label.wave">防御波次：</span><strong><span id="wave">1</span> <span id="delay"></span></strong></div>
-              <div class="status-metric"><span data-i18n="label.state">作战状态：</span><strong id="state">STANDBY</strong></div>
+              <div class="status-metric"><span class="status-label" data-i18n="label.cash">战术资源</span><strong><span id="cash">200</span></strong></div>
+              <div class="status-metric"><span class="status-label" data-i18n="label.wave">防御波次</span><strong><span id="wave">001</span> <span id="delay"></span></strong></div>
+              <div class="status-metric"><span class="status-label" data-i18n="label.state">作战状态</span><strong id="state">STANDBY</strong><span class="status-sub" id="state-sub">待机</span></div>
             </div>
           </section>
 
@@ -184,25 +184,29 @@
             </button>
             <span id="natural-oil-status" class="natural-oil-status" role="status" aria-live="polite"></span>
             <div id="tactical-items-grid" class="tactical-items-grid">
+              <button id="item-evomap" class="tactical-item-btn item-evomap" type="button" disabled>
+                <span class="tactical-item-icon icon-evomap" aria-hidden="true"></span>
+                <span class="tactical-item-label">EvoMap</span>
+                <span class="tactical-item-name" data-i18n="item.evomap.name">全域轨道打击</span>
+                <span class="tactical-item-footer"><span id="item-evomap-state" aria-live="polite">待机</span><span id="item-evomap-cost">免费</span></span>
+              </button>
               <button id="item-tripo" class="tactical-item-btn item-tripo" type="button" disabled>
                 <span class="tactical-item-icon icon-tripo" aria-hidden="true"></span>
                 <span class="tactical-item-label">Tripo</span>
-                <span class="tactical-item-cost">1000 ¢</span>
+                <span class="tactical-item-name" data-i18n="item.tripo.name">火力重构</span>
+                <span class="tactical-item-footer"><span id="item-tripo-state" aria-live="polite">待机</span><span id="item-tripo-cost">1000 ¢</span></span>
               </button>
               <button id="item-seeed" class="tactical-item-btn item-seeed" type="button" disabled>
                 <span class="tactical-item-icon icon-seeed" aria-hidden="true"></span>
                 <span class="tactical-item-label">Seeed Studio</span>
-                <span class="tactical-item-cost">1000 ¢</span>
-              </button>
-              <button id="item-evomap" class="tactical-item-btn item-evomap" type="button" disabled>
-                <span class="tactical-item-icon icon-evomap" aria-hidden="true"></span>
-                <span class="tactical-item-label">EvoMap</span>
-                <span id="evomap-cost" class="tactical-item-cost">FREE</span>
+                <span class="tactical-item-name" data-i18n="item.seeed.name">天然机油</span>
+                <span class="tactical-item-footer"><span id="item-seeed-state" aria-live="polite">待机</span><span id="item-seeed-cost">1000 ¢</span></span>
               </button>
               <button id="item-hypershell" class="tactical-item-btn item-hypershell" type="button" disabled>
                 <span class="tactical-item-icon icon-hypershell" aria-hidden="true"></span>
                 <span class="tactical-item-label">HyperShell</span>
-                <span class="tactical-item-cost">1000 ¢</span>
+                <span class="tactical-item-name" data-i18n="item.hypershell.name">外骨骼应急修复</span>
+                <span class="tactical-item-footer"><span id="item-hypershell-state" aria-live="polite">待机</span><span id="item-hypershell-cost">1000 ¢</span></span>
               </button>
             </div>
           </section>

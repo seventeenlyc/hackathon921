@@ -42,9 +42,9 @@ const STRINGS: { [key: string]: Entry } = {
     'aria.gameControls': {zh: '作战控制', en: 'Operation controls'},
     'aria.githubRepository': {zh: 'GitHub 源代码仓库', en: 'GitHub source repository'},
 
-    'label.wave': {zh: '防御波次：', en: 'Defense Wave:'},
-    'label.state': {zh: '作战状态：', en: 'Operation:'},
-    'label.cash': {zh: '战术资源：', en: 'Resources:'},
+    'label.wave': {zh: '防御波次', en: 'Wave'},
+    'label.state': {zh: '作战状态', en: 'Phase'},
+    'label.cash': {zh: '战术资源', en: 'Tactical Credit'},
     'label.spawners': {zh: '攻击路线：', en: 'Attack Routes:'},
 
     'strategy.label': {zh: '作战命令', en: 'Tactical Order'},
@@ -91,10 +91,17 @@ const STRINGS: { [key: string]: Entry } = {
     'control.audio': {zh: '音效开', en: 'Sound On'},
     'control.audioMuted': {zh: '音效关', en: 'Sound Off'},
 
+    // 设计稿的状态框是「英文大字 + 汉字小字」双语排布（对照 DEFENSE / 防衛），
+    // 因此主值两种语言都固定英文，副行两种语言都固定中文。
+    // 主值单词必须短（最长 8 字符），才能在 1/3 卡宽内不截断地放下。
     'state.idle': {zh: 'STANDBY', en: 'STANDBY'},
     'state.running': {zh: 'ACTION', en: 'ACTION'},
-    'state.paused': {zh: 'SUSPENDED', en: 'SUSPENDED'},
-    'state.planning': {zh: '战术分析中', en: 'TACTICAL ANALYSIS'},
+    'state.paused': {zh: 'PAUSED', en: 'PAUSED'},
+    'state.planning': {zh: 'PLANNING', en: 'PLANNING'},
+    'stateSub.idle': {zh: '待机', en: '待机'},
+    'stateSub.running': {zh: '行动中', en: '行动中'},
+    'stateSub.paused': {zh: '已暂停', en: '已暂停'},
+    'stateSub.planning': {zh: '战术分析中', en: '战术分析中'},
 
     'speed.label': {zh: '演算速度 x{speed}', en: 'Simulation x{speed}'},
 
@@ -109,10 +116,28 @@ const STRINGS: { [key: string]: Entry } = {
     'oil.failure.COOLDOWN': {zh: '机油仍在冷却', en: 'Natural Oil is cooling down'},
     'oil.failure.INSUFFICIENT_FUNDS': {zh: '金币不足，需要 1000 ¢', en: 'Insufficient cash: 1000 ¢ required'},
 
+    'item.evomap.name': {zh: '全域轨道打击', en: 'Orbital Strike'},
+    'item.tripo.name': {zh: '火力重构', en: 'Firepower Reconfiguration'},
+    'item.seeed.name': {zh: '天然机油', en: 'Natural Oil'},
+    'item.hypershell.name': {zh: '外骨骼应急修复', en: 'Emergency Exoshell Repair'},
+    'item.free': {zh: '免费', en: 'FREE'},
+    'item.cost': {zh: '{cost} ¢', en: '{cost} ¢'},
+    'item.waiting': {zh: '待机', en: 'WAITING'},
+    'item.ready': {zh: '可使用', en: 'READY'},
+    'item.active': {zh: '生效 {seconds}s', en: 'ACTIVE {seconds}s'},
+    'item.cooldown': {zh: '冷却 {seconds}s', en: 'CD {seconds}s'},
+    'item.insufficient': {zh: '资源不足', en: 'NO FUNDS'},
+    'item.used': {zh: '{name} 已启用', en: '{name} activated'},
+    'item.failure.NOT_RUNNING': {zh: '仅运行时可使用', en: 'Available while running'},
+    'item.failure.ALREADY_ACTIVE': {zh: '道具正在生效', en: 'Item already active'},
+    'item.failure.COOLDOWN': {zh: '道具仍在冷却', en: 'Item is cooling down'},
+    'item.failure.INSUFFICIENT_FUNDS': {zh: '战术资源不足', en: 'Insufficient resources'},
+    'item.failure.UNKNOWN_ITEM': {zh: '未知战术道具', en: 'Unknown tactical item'},
+
     'oil.desc': {zh: '5 秒内所有塔奇克马攻击速度提升 150%。冷却时间 10 秒。消耗 1000 战术资源。', en: 'Increases attack speed of all Tachikomas by 150% for 5s. 10s cooldown. Costs 1000.'},
     'item.tripo.desc': {zh: '5 秒内所有塔奇克马火力提升至 300%（单发伤害 ×3）。冷却时间 10 秒。消耗 1000 战术资源。', en: 'Increases firepower of all Tachikomas to 300% (damage x3) for 5s. 10s cooldown. Costs 1000.'},
     'item.seeed.desc': {zh: '5 秒内所有塔奇克马攻击速度提升至 150%。冷却时间 10 秒。消耗 1000 战术资源。', en: 'Increases attack speed of all Tachikomas to 150% for 5s. 10s cooldown. Costs 1000.'},
-    'item.evomap.desc': {zh: '对全图所有存活敌方单位造成 2% 最大生命值的全屏 AOE 伤害（至少 1 点）。前 2 次使用免费，随后 1000 战术资源/次。冷却时间 10 秒。', en: 'Deals 2% max HP AOE damage to all living enemies (min 1). First 2 uses free, then 1000 each. 10s cooldown.'},
+    'item.evomap.desc': {zh: '对全图所有存活敌方单位造成当前生命值 2% 的伤害（至少 1 点）。前 2 次使用免费，随后 1000 战术资源/次。冷却时间 10 秒。', en: 'Deals 2% of current HP to all living enemies (min 1). First 2 uses free, then 1000 each. 10s cooldown.'},
     'item.hypershell.desc': {zh: '主基地恢复 25% 最大生命值（上限不超过最大值）。冷却时间 10 秒。消耗 1000 战术资源。', en: 'Repairs home base by 25% max HP (capped at max). 10s cooldown. Costs 1000.'},
 
     'result.gameOver': {zh: '防御终止', en: 'DEFENSE TERMINATED'},
@@ -154,7 +179,7 @@ const STRINGS: { [key: string]: Entry } = {
 
     'lb.boardAi': {zh: 'AI 榜', en: 'AI'},
     'lb.boardHuman': {zh: '人类榜', en: 'Human'},
-    'lb.boardTotal': {zh: '总榜', en: 'Total'},
+    'lb.boardTotal': {zh: '混合榜', en: 'Mixed'},
     'lb.modeAi': {zh: 'AI', en: 'AI'},
     'lb.modeHuman': {zh: '人类', en: 'Human'},
 

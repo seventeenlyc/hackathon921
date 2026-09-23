@@ -441,7 +441,7 @@ const uiSource = fs.readFileSync(path.join(__dirname, '../../src/InterfaceManage
 assert.match(battlefieldSource, /return useModelItem\(item, tacticalItemsController, cashManager, \{/,
     'the concrete battlefield must delegate to the tested production seam');
 assert.doesNotMatch(battlefieldSource, /tacticalItemsController\.activate\(item,\s*true,/, 'no hard-coded model RUNNING');
-assert.match(uiSource, /tacticalItemsController\.activate\('tripo', gameLoop\.state === 'running'/,
+assert.match(uiSource, /tacticalItemsController\.activate\(key, gameLoop\.state === 'running'/,
     'the UI and model must read the same game-loop running state');
 assert.match(fs.readFileSync(path.join(__dirname, '../../index.html'), 'utf8'), /onclick="location\.reload\(\)"/,
     'a fresh run reloads the page and therefore constructs fresh item singletons');
