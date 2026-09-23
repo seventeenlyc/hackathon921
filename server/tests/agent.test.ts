@@ -9,6 +9,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { ApiDeps, ApiRequest } from '../src/http';
 import { LeaderboardStore } from '../src/store';
 import { signToken } from '../src/token';
+import * as agentModule from '../src/agent';
 import {
     AGENT_SYSTEM_PROMPT,
     DEEPSEEK_URL,
@@ -118,6 +119,17 @@ test('extractAgentActions 在模型不调工具时返回空列表', () => {
     assert.deepEqual(extractAgentActions(undefined), []);
 });
 
+test('extractAgentSummary exposes only concise player-facing content, never a reasoning field', () => {
+    const summary = '优先补强东侧路线，当前该路线缺少火力覆盖。';
+    const extractAgentSummary = (agentModule as any).extractAgentSummary;
+    assert.equal(typeof extractAgentSummary, 'function', 'summary extraction is not implemented yet');
+    assert.equal(extractAgentSummary({
+        choices: [{message: {content: `  ${summary}  `, reasoning_content: 'private chain of thought'}}],
+    }), summary);
+    assert.equal(extractAgentSummary({choices: [{message: {content: 'x'.repeat(241)}}]}), null);
+    assert.equal(extractAgentSummary({choices: [{message: {content: '', reasoning_content: 'private'}}]}), null);
+});
+
 test('mapProviderError 把 provider 失败映射成可读错误码', () => {
     assert.equal(mapProviderError(401, {}).error, 'PROVIDER_AUTH_ERROR');
     assert.equal(mapProviderError(429, {}).error, 'PROVIDER_RATE_LIMITED');
@@ -161,7 +173,7 @@ test('成功时下发给 provider 的是服务端系统指令与工具 schema，
             fetchImpl: (async (url: string, init: any) => {
                 sent = { url, init, body: JSON.parse(init.body) };
                 return providerResponse(200, {
-                    choices: [{ message: { tool_calls: [{ function: { name: 'build_tower', arguments: '{"type":"slow","i":4,"j":5}' } }] } }],
+                    choices: [{ message: { content: '优先补强东侧路线。', reasoning_content: 'private chain', tool_calls: [{ function: { name: 'build_tower', arguments: '{"type":"slow","i":4,"j":5}' } }] } }],
                     usage: { total_tokens: 321 },
                 });
             }) as any,
@@ -172,10 +184,13 @@ test('成功时下发给 provider 的是服务端系统指令与工具 schema，
 
     assert.equal(res.status, 200);
     assert.deepEqual(res.body.actions, [{ name: 'build_tower', arguments: { type: 'slow', i: 4, j: 5 } }]);
+    assert.equal(res.body.summary, '优先补强东侧路线。');
     assert.deepEqual(res.body.usage, { total_tokens: 321 });
 
     assert.equal(sent.body.messages[0].role, 'system');
     assert.equal(sent.body.messages[0].content, AGENT_SYSTEM_PROMPT);
+    assert.match(sent.body.messages[0].content, /player-facing decision summary/i);
+    assert.match(sent.body.messages[0].content, /do not show hidden chain-of-thought/i);
     assert.ok(sent.body.messages[0].content.indexOf('hold the base') === -1);
     assert.ok(sent.body.messages[1].content.indexOf('hold the base') !== -1);
     assert.equal(sent.body.model, 'deepseek-chat');

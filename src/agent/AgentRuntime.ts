@@ -43,6 +43,7 @@ export interface AgentRuntimeOptions {
     fetchImpl: typeof fetch;
     endpoint?: string;
     onDecision?: (entry: DecisionEntry) => void;
+    onSummary?: (summary: string | null) => void;
     onError?: (message: string) => void;
     maxActions?: number;
     /** Supplies the session token; the server requires a valid session (issue #22). */
@@ -58,6 +59,7 @@ interface AgentAction {
 
 const DEFAULT_ENDPOINT = '/api/agent/decide';
 const DEFAULT_MAX_ACTIONS = 8;
+const MAX_DECISION_SUMMARY_LENGTH = 240;
 const DEFAULT_TIMEOUT_MS = 12000;
 
 export class AgentRuntime implements Planner {
@@ -66,6 +68,7 @@ export class AgentRuntime implements Planner {
     private readonly fetchImpl: typeof fetch;
     private readonly endpoint: string;
     private readonly onDecision: (entry: DecisionEntry) => void;
+    private readonly onSummary: (summary: string | null) => void;
     private readonly onError: (message: string) => void;
     private readonly maxActions: number;
     private readonly getToken: () => string | null;
@@ -77,6 +80,7 @@ export class AgentRuntime implements Planner {
         this.fetchImpl = options.fetchImpl;
         this.endpoint = options.endpoint || DEFAULT_ENDPOINT;
         this.onDecision = options.onDecision || (() => undefined);
+        this.onSummary = options.onSummary || (() => undefined);
         this.onError = options.onError || (() => undefined);
         this.maxActions = options.maxActions || DEFAULT_MAX_ACTIONS;
         this.getToken = options.getToken || (() => null);
@@ -141,7 +145,7 @@ export class AgentRuntime implements Planner {
             return;
         }
 
-        let payload: { ok?: boolean; actions?: AgentAction[]; message?: string };
+        let payload: { ok?: boolean; actions?: AgentAction[]; message?: string; summary?: unknown };
         try {
             payload = await response.json();
         } catch (error) {
@@ -157,6 +161,8 @@ export class AgentRuntime implements Planner {
             return;
         }
 
+        const summary = typeof payload.summary === 'string' ? payload.summary.trim() : '';
+        this.onSummary(summary.length > 0 && summary.length <= MAX_DECISION_SUMMARY_LENGTH ? summary : null);
         payload.actions.slice(0, this.maxActions).forEach(action => this.execute(action, wave));
     }
 

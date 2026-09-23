@@ -131,8 +131,16 @@
             </div>
           </section>
 
+          <section id="decision-summary-panel" class="control-card reasoning-panel" data-state="idle" aria-labelledby="reasoning-heading">
+            <div class="reasoning-header">
+              <h2 id="reasoning-heading" class="panel-title" data-i18n="reasoning.title">AI 决策终端</h2>
+              <span id="decision-summary-status" class="reasoning-status" data-i18n="reasoning.status.waiting">等待分析</span>
+            </div>
+            <p id="decision-summary" class="reasoning-content" aria-live="polite" data-i18n="reasoning.empty">等待塔奇克马对下一波做出决策…</p>
+          </section>
+
           <section class="control-card flux-panel" aria-labelledby="flux-heading">
-            <h2 id="flux-heading" class="panel-title" data-i18n="decisions.label">塔奇克马判断</h2>
+            <h2 id="flux-heading" class="panel-title" data-i18n="decisions.label">执行日志</h2>
             <ul id="decision-log" class="decision-log"></ul>
             <div id="decision-empty" class="decision-empty" data-i18n="decisions.empty">等待塔奇克马自主判断。</div>
           </section>
