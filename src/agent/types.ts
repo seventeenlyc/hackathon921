@@ -128,6 +128,8 @@ export interface PathShapingCandidate {
     lane: number;
     /** Extra route tiles this single placement adds to that lane. */
     addedTiles: number;
+    /** Tactical zone along the lane: frontline (spawn area), midfield, or base. */
+    zone: 'frontline' | 'midfield' | 'base';
 }
 
 /** The enemy route, compressed to its turns instead of every traversed cell. */
