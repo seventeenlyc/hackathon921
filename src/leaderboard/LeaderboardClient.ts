@@ -1,11 +1,16 @@
 import {sanitizeUsername} from './LeaderboardStore';
+import {getSessionAvatar} from './SessionIdentity';
+import {isKnownAvatarId} from './AvatarCatalog';
+import type {AvatarId} from './AvatarCatalog';
 
 export type PlayMode = 'ai' | 'human';
 export type LeaderboardMode = PlayMode | 'total';
 
 export interface RemoteEntry {
+    uid: number;
     rank: number;
     username: string;
+    avatarId: AvatarId | null;
     wave: number;
     achievedAt: number;
     mode: PlayMode;
@@ -13,7 +18,7 @@ export interface RemoteEntry {
 
 export interface RemoteLeaderboard {
     entries: RemoteEntry[];
-    me: { username: string; rank: number | null; wave: number | null; mode?: PlayMode } | null;
+    me: { uid: number; username: string; avatarId: AvatarId | null; rank: number | null; wave: number | null; mode?: PlayMode } | null;
 }
 
 export interface StrategyVersionLike {
@@ -33,6 +38,7 @@ export interface PromptNode {
 }
 
 export interface BestRunPrompts {
+    uid: number;
     username: string;
     runId: string | null;
     wave: number | null;
@@ -51,6 +57,7 @@ export type ClientResult<T> = ClientSuccess<T> | ClientFailure;
 
 interface SessionState {
     username: string;
+    avatarId: string;
     token: string;
     runId: string | null;
     mode: PlayMode;
@@ -62,7 +69,7 @@ const API_BASE = '/api';
 const REQUEST_TIMEOUT_MS = 5000;
 
 let session: SessionState | null = null;
-let sessionPromise: { username: string; generation: number; promise: Promise<ClientResult<string>> } | null = null;
+let sessionPromise: { username: string; avatarId: string; generation: number; promise: Promise<ClientResult<string>> } | null = null;
 let runPromise: { generation: number; mode: PlayMode; promise: Promise<ClientResult<string>> } | null = null;
 let generation = 0;
 
@@ -114,13 +121,16 @@ async function request<T>(path: string, init: RequestInit, token?: string | null
     }
 }
 
-async function ensureSessionResult(username: string): Promise<ClientResult<string>> {
+async function ensureSessionResult(username: string, requestedAvatarId?: string | null): Promise<ClientResult<string>> {
     const clean = sanitizeUsername(username);
     if (!clean) return { ok: false, status: 400, retryable: false, reason: 'INVALID_USERNAME' };
-    if (session && session.username.toLowerCase() === clean.toLowerCase()) {
+    const avatarId = isKnownAvatarId(requestedAvatarId || '')
+        ? requestedAvatarId as AvatarId
+        : getSessionAvatar() || 'aramaki';
+    if (session && session.username.toLowerCase() === clean.toLowerCase() && session.avatarId === avatarId) {
         return { ok: true, value: session.token };
     }
-    if (sessionPromise && sessionPromise.username.toLowerCase() === clean.toLowerCase()) {
+    if (sessionPromise && sessionPromise.username.toLowerCase() === clean.toLowerCase() && sessionPromise.avatarId === avatarId) {
         return sessionPromise.promise;
     }
 
@@ -128,7 +138,7 @@ async function ensureSessionResult(username: string): Promise<ClientResult<strin
     const promise = (async (): Promise<ClientResult<string>> => {
         const result = await request<{ token?: unknown; username?: unknown }>(
             '/session',
-            { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username: clean }) }
+            { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username: clean, avatarId }) }
         );
         if (!result.ok) return result;
         if (typeof result.value.token !== 'string') {
@@ -137,6 +147,7 @@ async function ensureSessionResult(username: string): Promise<ClientResult<strin
         if (requestGeneration === generation) {
             session = {
                 username: typeof result.value.username === 'string' ? result.value.username : clean,
+                avatarId,
                 token: result.value.token,
                 runId: null,
                 mode: 'ai',
@@ -147,7 +158,7 @@ async function ensureSessionResult(username: string): Promise<ClientResult<strin
         }
         return { ok: true, value: result.value.token };
     })();
-    sessionPromise = { username: clean, generation: requestGeneration, promise };
+    sessionPromise = { username: clean, avatarId, generation: requestGeneration, promise };
     void promise.then(
         () => { if (sessionPromise && sessionPromise.promise === promise) sessionPromise = null; },
         () => { if (sessionPromise && sessionPromise.promise === promise) sessionPromise = null; }
@@ -198,8 +209,8 @@ export async function ensureRunResult(username: string, mode: PlayMode = 'ai'): 
     return promise;
 }
 
-export async function ensureSessionToken(username: string): Promise<string | null> {
-    const result = await ensureSessionResult(username);
+export async function ensureSessionToken(username: string, avatarId?: string | null): Promise<string | null> {
+    const result = await ensureSessionResult(username, avatarId);
     return result.ok ? result.value : null;
 }
 
@@ -277,7 +288,7 @@ export async function fetchSharedLeaderboard(
     const mode: LeaderboardMode = typeof modeOrLimit === 'number' ? 'ai' : modeOrLimit;
     const finalLimit = typeof modeOrLimit === 'number' ? modeOrLimit : limit;
     let token: string | null = null;
-    if (username) token = await ensureSessionToken(username);
+    if (username) token = await ensureSessionToken(username, getSessionAvatar());
     const searchParams = new URLSearchParams();
     searchParams.set('limit', String(finalLimit));
     if (mode) searchParams.set('mode', mode);
@@ -290,19 +301,23 @@ export async function fetchSharedLeaderboard(
 
     const entries: RemoteEntry[] = [];
     for (const raw of result.value.entries) {
-        if (!raw || typeof raw.username !== 'string' || typeof raw.wave !== 'number') continue;
+        if (!raw || !Number.isSafeInteger(raw.uid) || raw.uid < 1 || typeof raw.username !== 'string' || typeof raw.wave !== 'number') continue;
         entries.push({
+            uid: raw.uid,
             rank: typeof raw.rank === 'number' ? raw.rank : entries.length + 1,
             username: raw.username,
+            avatarId: isKnownAvatarId(raw.avatarId) ? raw.avatarId : null,
             wave: raw.wave,
             achievedAt: typeof raw.achievedAt === 'number' ? raw.achievedAt : 0,
             mode: raw.mode === 'human' ? 'human' : 'ai',
         });
     }
     let me: RemoteLeaderboard['me'] = null;
-    if (result.value.me && typeof result.value.me === 'object' && typeof result.value.me.username === 'string') {
+    if (result.value.me && typeof result.value.me === 'object' && Number.isSafeInteger(result.value.me.uid) && result.value.me.uid > 0 && typeof result.value.me.username === 'string') {
         me = {
+            uid: result.value.me.uid,
             username: result.value.me.username,
+            avatarId: isKnownAvatarId(result.value.me.avatarId) ? result.value.me.avatarId : null,
             rank: typeof result.value.me.rank === 'number' ? result.value.me.rank : null,
             wave: typeof result.value.me.wave === 'number' ? result.value.me.wave : null,
             mode: result.value.me.mode === 'human' ? 'human' : 'ai',
@@ -311,11 +326,10 @@ export async function fetchSharedLeaderboard(
     return { entries, me };
 }
 
-export async function fetchBestRunPrompts(username: string): Promise<BestRunPrompts | null> {
-    const clean = sanitizeUsername(username);
-    if (!clean) return null;
+export async function fetchBestRunPrompts(uid: number): Promise<BestRunPrompts | null> {
+    if (!Number.isSafeInteger(uid) || uid < 1) return null;
     const result = await request<BestRunPrompts>(
-        '/leaderboard/' + encodeURIComponent(clean) + '/prompts',
+        '/leaderboard/' + uid + '/prompts',
         { method: 'GET' }
     );
     if (!result.ok || !result.value || !Array.isArray(result.value.prompts)) return null;

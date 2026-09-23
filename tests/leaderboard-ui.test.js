@@ -156,7 +156,10 @@ function loadUI(document, currentPlayMode, remoteData = null) {
             submitScore: () => ({ entries: [], rank: null }),
             entriesForBoard: entries => entries,
         },
-        './SessionIdentity': { getSessionUsername: () => 'Alice', setSessionUsername: () => true },
+        './SessionIdentity': {
+            getSessionUsername: () => 'Alice', getSessionAvatar: () => 'aramaki', getLocalSessionId: () => 'local-1',
+            setSessionUsername: () => true, setSessionAvatar: () => true,
+        },
         './AvatarCatalog': avatarCatalog,
         './avatarAssets': {
             AVATAR_SRC: Object.fromEntries(avatarCatalog.AVATARS.map(a => [a.id, 'fake://' + a.id])),
@@ -232,10 +235,10 @@ function loadUI(document, currentPlayMode, remoteData = null) {
     const doc = new FakeDocument();
     const remoteData = mode => ({
         entries: [
-            { rank: 1, username: 'Alice', wave: 20, achievedAt: 100, mode: 'human' },
-            { rank: 2, username: 'Alice', wave: 10, achievedAt: 50, mode: 'ai' },
+            { uid: 7, rank: 1, username: 'Alice', avatarId: 'aramaki', wave: 20, achievedAt: 100, mode: 'human' },
+            { uid: 7, rank: 2, username: 'Alice', avatarId: 'aramaki', wave: 10, achievedAt: 50, mode: 'ai' },
         ],
-        me: { username: 'Alice', rank: 1, wave: 20, mode: 'human' },
+        me: { uid: 7, username: 'Alice', avatarId: 'aramaki', rank: 1, wave: 20, mode: 'human' },
     });
     const { LeaderboardPanel } = loadUI(doc, 'ai', remoteData);
     const panel = new LeaderboardPanel();

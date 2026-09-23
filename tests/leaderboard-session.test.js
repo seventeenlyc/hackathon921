@@ -57,11 +57,16 @@ test('reloading the identity module forgets the nickname and clears the legacy c
     const document = { cookie: 'pd_username=Alice' };
     const first = loadSession(document);
     first.setSessionUsername('Alice');
+    first.setSessionAvatar('batou');
+    const firstLocalId = first.getLocalSessionId();
     first.clearLegacyUsernameCookie();
     assert.match(document.cookie, /^pd_username=; Max-Age=0; Path=\/$/);
 
     const second = loadSession(document);
     assert.strictEqual(second.getSessionUsername(), null);
+    assert.strictEqual(second.getSessionAvatar(), null);
+    assert.notStrictEqual(second.getLocalSessionId(), firstLocalId,
+        'offline session identity must be regenerated on page reload');
 });
 
 test('invalid nickname does not become the current session identity', () => {

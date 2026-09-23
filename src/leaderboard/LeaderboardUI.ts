@@ -6,7 +6,7 @@ import {
     entriesForBoard,
 } from './LeaderboardStore';
 import type { LeaderboardEntry, PlayMode, LeaderboardMode } from './LeaderboardStore';
-import {getSessionUsername, setSessionUsername, setSessionAvatar} from './SessionIdentity';
+import {getSessionUsername, getSessionAvatar, getLocalSessionId, setSessionUsername, setSessionAvatar} from './SessionIdentity';
 import {AVATARS, isKnownAvatarId, randomAvatarId, randomUsername} from './AvatarCatalog';
 import type {AvatarId} from './AvatarCatalog';
 import {AVATAR_SRC} from './avatarAssets';
@@ -277,7 +277,7 @@ export class LeaderboardPanel {
         const shared = this.remote != null;
         const local: LeaderboardEntry[] = entriesForBoard(readStoredLeaderboard() || [], this.currentMode);
         const entries: LeaderboardEntry[] = shared
-            ? this.remote!.entries.map(e => ({ username: e.username, wave: e.wave, timestamp: e.achievedAt, mode: e.mode }))
+            ? this.remote!.entries.map(e => ({ userId: String(e.uid), username: e.username, avatarId: e.avatarId, wave: e.wave, timestamp: e.achievedAt, mode: e.mode }))
             : local;
         const top = entries.slice(0, TOP_N);
         this.listEl.textContent = '';
@@ -287,10 +287,10 @@ export class LeaderboardPanel {
             li.textContent = t('lb.empty');
             this.listEl.appendChild(li);
         }
-        const ownLower = this.username ? this.username.toLowerCase() : null;
+        const ownId = shared && this.remote!.me ? String(this.remote!.me.uid) : getLocalSessionId();
         top.forEach((e, i) => {
             const li = document.createElement('li');
-            const isMe = ownLower != null && e.username.toLowerCase() === ownLower;
+            const isMe = e.userId === ownId;
             if (isMe) li.className = 'me';
             const rankSpan = document.createElement('span');
             rankSpan.className = 'rank';
@@ -309,7 +309,8 @@ export class LeaderboardPanel {
                 nameButton.className = 'name';
                 nameButton.textContent = e.username;
                 nameButton.setAttribute('aria-label', t('history.open', {name: e.username}));
-                nameButton.addEventListener('click', () => { void this.historyDialog.open(e.username); });
+                const uid = shared ? Number(e.userId) : 0;
+                nameButton.addEventListener('click', () => { if (uid > 0) void this.historyDialog.open(uid, e.username); });
                 li.appendChild(nameButton);
             } else {
                 const nameSpan = document.createElement('span');
@@ -347,7 +348,7 @@ export class LeaderboardPanel {
             if (shared && this.remote!.me) {
                 rank = this.remote!.me.rank;
             } else {
-                const idx = entries.findIndex(e => e.username.toLowerCase() === (this.username as string).toLowerCase());
+                const idx = entries.findIndex(e => e.userId === getLocalSessionId());
                 rank = idx >= 0 ? idx + 1 : null;
             }
             let footerText = t('lb.you', {name: this.username});
@@ -356,7 +357,7 @@ export class LeaderboardPanel {
                 if (this.currentMode === 'total') {
                     const myMode = shared && this.remote!.me && this.remote!.me.mode
                         ? this.remote!.me.mode
-                        : (entries.find(e => e.username.toLowerCase() === (this.username as string).toLowerCase())?.mode ?? 'ai');
+                        : (entries.find(e => e.userId === getLocalSessionId())?.mode ?? 'ai');
                     footerText += ` (${myMode === 'human' ? t('lb.modeHuman') : t('lb.modeAi')})`;
                 }
             } else {
@@ -376,7 +377,7 @@ export function submitRunScore(name: string, score: number, mode: PlayMode = 'ai
     if (!clean) return null;
     // 本地立即记录：保证离线时玩家仍能看到自己的成绩与名次。
     const stored = readStoredLeaderboard();
-    const { entries, rank } = submitScore(clean, score, stored, mode);
+    const { entries, rank } = submitScore(clean, score, stored, mode, getLocalSessionId(), getSessionAvatar());
     writeStoredLeaderboard(entries);
     leaderboardPanel.refresh();
     // 再异步同步到服务端（共享排行榜的真值来源）；同步完成后刷新一次以拿到全局排名。

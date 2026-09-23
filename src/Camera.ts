@@ -16,6 +16,29 @@ export class Camera {
     private dragStartCoordinates = {x: 0, y: 0};
     private dragDeltaDistances = {x: 0, y: 0};
 
+    private getViewport() {
+        const canvasElement = canvas.getElement();
+        const canvasRect = canvasElement.getBoundingClientRect();
+        const frame = document.getElementById('map-frame');
+        if (!frame) {
+            return {x: canvasElement.width / 2, y: canvasElement.height / 2, width: canvasElement.width, height: canvasElement.height};
+        }
+        const frameRect = frame.getBoundingClientRect();
+        return {
+            x: frameRect.left - canvasRect.left + frameRect.width / 2,
+            y: frameRect.top - canvasRect.top + frameRect.height / 2,
+            width: frameRect.width,
+            height: frameRect.height,
+        };
+    }
+
+    private getMinimumScale(): number {
+        const viewport = this.getViewport();
+        const mapWidth = Map.TILE_SIZE * Map.GRID_W;
+        const mapHeight = Map.TILE_SIZE * Map.GRID_H;
+        return Math.min(viewport.width / mapWidth, viewport.height / mapHeight);
+    }
+
     constructor() {
         controls.on('keydown:ARROWUP', () => this.move(0, -Camera.DELTA_MOVE))
         controls.on('keydown:ARROWDOWN', () => this.move(0, Camera.DELTA_MOVE))
@@ -44,7 +67,9 @@ export class Camera {
     }
 
     process(ctx: CanvasRenderingContext2D): void {
-        ctx.translate(canvas.getElement().width / 2, canvas.getElement().height / 2)
+        const viewport = this.getViewport();
+        this.scaleRatio = Math.max(this.scaleRatio, this.getMinimumScale());
+        ctx.translate(viewport.x, viewport.y)
         ctx.scale(this.scaleRatio, this.scaleRatio)
         ctx.translate(-this.x + this.dragDeltaDistances.x, -this.y + this.dragDeltaDistances.y);
 
@@ -57,7 +82,7 @@ export class Camera {
     }
 
     private scale(factor: number) {
-        this.scaleRatio *= factor;
+        this.scaleRatio = Math.max(this.getMinimumScale(), this.scaleRatio * factor);
         this.scaleCenter = {...controls.mouse};
     }
 
