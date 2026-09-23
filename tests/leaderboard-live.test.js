@@ -84,7 +84,7 @@ async function test(name, fn) {
         './tools/enemyScaling': {
             waveLifeRatio: wave => 1 + wave / 10,
             waveSpeedMultiplier: (wave, cap) => Math.min(1 + wave / 30, cap),
-            earlyWaveReliefFactor: wave => (wave <= 200 ? 0.4 : 1),
+            earlyWaveReliefFactor: (wave, alwaysApply) => (alwaysApply || wave <= 200 ? 0.4 : 1),
         },
             './agent/GameLoop': { gameLoop: {
                 sleep: async () => {},
@@ -132,7 +132,7 @@ async function test(name, fn) {
         './tools/enemyScaling': {
             waveLifeRatio: wave => 1 + wave / 10,
             waveSpeedMultiplier: (wave, cap) => Math.min(1 + wave / 30, cap),
-            earlyWaveReliefFactor: wave => (wave <= 200 ? 0.4 : 1),
+            earlyWaveReliefFactor: (wave, alwaysApply) => (alwaysApply || wave <= 200 ? 0.4 : 1),
         },
             './agent/GameLoop': { gameLoop: {
                 sleep: async () => {},
@@ -174,7 +174,7 @@ async function test(name, fn) {
         './tools/enemyScaling': {
             waveLifeRatio: wave => 1 + wave / 10,
             waveSpeedMultiplier: (wave, cap) => Math.min(1 + wave / 30, cap),
-            earlyWaveReliefFactor: wave => (wave <= 200 ? 0.4 : 1),
+            earlyWaveReliefFactor: (wave, alwaysApply) => (alwaysApply || wave <= 200 ? 0.4 : 1),
         },
             './agent/GameLoop': { gameLoop: {
                 sleep: async () => {},
