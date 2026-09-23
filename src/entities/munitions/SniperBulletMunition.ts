@@ -15,7 +15,8 @@ export class SniperBulletMunition extends BasicBulletMunition {
         ctx.lineWidth = 4;
 
         ctx.beginPath();
-        ctx.moveTo(this.emitter.center.x, this.emitter.center.y);
+        const muzzle = this.emitter.getMuzzlePosition();
+        ctx.moveTo(muzzle.x, muzzle.y);
         ctx.lineTo(this.target.x, this.target.y);
         ctx.stroke()
 

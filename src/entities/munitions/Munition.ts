@@ -8,7 +8,8 @@ export abstract class Munition extends Renderable {
     protected emitter: Tower;
 
     constructor(target: Enemy, emitter: Tower) {
-        super(emitter.center.x, emitter.center.y);
+        const muzzle = emitter.getMuzzlePosition();
+        super(muzzle.x, muzzle.y);
         this.target = target;
         this.emitter = emitter
     }
