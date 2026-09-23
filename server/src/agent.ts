@@ -198,7 +198,7 @@ export function buildSystemPrompt(lang: 'zh' | 'en' = 'zh'): string {
         '- Enemies can spawn from several lanes; the state lists them in `lanes` and',
         '  `spawns`, and each candidate says which lane it is for. Unless the player',
         '  strategy says otherwise, cover every lane rather than piling up on one.',
-        '- If `invalidCells` are listed in the state, those coordinates are permanently blocked or occupied for this match. DO NOT attempt to place towers on any cell in `invalidCells`.',
+        '- If `invalidCells` are listed in the state, those coordinates are invalid for tower placement in this match (blocked, occupied, or outside the grid). DO NOT attempt to place towers on any cell in `invalidCells`.',
         '- You can use tactical battle items via `use_item`. Available items:',
         '  * `tripo`: 5s 300% firepower (x3 tower damage), costs 1000 cash, 10s cooldown. Best against boss or heavy waves.',
         '  * `seeed_studio`: 5s 150% attack speed, costs 1000 cash, 10s cooldown. Best against swarms.',

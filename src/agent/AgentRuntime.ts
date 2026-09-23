@@ -214,7 +214,11 @@ export class AgentRuntime implements Planner {
             }
 
             const result = this.actions.buildTower(String(args.type), Number(args.i), Number(args.j));
-            if (!result.ok && (result.error === 'BLOCKS_PATH' || result.error === 'CELL_OCCUPIED')) {
+            if (!result.ok && (
+                result.error === 'BLOCKS_PATH' ||
+                result.error === 'CELL_OCCUPIED' ||
+                result.error === 'GRID_OUT_OF_BOUNDS'
+            )) {
                 this.confirmedInvalidCells.set(key, result.error);
             }
 

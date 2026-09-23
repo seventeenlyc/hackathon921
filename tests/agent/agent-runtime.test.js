@@ -266,6 +266,35 @@ function makeStore(text = 'hold the base') {
         assert.ok(sentBodies[1].lang === 'zh' || sentBodies[1].lang === 'en');
     });
 
+    await test('tracks GRID_OUT_OF_BOUNDS and short-circuits the same rejected coordinate', async () => {
+        let attempts = 0;
+        const sentBodies = [];
+        const runtime = new AgentRuntime({
+            actions: {
+                getState: () => ({wave: 1, cash: 1000, baseLife: 20, towers: []}),
+                buildTower: () => {
+                    attempts += 1;
+                    return {ok: false, error: 'GRID_OUT_OF_BOUNDS', message: 'Outside the grid'};
+                },
+                upgradeTower: () => ({ok: true, data: {level: 2, upgradeCost: 100}, message: 'ok'}),
+            },
+            store: makeStore('build a tower'),
+            fetchImpl: async (_url, options) => {
+                sentBodies.push(JSON.parse(options.body));
+                return jsonResponse(200, {
+                    ok: true,
+                    actions: [{name: 'build_tower', arguments: {type: 'canon', i: -1, j: 3}}],
+                });
+            },
+        });
+
+        await runtime.plan();
+        await runtime.plan();
+
+        assert.strictEqual(attempts, 1);
+        assert.deepStrictEqual(sentBodies[1].state.invalidCells, ['-1:3']);
+    });
+
     await test('INSUFFICIENT_FUNDS is not marked as invalid placement', async () => {
         let attempts = 0;
         const actions = {
