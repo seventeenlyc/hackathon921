@@ -138,7 +138,7 @@ export const AGENT_TOOLS = [
         type: 'function',
         function: {
             name: 'use_item',
-            description: 'Use a tactical battle item. Available items:\n- "tripo": 300% tower damage for 5s (cost 1000, 10s cooldown)\n- "seeed_studio": 150% tower attack speed for 5s (cost 1000, 10s cooldown)\n- "evomap": 2% max HP AOE damage to all living enemies (first 2 uses FREE, then 1000, 10s cooldown)\n- "hypershell": restores 25% base HP (cost 1000, 10s cooldown)\n- "natural_oil": 150% tower attack speed for 5s (cost 1000, 10s cooldown)',
+            description: 'Use a tactical battle item. During PLANNING, accepted requests are queued and attempted after the first enemy batch of the upcoming wave spawns. The execution log reports whether activation actually succeeded; queued does not guarantee success. Available items:\n- "tripo": 300% tower damage for 5s (cost 1000, 10s cooldown)\n- "seeed_studio": 150% tower attack speed for 5s (cost 1000, 10s cooldown)\n- "evomap": 2% max HP AOE damage to all living enemies (first 2 uses FREE, then 1000, 10s cooldown)\n- "hypershell": restores 25% base HP (cost 1000, 10s cooldown)\n- "natural_oil": 150% tower attack speed for 5s (cost 1000, 10s cooldown)',
             parameters: {
                 type: 'object',
                 properties: {
@@ -205,6 +205,7 @@ export function buildSystemPrompt(lang: 'zh' | 'en' = 'zh'): string {
         '  * `evomap`: 2% max HP AOE damage to ALL enemies on the map, 10s cooldown. First 2 uses are FREE, then 1000 cash. Great against large waves.',
         '  * `hypershell`: repairs base by +25% max life, costs 1000 cash, 10s cooldown. Use when base is damaged or in critical danger.',
         '  * `natural_oil`: 5s 150% attack speed, costs 1000 cash, 10s cooldown.',
+        '- `use_item` calls happen during PLANNING before this wave spawns. An accepted item request is queued and attempted after the first enemy batch appears while RUNNING. The execution log is authoritative; queued does not guarantee activation. Do not repeat the request until you see that result.',
         '- Every tool call must include `decision_summary` in its arguments: a brief',
         '  player-facing macro tactical assessment (at most 120 characters) tied to the strategy and battlefield.',
         '  CRITICAL: NEVER recite coordinates (i, j), cell indices, or raw tool actions in decision_summary.',

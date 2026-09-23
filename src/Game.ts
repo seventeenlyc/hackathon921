@@ -62,6 +62,18 @@ class Game {
         // Human-mode runs are not leaderboard entries: the board compares AI
         // strategies, so a hand-played wave would not be comparable (see §9).
         waveManager.onWaveReached = wave => this.recordReachedWave(wave);
+        waveManager.onWaveStarted = wave => {
+            for (const item of battlefield.takePendingModelItems()) {
+                const result = actions.useItem(item);
+                decisionLog.add({
+                    wave,
+                    action: 'use_item',
+                    detail: item,
+                    ok: result.ok,
+                    message: result.message,
+                });
+            }
+        };
 
         // The run keeps going when the window loses focus — the player may want to
         // look elsewhere while the AI plays; the run ends only when the base falls.
@@ -196,7 +208,8 @@ class Game {
     }
 }
 
-const actions = new GameActions(new InertBattlefield());
+const battlefield = new InertBattlefield();
+const actions = new GameActions(battlefield);
 // Keep the module boundary tolerant of lightweight test doubles from the
 // leaderboard suite while the real TowerPlacer receives the same validated
 // action port as the AI runtime.

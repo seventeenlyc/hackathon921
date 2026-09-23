@@ -52,7 +52,7 @@ export interface Battlefield {
     snapshot(): GameSnapshot;
 
     /** Use a tactical item. Authoritative logic lives in the battlefield/engine. */
-    useItem?(item: string): { ok: true } | { ok: false; error: ActionError };
+    useItem?(item: string): { ok: true; queued?: true } | { ok: false; error: ActionError };
 }
 
 function towerId(i: number, j: number): string {
@@ -188,6 +188,9 @@ export class GameActions {
                         ? t('action.itemAlreadyActive', {item: rawItem})
                         : t('action.itemFailed', {item: rawItem, error: result.error});
                 return failure(result.error, message);
+            }
+            if (result.queued) {
+                return success({ item: rawItem }, t('action.itemQueued', {item: rawItem}));
             }
         }
 
