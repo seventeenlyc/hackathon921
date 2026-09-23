@@ -18,7 +18,12 @@ const textureFiles = [
   'src/assets/entities/towers/laser.png',
   'src/assets/entities/home/home.png',
   'src/assets/entities/home/enermy.png',
-  'src/assets/entities/terrain/rock.png'
+  'src/assets/obstacles/obstacle_01.png',
+  'src/assets/obstacles/obstacle_02.png',
+  'src/assets/obstacles/obstacle_03.png',
+  'src/assets/obstacles/obstacle_04.png',
+  'src/assets/obstacles/obstacle_05.png',
+  'src/assets/obstacles/obstacle_06.png'
 ];
 
 const renderers = [
@@ -45,7 +50,8 @@ for (const relativePath of textureFiles) {
     `Missing external texture: ${relativePath}`
   );
   if (relativePath.startsWith('src/assets/entities/towers/') ||
-      relativePath.startsWith('src/assets/entities/enemies/')) {
+      relativePath.startsWith('src/assets/entities/enemies/') ||
+      relativePath.startsWith('src/assets/obstacles/')) {
     const {width, height} = readPngSize(relativePath);
     assert.ok(width > 0 && height > 0, `${relativePath} has a degenerate PNG size`);
   }

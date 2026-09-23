@@ -16,10 +16,12 @@
  *    is truly cleared with the base still standing; if the defense falls, the
  *    scene is skipped entirely.
  *
- * The lines below are the original Chinese draft from issue #100. The English
- * strings are an initial, unreviewed working translation kept only so the
- * bilingual UI stays coherent; they are not an approved localization and must be
- * confirmed before release (same for the avatar art licensing).
+ * The Chinese lines are original game dialogue revised against Production I.G's
+ * episode 20/21/24–26 synopses (see the v2 worldbuilding document). Those pages
+ * are plot summaries, NOT a dialogue transcript: no line below claims to quote
+ * the anime. Routes, Ishikawa's upload and wave 256 are game inventions. English
+ * is an unreviewed working translation; character portrait rights still require
+ * confirmation before release.
  */
 
 export type NarrativeLang = 'zh' | 'en';
@@ -130,15 +132,15 @@ export const NARRATIVE_SCENES: readonly NarrativeScene[] = [
             {
                 speaker: 'ishikawa',
                 text: {
-                    zh: '信号源藏得很深，暂时查不到谁在指挥。',
-                    en: 'The signal source is well hidden. We cannot trace who is commanding them yet.',
+                    zh: '两路信号的行动节拍一致。源头还没定位。',
+                    en: 'The two routes move in the same rhythm. We still cannot locate the source.',
                 },
             },
             {
                 speaker: 'kusanagi',
                 text: {
-                    zh: '提高警戒。这不是临时起意的攻击。',
-                    en: 'Raise the alert level. This is no improvised attack.',
+                    zh: '先别认定是谁。把两条路线都看住。',
+                    en: 'Do not decide who is behind it yet. Keep eyes on both routes.',
                 },
             },
             {
@@ -151,8 +153,8 @@ export const NARRATIVE_SCENES: readonly NarrativeScene[] = [
             {
                 speaker: 'kusanagi',
                 text: {
-                    zh: '让参谋看清两条路线。接下来怎么守，由战场情况和他的策略决定。',
-                    en: 'Let the officer see both routes. How we hold from here depends on the battlefield and his strategy.',
+                    zh: '参谋，第二条路线已标出来。防线怎么调，看眼前的战场。',
+                    en: 'Officer, the second route is marked. Adjust the defense to the battlefield in front of you.',
                 },
             },
         ],
@@ -174,36 +176,36 @@ export const NARRATIVE_SCENES: readonly NarrativeScene[] = [
             {
                 speaker: 'ishikawa',
                 text: {
-                    zh: '等等，义体的接口编号……是军用规格。',
-                    en: 'Wait. The prosthetic interface registry… it is military-grade.',
+                    zh: '接口记录是军用规格，但装备从哪儿来的，还没有证据。',
+                    en: 'The interface records meet military specifications, but we have no proof of where the equipment came from.',
                 },
             },
             {
                 speaker: 'batou',
                 text: {
-                    zh: '普通雇佣兵从哪儿弄来这种装备？',
-                    en: 'Where would ordinary mercenaries get hardware like this?',
+                    zh: '一身雇佣兵的行头，拿的却是军用装备？',
+                    en: 'Mercenary gear on the outside, military hardware underneath?',
                 },
             },
             {
                 speaker: 'kusanagi',
                 text: {
-                    zh: '先别替他们的雇主下结论。把证据存下来。',
-                    en: 'Do not draw conclusions about their employer yet. Preserve the evidence.',
+                    zh: '装备不是雇主的签名。先保存记录，别抢着下结论。',
+                    en: 'Equipment is not an employer\'s signature. Save the records before drawing conclusions.',
                 },
             },
             {
                 speaker: 'ishikawa',
                 text: {
-                    zh: '已经在备份。有人不想让我们继续查笑脸男。',
-                    en: 'Already backing it up. Someone does not want us pursuing the Laughing Man.',
+                    zh: '备份好了。厚生省那条调查线索，看来有人想让它断在这里。',
+                    en: 'Backed up. It seems someone wants our Health and Labor Ministry lead to end here.',
                 },
             },
             {
                 speaker: 'kusanagi',
                 text: {
-                    zh: '那就先守住这里，别让他们碰到证据。',
-                    en: 'Then hold this position first. Do not let them reach the evidence.',
+                    zh: '那就守住证据。其余的，活过这一波再查。',
+                    en: 'Then protect the evidence. We can investigate the rest after we survive this wave.',
                 },
             },
         ],
@@ -235,27 +237,27 @@ export const NARRATIVE_SCENES: readonly NarrativeScene[] = [
             },
             {
                 speaker: 'batou',
-                text: {zh: '连我们的身份都抹掉了？', en: 'They erased even our identities?'},
+                text: {zh: '行动权限撤了。看来他们不打算给九课留退路。', en: 'Operational authority revoked. It looks like they are leaving Section 9 no way out.'},
             },
             {
                 speaker: 'ishikawa',
                 text: {
-                    zh: '葵交出的资料还在。我需要时间把它送出九课。',
-                    en: 'The data Aoi handed over is still here. I need time to get it out of Section 9.',
+                    zh: '葵给的线索和厚生省的调查记录还在。我需要时间把副本送出去。',
+                    en: 'Aoi\'s lead and the Health and Labor Ministry records are still here. I need time to send copies out.',
                 },
             },
             {
                 speaker: 'kusanagi',
                 text: {
-                    zh: '听到了吗，参谋？守住第四条路线，给石川争取时间。',
-                    en: 'Did you hear that, officer? Hold the fourth route. Buy Ishikawa time.',
+                    zh: '参谋，第四条路线开了。守住这里，给石川争取传输时间。',
+                    en: 'Officer, the fourth route is open. Hold this position so Ishikawa can finish the transfer.',
                 },
             },
             {
                 speaker: 'tachikoma',
                 text: {
-                    zh: '中央链路断了，但本地链路还在。我还听得见你们。',
-                    en: 'The central link is down, but the local link is still up. We can still hear you.',
+                    zh: '中央链路断了；本地通讯还通。少校，我在。',
+                    en: 'The central link is down; local comms still work. Major, I\'m here.',
                 },
             },
         ],
@@ -270,43 +272,43 @@ export const NARRATIVE_SCENES: readonly NarrativeScene[] = [
             {
                 speaker: 'ishikawa',
                 text: {
-                    zh: '少校，资料已经离开九课网络了。',
-                    en: 'Major. The data has left the Section 9 network.',
+                    zh: '少校，副本已送到九课以外。厚生省那条证据链，不只我们握着了。',
+                    en: 'Major, the copies reached nodes outside Section 9. We are no longer the only ones holding the Health and Labor Ministry evidence.',
                 },
             },
             {
                 speaker: 'terminal',
                 text: {
-                    zh: '外部节点持续增加。分发状态：不可逆。首要任务：完成。',
-                    en: 'External nodes are multiplying. Distribution status: irreversible. Primary mission: accomplished.',
+                    zh: '外部节点：已确认。分发状态：不可逆。首要任务：完成。',
+                    en: 'External nodes: confirmed. Distribution: irreversible. Primary mission: complete.',
                 },
             },
             {
                 speaker: 'kusanagi',
                 text: {
-                    zh: '他们可以拆掉这里，但已经收不回那份真相。',
-                    en: 'They can tear this place down, but they cannot take that truth back.',
+                    zh: '真相送出去了。人还在，就还有路可走。',
+                    en: 'The truth is out. As long as we are alive, there is still a way forward.',
                 },
             },
             {
                 speaker: 'terminal',
                 text: {
-                    zh: '警报。海陆空多方向信号接近。识别结果：海坊主。',
-                    en: 'Alert. Signals closing from sea, land and air. Identification: Umibozu.',
+                    zh: '警报。多方向重装信号接近。识别代号：海坊主。',
+                    en: 'Alert. Heavy units approaching from multiple directions. Designation: Umibozu.',
                 },
             },
             {
                 speaker: 'batou',
                 text: {
-                    zh: '这阵仗不是来抢资料的。他们要把九课一并抹掉。',
-                    en: 'This is not a raid for the data. They intend to wipe out Section 9 along with it.',
+                    zh: '不是来抢一份已经传开的资料。他们是来清除九课的。',
+                    en: 'They are not here for data that has already spread. They are here to eliminate Section 9.',
                 },
             },
             {
                 speaker: 'kusanagi',
                 text: {
-                    zh: '任务已经完成。现在，尽可能活下去。',
-                    en: 'The mission is complete. Now survive as long as you can.',
+                    zh: '任务完成。守住阵地，也给其他人留条退路。',
+                    en: 'The mission is complete. Hold the line and leave the others a way out.',
                 },
             },
             {
@@ -344,16 +346,16 @@ export const NARRATIVE_SCENES: readonly NarrativeScene[] = [
                 speaker: 'ishikawa',
                 recording: true,
                 text: {
-                    zh: '真相一旦传出去，就不再需要一座总部替它保管。',
-                    en: 'Once the truth is out, it no longer needs a headquarters to keep it safe.',
+                    zh: '资料发出去那一刻，九课就不再是唯一的保管人。',
+                    en: 'The moment the data went out, Section 9 stopped being its sole keeper.',
                 },
             },
             {
                 speaker: 'kusanagi',
                 recording: true,
                 text: {
-                    zh: '如果你还在听，说明有人选择继续往前走。',
-                    en: 'If you are still listening, then someone chose to keep moving forward.',
+                    zh: '如果你还在听，就别把活下去当作违抗命令。',
+                    en: 'If you can still hear this, do not mistake survival for disobedience.',
                 },
             },
             {

@@ -17,7 +17,12 @@ import slowTower from '../assets/entities/towers/slow.png';
 import sniperTower from '../assets/entities/towers/sniper.png';
 import homeBase from '../assets/entities/home/home.png';
 import enemyBase from '../assets/entities/home/enermy.png';
-import rockTerrain from '../assets/entities/terrain/rock.png';
+import obstacle1 from '../assets/obstacles/obstacle_01.png';
+import obstacle2 from '../assets/obstacles/obstacle_02.png';
+import obstacle3 from '../assets/obstacles/obstacle_03.png';
+import obstacle4 from '../assets/obstacles/obstacle_04.png';
+import obstacle5 from '../assets/obstacles/obstacle_05.png';
+import obstacle6 from '../assets/obstacles/obstacle_06.png';
 
 export const texturePaths = {
     enemies: {
@@ -36,7 +41,8 @@ export const texturePaths = {
     },
     home: homeBase,
     enemy: enemyBase,
+    // Each placed obstacle picks one of these six textures at random.
     terrain: {
-        rock: rockTerrain
+        obstacles: [obstacle1, obstacle2, obstacle3, obstacle4, obstacle5, obstacle6]
     }
 };

@@ -76,8 +76,11 @@ export class StrategyPanel {
 
         this.status.classList.remove('warn');
         queueStrategy(text);
-        // 提交命令（开局或更新）都不再自动隐藏控制面板：
-        // 玩家可用头部「控制面板」开关自行收起，或双击战场切换。
+        // 按钮文案是「下达命令并开始行动」：IDLE 下提交必须真正开战，否则
+        // 对局永远停在 STANDBY（AI 只有进入 PLANNING 才会读这条命令）。
+        // 注意这里只启动对局，不自动收起控制面板——面板显隐由玩家的
+        // 头部开关或双击战场决定。
+        if (idle) startRun();
         this.render();
     }
 

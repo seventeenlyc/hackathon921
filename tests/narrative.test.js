@@ -100,6 +100,35 @@ function fakePorts(overrides = {}) {
         assert.deepStrictEqual(recordings, ['ishikawa', 'kusanagi']);
     });
 
+    await test('system bulletins use a terminal icon, not a ninth character avatar', () => {
+        assert.deepStrictEqual(NARRATIVE_SPEAKERS.terminal.portrait, {kind: 'terminal'});
+        assert.deepStrictEqual(NARRATIVE_SPEAKERS.tachikoma.portrait, {kind: 'tachikoma'});
+        const characterIds = Object.values(NARRATIVE_SPEAKERS)
+            .filter(speaker => speaker.portrait.kind === 'avatar')
+            .map(speaker => speaker.portrait.avatarId);
+        assert.deepStrictEqual(characterIds.sort(), ['aramaki', 'batou', 'ishikawa', 'kusanagi']);
+        const overlay = read('src/narrative/NarrativeOverlay.ts');
+        assert.match(overlay, /elements\.portraitTerminal\.hidden = !terminal/);
+        assert.match(overlay, /elements\.avatar\.hidden = true/);
+        assert.match(overlay, /elements\.avatar\.removeAttribute\('src'\)/,
+            'the former human image must be cleared when a terminal line takes over');
+        const markup = read('index.html');
+        assert.match(markup, /id="narrative-portrait-terminal"[\s\S]*?<svg/);
+    });
+
+    await test('revised dialogue separates the ministry investigation from unproven attackers', () => {
+        const [unknown, mercenaries, revoked, annihilation] = NARRATIVE_SCENES;
+        assert.match(unknown.lines[2].text.zh, /源头还没定位/);
+        assert.match(mercenaries.lines[1].text.zh, /军用规格.*没有证据/);
+        assert.match(mercenaries.lines[4].text.zh, /厚生省/);
+        assert.doesNotMatch(revoked.lines[3].text.zh, /身份.*抹掉/);
+        assert.match(annihilation.lines[0].text.zh, /厚生省.*证据链/);
+        assert.doesNotMatch(annihilation.lines[2].text.zh, /总部.*摧毁|拆掉这里/);
+        const doc = read('docs/保护笑脸男-游戏世界观与剧情设定-v2.md');
+        assert.match(doc, /剧情简介，不是动画逐字台本/);
+        assert.match(doc, /production-ig\.com\/contents\/works_sp\/03_\/s02_\/000298\.html/);
+    });
+
     await test('the script matches the single-source appendix in the v2 document', () => {
         const doc = read('docs/保护笑脸男-游戏世界观与剧情设定-v2.md');
         const start = doc.indexOf('# 附录 A. 游戏内剧情演出脚本');
