@@ -42,16 +42,6 @@ export class Camera {
         return Math.min(viewport.width / mapWidth, viewport.height / mapHeight);
     }
 
-    // "Contain" semantics (user request 2026-09-24): the minimum zoom lets the
-    // whole map fit INSIDE the fixed central viewport (缩小至全图), so the
-    // smaller map/viewport ratio wins and one axis may letterbox in the frame.
-    private getMinimumScale(): number {
-        const viewport = this.getViewport();
-        const mapWidth = Map.TILE_SIZE * Map.GRID_W;
-        const mapHeight = Map.TILE_SIZE * Map.GRID_H;
-        return Math.min(viewport.width / mapWidth, viewport.height / mapHeight);
-    }
-
     // 限制相机中心，使地图相对扇区框保持正确位置：地图大于框时钳制在地图边缘内，
     // 地图小于框（contain 最小缩放）时锁定居中，任何情况下都不会偏出地图范围。
     private clampCenterToViewport(viewport: {width: number, height: number}): {x: number, y: number} {
