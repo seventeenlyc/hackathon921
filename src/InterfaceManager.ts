@@ -174,7 +174,7 @@ class InterfaceManager {
         this.stateElement.textContent = t(`state.${state}`);
         this.stateSubElement.textContent = t(`stateSub.${state}`);
         this.pauseButton.hidden = state === 'paused';
-        this.pauseButton.disabled = state === 'idle' || state === 'planning';
+        this.pauseButton.disabled = state === 'idle' || state === 'planning' || state === 'narrative';
         this.resumeButton.hidden = state !== 'paused';
         // The intrusion banner reads as an amber warning while a wave is live;
         // red stays reserved for the settlement screen (issue #66 palette).

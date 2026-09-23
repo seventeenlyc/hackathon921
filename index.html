@@ -82,7 +82,7 @@
         <div class="header-side header-left">
           <span class="eyebrow" data-i18n="shell.eyebrow">公安九课 // 战术网络</span>
           <span class="header-sub" data-i18n="header.subtitle">公安九课 · 塔奇克马防御协议</span>
-          <span id="version" class="header-ver">v0.2.14</span>
+          <span id="version" class="header-ver">v0.2.16</span>
         </div>
         <h1 class="header-title" data-i18n="app.name">保护笑脸男</h1>
         <div class="header-side header-right">
@@ -238,6 +238,54 @@
       </div>
       <div id="controls-hint" class="controls-hint" role="status" aria-live="polite" data-i18n="controls.hint">双击战场重新打开作战终端。</div>
       <div id="snackbar"></div>
+      <div id="narrative-overlay" class="narrative-overlay" role="dialog" aria-modal="true" aria-label="剧情演出" hidden>
+        <div id="narrative-view" class="narrative-card">
+          <div class="narrative-head">
+            <span id="narrative-code" class="narrative-code"></span>
+            <span id="narrative-title" class="narrative-title"></span>
+            <span id="narrative-counter" class="narrative-counter" aria-hidden="true"></span>
+            <button id="narrative-close" class="narrative-close" type="button" data-i18n-aria-label="narrative.close" aria-label="关闭剧情">×</button>
+          </div>
+          <div class="narrative-stage">
+            <div class="narrative-portrait" aria-hidden="true">
+              <img id="narrative-avatar" class="narrative-avatar" alt="" hidden />
+              <span id="narrative-portrait-terminal" class="narrative-portrait-art" hidden>
+                <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+                  <rect x="8" y="12" width="48" height="34" rx="4" fill="none" stroke="currentColor" stroke-width="3"/>
+                  <path d="M16 24l8 6-8 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M30 36h16" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                  <path d="M24 52h16" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <span id="narrative-portrait-tachikoma" class="narrative-portrait-art" hidden>
+                <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+                  <path d="M14 30c0-8 6-14 18-14s18 6 18 14v10c0 6-6 10-18 10s-18-4-18-10z" fill="currentColor"/>
+                  <rect x="18" y="30" width="28" height="9" rx="4.5" fill="#0b0e13"/>
+                  <circle cx="32" cy="34.5" r="3.2" fill="#35e2ff"/>
+                  <path d="M12 44l-6 8M52 44l6 8M22 50l-3 10M42 50l3 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                </svg>
+              </span>
+            </div>
+            <div class="narrative-body">
+              <div id="narrative-speaker" class="narrative-speaker"></div>
+              <p id="narrative-line" class="narrative-line" aria-live="polite"></p>
+            </div>
+          </div>
+          <div class="narrative-actions">
+            <button id="narrative-skip" class="narrative-skip" type="button" data-i18n="narrative.skip">跳过</button>
+            <div class="narrative-actions-right">
+              <button id="narrative-back" class="narrative-back" type="button" data-i18n="narrative.back" disabled>上一句</button>
+              <button id="narrative-next" class="narrative-next" type="button" data-i18n="narrative.next">继续</button>
+            </div>
+          </div>
+        </div>
+        <div id="narrative-archive-view" class="narrative-card narrative-archive" hidden>
+          <div class="archive-eyebrow" data-i18n="narrative.archiveEyebrow">检测到不可能状态</div>
+          <div class="archive-title" data-i18n="narrative.archiveTitle">THE ENDLESS</div>
+          <p class="archive-note" data-i18n="narrative.archiveNote">找到秘密档案。影像资料尚未确认出镜与素材授权，此处暂不展示。</p>
+          <button id="narrative-continue" class="narrative-next" type="button" data-i18n="narrative.continueEndless">继续无尽挑战</button>
+        </div>
+      </div>
       <div id="game-over">
         <div class="description" data-i18n="result.gameOver">防御终止</div>
         <div class="result">

@@ -28,6 +28,8 @@
     "src/agent/StrategyStore.ts",
     "src/agent/snapshot.ts",
     "src/agent/types.ts",
-    "src/entities/towers/towerTypes.ts"
+    "src/entities/towers/towerTypes.ts",
+    "src/narrative/NarrativeScript.ts",
+    "src/narrative/NarrativeDirector.ts"
   ]
 }

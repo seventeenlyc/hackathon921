@@ -97,10 +97,27 @@ const STRINGS: { [key: string]: Entry } = {
     'state.running': {zh: '行动中', en: 'ACTION'},
     'state.paused': {zh: '已暂停', en: 'PAUSED'},
     'state.planning': {zh: '战术分析中', en: 'PLANNING'},
+    'state.narrative': {zh: '剧情演出', en: 'STORY'},
     'stateSub.idle': {zh: 'STANDBY', en: '待机'},
     'stateSub.running': {zh: 'ACTION', en: '行动中'},
     'stateSub.paused': {zh: 'PAUSED', en: '已暂停'},
     'stateSub.planning': {zh: 'PLANNING', en: '战术分析中'},
+    'stateSub.narrative': {zh: 'STORY SCENE', en: '剧情演出'},
+
+    // 剧情演出（issue #100）：对白文本在 src/narrative/NarrativeScript.ts，这里只放
+    // 界面外壳文案，保证中英切换与无障碍标签走同一张表。
+    'narrative.dialogLabel': {zh: '剧情演出', en: 'STORY SCENE'},
+    'narrative.skip': {zh: '跳过', en: 'SKIP'},
+    'narrative.next': {zh: '继续', en: 'NEXT'},
+    'narrative.finish': {zh: '结束', en: 'END'},
+    'narrative.back': {zh: '上一句', en: 'PREVIOUS'},
+    'narrative.close': {zh: '关闭剧情', en: 'Close scene'},
+    'narrative.recording': {zh: '（档案录音）', en: ' (ARCHIVE RECORDING)'},
+    'narrative.progress': {zh: '第 {index} / {total} 句', en: 'Line {index} / {total}'},
+    'narrative.archiveEyebrow': {zh: '检测到不可能状态', en: 'IMPOSSIBLE STATE DETECTED'},
+    'narrative.archiveTitle': {zh: 'THE ENDLESS', en: 'THE ENDLESS'},
+    'narrative.archiveNote': {zh: '找到秘密档案。影像资料尚未确认出镜与素材授权，此处暂不展示。', en: 'Secret archive found. The archive media is withheld here until portrait and asset authorization is confirmed.'},
+    'narrative.continueEndless': {zh: '继续无尽挑战', en: 'Continue Endless Challenge'},
 
     'speed.label': {zh: '演算速度 x{speed}', en: 'Simulation x{speed}'},
 
