@@ -365,29 +365,15 @@ body {
       gap: 10px;
     }
 
-    // CSS 绘制的笑脸徽记（不引入新图片）。
+    // 笑脸男徽记：取自 design/smile-man.png 中央徽记（构建期裁剪好的 128px 图标），
+    // 圆形容器裁掉四角残留的环形文字。
     .ghost-avatar {
-      position: relative;
       width: 36px;
       height: 36px;
       flex: none;
       border: 1px solid var(--line);
       border-radius: 50%;
-      background:
-        radial-gradient(circle at 12px 15px, var(--accent) 2px, transparent 2.6px),
-        radial-gradient(circle at 24px 15px, var(--accent) 2px, transparent 2.6px);
-
-      &::after {
-        content: '';
-        position: absolute;
-        left: 10px;
-        right: 10px;
-        bottom: 8px;
-        height: 9px;
-        border: 2px solid var(--accent);
-        border-top: 0;
-        border-radius: 0 0 12px 12px;
-      }
+      background: url('../assets/ui/laughing-man.png') center / contain no-repeat;
     }
 
     .status-grid {

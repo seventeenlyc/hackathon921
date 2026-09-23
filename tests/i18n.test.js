@@ -78,21 +78,16 @@ for (const key of [
     'tower.cardDetailsTitle',
     'tower.dpsTitle',
     'tower.summary',
-    // 战术工作站位壳层（issue #66）：Header / 地图框 / 面板 / 数据库 / 威胁情报 / 敌性体图鉴。
+    // 战术工作站位壳层（issue #66）：Header / 地图框装饰与新增面板文案；
+    // 既有面板沿用 console.* / towers.heading / decisions.label / aria.battlefieldStatus 原文案。
     'map.sector',
     'map.intrusion',
     'map.liveBar',
     'map.waveTag',
-    'ghost.title',
-    'directive.eyebrow',
-    'directive.title',
-    'flux.title',
     'threat.title',
     'threat.idle',
     'neural.title',
     'items.title',
-    'database.title',
-    'database.tabTachikoma',
     'database.tabHostile',
     'enemy.simple.name',
     'enemy.simple.desc',
@@ -115,6 +110,18 @@ for (const key of [
     'gate.avatar.boma',
 ]) {
     assert.ok(entries.has(key), `missing required i18n key: ${key}`);
+}
+
+// 666601c established the command-terminal copy; the layout mockup must not replace it.
+const commandPanelStart = index.indexOf('class="control-card chatbox-panel"');
+assert.ok(commandPanelStart >= 0, 'command panel must be present');
+const commandPanel = index.slice(commandPanelStart, index.indexOf('</section>', commandPanelStart));
+for (const [key, zh, en, markup] of [
+    ['console.eyebrow', '塔奇克马指挥网络', 'TACHIKOMA COMMAND NETWORK', /<div class="eyebrow" data-i18n="console\.eyebrow">塔奇克马指挥网络<\/div>/],
+    ['console.heading', '战术命令终端', 'TACTICAL ORDER TERMINAL', /<h2 id="chatbox-heading" data-i18n="console\.heading">战术命令终端<\/h2>/],
+]) {
+    assert.deepStrictEqual(entries.get(key), {zh, en}, `${key} must retain the established copy in both languages`);
+    assert.match(commandPanel, markup, `${key} must retain its markup binding and pre-translation copy`);
 }
 
 console.log(`i18n table assertions passed (${entries.size} keys, ${referenced} markup references).`);
