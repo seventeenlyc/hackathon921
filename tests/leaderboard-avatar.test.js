@@ -69,6 +69,19 @@ test('randomAvatarId always returns a known avatar id', () => {
     }
 });
 
+test('randomUsername returns valid username matching character and length limits', () => {
+    const store = evaluate(transpile('src/leaderboard/LeaderboardStore.ts'), () => {});
+    for (let i = 0; i < 100; i++) {
+        const zh = catalog.randomUsername('zh');
+        assert.ok(zh && zh.length >= 1 && zh.length <= 16);
+        assert.strictEqual(store.sanitizeUsername(zh), zh);
+
+        const en = catalog.randomUsername('en');
+        assert.ok(en && en.length >= 1 && en.length <= 16);
+        assert.strictEqual(store.sanitizeUsername(en), en);
+    }
+});
+
 test('session avatar starts empty, accepts valid ids and rejects unknown ones', () => {
     const identity = loadIdentity();
     assert.strictEqual(identity.getSessionAvatar(), null);
