@@ -1,7 +1,7 @@
 import {ActionResult, GameSnapshot} from './types';
 import {Planner} from './GameLoop';
 import {StrategyStore} from './StrategyStore';
-import {t} from '../i18n';
+import {getLang, t} from '../i18n';
 
 /**
  * The AI player's decision loop (issue #25).
@@ -112,6 +112,7 @@ export class AgentRuntime implements Planner {
     private readonly maxActions: number;
     private readonly getToken: () => string | null;
     private readonly timeoutMs: number;
+    private readonly confirmedInvalidCells = new Map<string, string>();
 
     constructor(options: AgentRuntimeOptions) {
         this.actions = options.actions;
@@ -124,6 +125,11 @@ export class AgentRuntime implements Planner {
         this.maxActions = options.maxActions || DEFAULT_MAX_ACTIONS;
         this.getToken = options.getToken || (() => null);
         this.timeoutMs = options.timeoutMs || DEFAULT_TIMEOUT_MS;
+    }
+
+    /** Clear invalid placement memory on new match/reset. */
+    resetInvalidCells(): void {
+        this.confirmedInvalidCells.clear();
     }
 
     async plan(): Promise<void> {
@@ -160,10 +166,15 @@ export class AgentRuntime implements Planner {
 
         let response: Response;
         try {
+            const lang = getLang();
+            const payloadState = {
+                ...state,
+                invalidCells: Array.from(this.confirmedInvalidCells.keys()),
+            };
             response = await this.fetchImpl(this.endpoint, {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({strategy, state}),
+                body: JSON.stringify({strategy, state: payloadState, lang}),
                 signal: controller.signal,
             });
         } catch (error) {
@@ -204,7 +215,7 @@ export class AgentRuntime implements Planner {
         const summary = typeof payload.summary === 'string' ? payload.summary.trim() : '';
         this.onSummary(summary.length > 0 && summary.length <= MAX_DECISION_SUMMARY_LENGTH
             ? summary
-            : actionPlanSummary(plannedActions));
+            : null);
         plannedActions.forEach(action => this.execute(action, wave));
     }
 
@@ -221,7 +232,24 @@ export class AgentRuntime implements Planner {
         const args = action.arguments || {};
 
         if (action.name === 'build_tower') {
+            const key = `${String(args.i)}:${String(args.j)}`;
+            if (this.confirmedInvalidCells.has(key)) {
+                const prev = this.confirmedInvalidCells.get(key) || 'BLOCKS_PATH';
+                this.onDecision({
+                    wave,
+                    action: 'build_tower',
+                    detail: `${String(args.type)} at (${String(args.i)}, ${String(args.j)})`,
+                    ok: false,
+                    message: t('action.cellUnbuildable', {error: prev}),
+                });
+                return;
+            }
+
             const result = this.actions.buildTower(String(args.type), Number(args.i), Number(args.j));
+            if (!result.ok && (result.error === 'BLOCKS_PATH' || result.error === 'CELL_OCCUPIED')) {
+                this.confirmedInvalidCells.set(key, result.error);
+            }
+
             this.onDecision({
                 wave,
                 action: 'build_tower',

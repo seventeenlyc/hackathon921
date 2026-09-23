@@ -157,7 +157,7 @@ function makeStore(text = 'hold the base') {
         assert.deepStrictEqual(summaries, [null, null]);
     });
 
-    await test('shows a readable action plan when a successful tool response has no summary', async () => {
+    await test('does not fallback to coordinate action plan when summary is missing', async () => {
         const actions = new FakeActions();
         const summaries = [];
         let call = 0;
@@ -179,11 +179,73 @@ function makeStore(text = 'hold the base') {
 
         assert.deepStrictEqual(actions.buildCalls, [{type: 'gatling', i: 27, j: 19}]);
         assert.deepStrictEqual(actions.upgradeCalls, ['27:19']);
-        assert.equal(summaries.length, 2);
-        assert.match(summaries[0], /Gatling/);
-        assert.match(summaries[0], /27, 19/);
-        assert.match(summaries[1], /upgrade/);
-        assert.match(summaries[1], /27:19/);
+        assert.deepStrictEqual(summaries, [null, null], 'macro summary must never fallback to reciting coordinates');
+    });
+
+    await test('tracks BLOCKS_PATH and short-circuits repeated invalid placements', async () => {
+        let attempts = 0;
+        const actions = {
+            getState: () => ({wave: 2, cash: 1000, baseLife: 20, towers: []}),
+            buildTower: (type, i, j) => {
+                attempts += 1;
+                return {ok: false, error: 'BLOCKS_PATH', message: 'Would block path'};
+            },
+            upgradeTower: () => ({ok: true, data: {level: 2, upgradeCost: 100}, message: 'ok'}),
+        };
+        const decisions = [];
+        let sentBodies = [];
+        const runtime = new AgentRuntime({
+            actions,
+            store: makeStore('hold base'),
+            fetchImpl: async (url, options) => {
+                sentBodies.push(JSON.parse(options.body));
+                return jsonResponse(200, {
+                    ok: true,
+                    actions: [{name: 'build_tower', arguments: {type: 'canon', i: 5, j: 5}}],
+                });
+            },
+            onDecision: d => decisions.push(d),
+        });
+
+        // First plan: build fails with BLOCKS_PATH
+        await runtime.plan();
+        assert.strictEqual(attempts, 1);
+        assert.strictEqual(decisions.length, 1);
+        assert.strictEqual(decisions[0].ok, false);
+
+        // Second plan: runtime short-circuits and does NOT call actions.buildTower again
+        await runtime.plan();
+        assert.strictEqual(attempts, 1, 'repeated placement at (5, 5) must be short-circuited');
+        assert.strictEqual(decisions.length, 2);
+        assert.strictEqual(decisions[1].ok, false);
+        // Verify invalidCells is sent to server on next request
+        assert.deepStrictEqual(sentBodies[1].state.invalidCells, ['5:5']);
+        assert.ok(sentBodies[1].lang === 'zh' || sentBodies[1].lang === 'en');
+    });
+
+    await test('INSUFFICIENT_FUNDS is not marked as invalid placement', async () => {
+        let attempts = 0;
+        const actions = {
+            getState: () => ({wave: 2, cash: 10, baseLife: 20, towers: []}),
+            buildTower: () => {
+                attempts += 1;
+                return {ok: false, error: 'INSUFFICIENT_FUNDS', message: 'Not enough cash'};
+            },
+            upgradeTower: () => ({ok: true, data: {level: 2, upgradeCost: 100}, message: 'ok'}),
+        };
+        const runtime = new AgentRuntime({
+            actions,
+            store: makeStore('hold base'),
+            fetchImpl: async () => jsonResponse(200, {
+                ok: true,
+                actions: [{name: 'build_tower', arguments: {type: 'sniper', i: 2, j: 3}}],
+            }),
+        });
+
+        await runtime.plan();
+        await runtime.plan();
+        // Since it's only INSUFFICIENT_FUNDS, the engine is called both times (can retry when funds arrive)
+        assert.strictEqual(attempts, 2);
     });
 
     await test('ignores unknown action names without executing them', async () => {
