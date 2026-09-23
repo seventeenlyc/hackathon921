@@ -3,20 +3,26 @@ const fs = require('fs');
 const path = require('path');
 const ts = require('typescript');
 
+const specialNames = {
+    1: 'inner universe（启动战斗专用不循环）.mp4',
+    151: 'Freak Out (151波次专用曲).mp4',
+    201: 'M01 謡I-Making of Cyborg （201波次启动此曲专用）.mp4',
+    256: 'MVlithium flower(256彩蛋专用）.mp4',
+};
+const specialTracks = Object.fromEntries(Object.entries(specialNames)
+    .map(([wave, name]) => [wave, `/audio/${encodeURIComponent(name)}`]));
+
 function loadAudioManager(tracks = [
     '/audio/background/background.mp3',
-    '/audio/background/1.mp3',
-    '/audio/background/151.mp3',
-    '/audio/background/201.mp3',
-    '/audio/background/256.mp3',
+    ...Object.values(specialTracks),
 ]) {
     const source = fs.readFileSync(path.join(__dirname, '..', 'src', 'AudioManager.ts'), 'utf8');
     const js = ts.transpileModule(source, {
         compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2017 },
     }).outputText;
     const moduleObj = { exports: {} };
-    new Function('module', 'exports', 'require', '__BACKGROUND_TRACKS__', js)(
-        moduleObj, moduleObj.exports, require, tracks,
+    new Function('module', 'exports', 'require', '__BACKGROUND_TRACKS__', '__SPECIAL_MUSIC_PATHS__', js)(
+        moduleObj, moduleObj.exports, require, tracks, specialTracks,
     );
     return moduleObj.exports.AudioManager;
 }
@@ -70,7 +76,7 @@ async function test(name, fn) {
     await test('ended tracks choose another folder track without an immediate repeat', async () => {
         const tracks = [
             '/audio/background/a.mp3',
-            '/audio/background/151.mp3',
+            specialTracks[151],
             '/audio/background/b.ogg',
             '/audio/background/c.wav',
         ];
@@ -94,11 +100,8 @@ async function test(name, fn) {
         const created = [];
         const tracks = [
             '/audio/background/background.mp3',
-            '/audio/background/1.mp3',
-            '/audio/background/151.mp3',
-            '/audio/background/201.mp3',
-            '/audio/background/256.mp3',
-            '/audio/background/extra.ogg',
+            ...Object.values(specialTracks),
+            '/audio/extra.mp4',
         ];
         const manager = new AudioManager(src => {
             const audio = new FakeAudio(src);
@@ -109,20 +112,17 @@ async function test(name, fn) {
         for (const wave of [1, 151, 201, 256]) {
             manager.setWave(wave);
             const dedicated = created[created.length - 1];
-            assert.strictEqual(dedicated.src, `/audio/background/${wave}.mp3`);
+            assert.strictEqual(dedicated.src, specialTracks[wave]);
             assert.strictEqual(dedicated.loop, false);
             assert.strictEqual(dedicated.playCount, 1);
             manager.setWave(wave);
             dedicated.end();
+            assert.ok([tracks[0], tracks[tracks.length - 1]].includes(created[created.length - 1].src));
+            assert.notStrictEqual(created[created.length - 1].src, dedicated.src);
         }
 
-        const dedicatedTracks = created.filter(audio => /\/(1|151|201|256)\.mp3$/.test(audio.src));
-        assert.deepStrictEqual(dedicatedTracks.map(audio => audio.src), [
-            '/audio/background/1.mp3',
-            '/audio/background/151.mp3',
-            '/audio/background/201.mp3',
-            '/audio/background/256.mp3',
-        ]);
+        const dedicatedTracks = created.filter(audio => Object.values(specialTracks).includes(audio.src));
+        assert.deepStrictEqual(dedicatedTracks.map(audio => audio.src), Object.values(specialTracks));
         assert.ok(created.filter(audio => !dedicatedTracks.includes(audio)).every(audio => audio.loop === false));
         manager.setMuted(true);
         manager.setMuted(false);
@@ -162,18 +162,20 @@ async function test(name, fn) {
         assert.strictEqual(created[0].playCount, 1);
     });
 
-    await test('background asset is MP3 and cue assets remain valid PCM WAV files', () => {
+    await test('regular background is MP3, milestone assets are MP4, and cues are PCM WAV', () => {
         const background = fs.readFileSync(path.join(__dirname, '..', 'public', 'audio', 'background', 'background.mp3'));
         const startsWithId3 = background.toString('ascii', 0, 3) === 'ID3';
         const startsWithMpegFrame = background.length > 1 && background[0] === 0xff && (background[1] & 0xe0) === 0xe0;
         assert.ok(startsWithId3 || startsWithMpegFrame);
         assert.ok(background.length > 0);
 
-        for (const name of ['1.mp3', '151.mp3', '201.mp3', '256.mp3']) {
-            const specialTrack = fs.readFileSync(path.join(__dirname, '..', 'public', 'audio', 'background', name));
-            const startsWithId3 = specialTrack.toString('ascii', 0, 3) === 'ID3';
-            const startsWithMpegFrame = specialTrack.length > 1 && specialTrack[0] === 0xff && (specialTrack[1] & 0xe0) === 0xe0;
-            assert.ok(startsWithId3 || startsWithMpegFrame, `${name} should contain a playable MP3 placeholder`);
+        for (const name of Object.values(specialNames)) {
+            const specialTrack = fs.readFileSync(path.join(__dirname, '..', 'public', 'audio', name));
+            assert.strictEqual(specialTrack.toString('ascii', 4, 8), 'ftyp', `${name} should be an MP4 container`);
+            assert.ok(specialTrack.length > 1000);
+        }
+        for (const wave of Object.keys(specialNames)) {
+            assert.ok(!fs.existsSync(path.join(__dirname, '..', 'public', 'audio', 'background', `${wave}.mp3`)));
         }
 
         for (const name of ['wave.wav', 'game-over.wav']) {
@@ -185,15 +187,18 @@ async function test(name, fn) {
         }
     });
 
-    await test('Vite playlist includes every supported audio file in the background folder', async () => {
+    await test('Vite playlist includes all 12 regular demo tracks, excludes four milestones', async () => {
         const { default: config } = await import('../vite.config.mjs');
         const tracks = JSON.parse(config.define.__BACKGROUND_TRACKS__);
-        const directory = path.join(__dirname, '..', 'public', 'audio', 'background');
-        const expected = fs.readdirSync(directory)
-            .filter(name => /\.(mp3|ogg|wav|m4a)$/i.test(name))
+        const specials = JSON.parse(config.define.__SPECIAL_MUSIC_PATHS__);
+        const directory = path.join(__dirname, '..', 'public', 'audio');
+        const regularMp4 = fs.readdirSync(directory)
+            .filter(name => /\.mp4$/i.test(name) && !Object.values(specialNames).includes(name))
             .sort()
-            .map(name => `/audio/background/${encodeURIComponent(name)}`);
-        assert.deepStrictEqual(tracks, expected);
-        assert.ok(tracks.length > 0);
+            .map(name => `/audio/${encodeURIComponent(name)}`);
+        assert.strictEqual(regularMp4.length, 12);
+        assert.deepStrictEqual(specials, specialTracks);
+        assert.deepStrictEqual(tracks, ['/audio/background/background.mp3', ...regularMp4]);
+        assert.ok(tracks.every(track => !Object.values(specials).includes(track)));
     });
 })();

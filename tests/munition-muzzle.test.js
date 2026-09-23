@@ -41,6 +41,24 @@ const SniperBulletMunition = loadModule('src/entities/munitions/SniperBulletMuni
 const LaserMunition = loadModule('src/entities/munitions/LaserMunition.ts', 'LaserMunition');
 const BasicBulletMunition = modules['./BasicBulletMunition'].BasicBulletMunition;
 
+modules['./Tower'] = {
+    Tower: class TowerPort {
+        constructor(x, y, width) {
+            this.width = width;
+            this.halfWidth = width / 2;
+            this.center = {x: x + this.halfWidth, y: y + this.halfWidth};
+        }
+    },
+};
+modules['../../MunitionManager'] = {munitionManager: {add() {}}};
+modules['../munitions/BasicBulletMunition'] = {BasicBulletMunition};
+modules['../../tools/texturePaths'] = {
+    texturePaths: {towers: {canon: 'canon', gatling: 'gatling'}},
+};
+const CanonTower = loadModule('src/entities/towers/CanonTower.ts', 'CanonTower');
+modules['./CanonTower'] = {CanonTower};
+const GatlingTower = loadModule('src/entities/towers/GatlingTower.ts', 'GatlingTower');
+
 let muzzle = {x: 37, y: 61};
 const emitter = {
     center: {x: 20, y: 30},
@@ -71,15 +89,39 @@ sniper.draw({
 });
 assert.deepEqual(sniperStart, [muzzle.x, muzzle.y], 'sniper trace follows the emitter muzzle');
 
+function drawBulletColor(tower) {
+    const bullet = Object.create(BasicBulletMunition.prototype);
+    bullet.emitter = tower;
+    bullet.x = 12;
+    bullet.y = 24;
+    const context = {fillStyle: '', beginPath() {}, ellipse() {}, fill() {}};
+    bullet.draw(context);
+    return context.fillStyle;
+}
+
+assert.equal(
+    drawBulletColor(new CanonTower(10, 20, 16)),
+    '#556EE6',
+    'Cannon bullet is blue'
+);
+assert.equal(
+    drawBulletColor(new GatlingTower(10, 20, 16)),
+    'red',
+    'Gatling bullet is red'
+);
+
 const laser = new LaserMunition(target, emitter);
 assertStartsAtMuzzle(laser, 'laser beam');
 let laserStart;
-laser.draw({
+const laserContext = {
     beginPath() {},
     moveTo(x, y) { laserStart = [x, y]; },
     lineTo() {},
     stroke() {},
-});
+};
+laser.draw(laserContext);
 assert.deepEqual(laserStart, [muzzle.x, muzzle.y], 'laser beam follows the emitter muzzle');
+assert.equal(laserContext.strokeStyle, 'purple', 'laser beam is purple');
+assert.equal(laserContext.shadowColor, 'purple', 'laser glow is purple');
 
 console.log('All projectile muzzle tests passed.');
