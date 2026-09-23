@@ -3,6 +3,7 @@ import {
     EnemyGroup,
     EnemyType,
     GameSnapshot,
+    ItemStateSnapshot,
     LaneInfo,
     PathInfo,
     PathShapingCandidate,
@@ -68,6 +69,7 @@ export interface SnapshotInput {
      * injected lets `buildSnapshot` stay pure and testable without the engine.
      */
     routeLengthAfterBuilding?: (lane: number, i: number, j: number) => number | null;
+    items?: ItemStateSnapshot[];
 }
 
 /**
@@ -361,6 +363,7 @@ export function buildSnapshot(input: SnapshotInput): GameSnapshot {
         towerOptions: input.towerOptions,
         buildCandidates: buildCandidates(routes, input),
         pathShapingCandidates: pathShapingCandidates(routes, input),
+        items: input.items || [],
     };
 }
 
@@ -387,7 +390,13 @@ export function formatSnapshot(snapshot: GameSnapshot): string {
         .map(candidate => `L${candidate.lane}(${candidate.i},${candidate.j}) +${candidate.addedTiles}t`)
         .join('; ');
 
-    return [
+    const items = snapshot.items && snapshot.items.length > 0
+        ? snapshot.items
+            .map(item => `${item.name} (${item.ready ? 'ready' : item.active ? `active ${Math.round((item.activeRemainingMs || 0) / 100) / 10}s` : `cooldown ${Math.round((item.cooldownRemainingMs || 0) / 100) / 10}s`}, cost ${item.cost})`)
+            .join('; ')
+        : null;
+
+    const lines = [
         `Wave ${snapshot.wave} · cash ${snapshot.cash} · base ${snapshot.baseLife}/${snapshot.baseMaxLife}`,
         `Enemies (${snapshot.enemies.total}): ${groups || 'none'}`,
         `Nearest threat: ${threat ? `${threat.type} at (${threat.i},${threat.j}) ETA ${threat.etaSeconds}s hp ${threat.remainingLife}` : 'none'}`,
@@ -395,5 +404,11 @@ export function formatSnapshot(snapshot: GameSnapshot): string {
         `Lanes (${snapshot.lanes.length}): ${lanes || 'unknown'}`,
         `Build candidates: ${candidates || 'none'}`,
         `Path-shaping cells: ${walls || 'none'}`,
-    ].join('\n');
+    ];
+
+    if (items) {
+        lines.push(`Items: ${items}`);
+    }
+
+    return lines.join('\n');
 }

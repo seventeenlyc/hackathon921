@@ -24,6 +24,8 @@ export interface ActionPort {
     buildTower(type: string, i: number, j: number): ActionResult<{ towerId: string; cost: number }>;
 
     upgradeTower(id: string): ActionResult<{ level: number; upgradeCost: number }>;
+
+    useItem?(item: string): ActionResult<{ item: string }>;
 }
 
 export interface DecisionEntry {
@@ -188,6 +190,21 @@ export class AgentRuntime implements Planner {
                 wave,
                 action: 'upgrade_tower',
                 detail: `tower ${String(args.id)}`,
+                ok: result.ok,
+                message: result.message,
+            });
+            return;
+        }
+
+        if (action.name === 'use_item') {
+            const item = String(args.item);
+            const result = this.actions.useItem
+                ? this.actions.useItem(item)
+                : { ok: false, error: 'UNKNOWN_ITEM' as const, message: t('action.unknownItem', {item}) };
+            this.onDecision({
+                wave,
+                action: 'use_item',
+                detail: item,
                 ok: result.ok,
                 message: result.message,
             });

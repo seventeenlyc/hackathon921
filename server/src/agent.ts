@@ -112,6 +112,24 @@ export const AGENT_TOOLS = [
             },
         },
     },
+    {
+        type: 'function',
+        function: {
+            name: 'use_item',
+            description: 'Use a tactical battle item. Currently available: "natural_oil" (costs 2000 cash, grants all towers 1.5x attack speed for 5s, 10s cooldown).',
+            parameters: {
+                type: 'object',
+                properties: {
+                    item: {
+                        type: 'string',
+                        enum: ['natural_oil'],
+                        description: 'Identifier of the item to activate.',
+                    },
+                },
+                required: ['item'],
+            },
+        },
+    },
 ];
 
 const AGENT_TOOL_NAMES = AGENT_TOOLS.map(tool => tool.function.name);
@@ -146,6 +164,11 @@ export const AGENT_SYSTEM_PROMPT = [
     '- Enemies can spawn from several lanes; the state lists them in `lanes` and',
     '  `spawns`, and each candidate says which lane it is for. Unless the player',
     '  strategy says otherwise, cover every lane rather than piling up on one.',
+    '- You can use tactical battle items via `use_item`. Currently available:',
+    '  `natural_oil`, which costs 2000 cash and grants all towers 1.5x attack speed',
+    '  for 5 seconds (10s cooldown). Use it when facing dense waves, boss enemies,',
+    '  or urgent threats where burst damage is critical, provided you have enough cash',
+    '  and it is not on cooldown.',
     '- Return tool calls only. Do not explain.',
 ].join('\n');
 

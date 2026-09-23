@@ -248,4 +248,38 @@ test('getState returns the snapshot the battlefield provides', () => {
     assert.strictEqual(new GameActions(field).getState(), snapshot);
 });
 
+test('useItem rejects unknown item', () => {
+    const field = new FakeBattlefield();
+    const actions = new GameActions(field);
+    const result = actions.useItem('super_bomb');
+    assert.strictEqual(result.ok, false);
+    assert.strictEqual(result.error, 'UNKNOWN_ITEM');
+});
+
+test('useItem passes through engine errors', () => {
+    const field = new FakeBattlefield();
+    field.useItem = () => ({ok: false, error: 'INSUFFICIENT_FUNDS'});
+    const actions = new GameActions(field);
+    const result = actions.useItem('natural_oil');
+    assert.strictEqual(result.ok, false);
+    assert.strictEqual(result.error, 'INSUFFICIENT_FUNDS');
+
+    field.useItem = () => ({ok: false, error: 'COOLDOWN'});
+    assert.strictEqual(actions.useItem('natural_oil').error, 'COOLDOWN');
+
+    field.useItem = () => ({ok: false, error: 'ALREADY_ACTIVE'});
+    assert.strictEqual(actions.useItem('natural_oil').error, 'ALREADY_ACTIVE');
+});
+
+test('useItem succeeds when battlefield accepts', () => {
+    let called = null;
+    const field = new FakeBattlefield();
+    field.useItem = (item) => { called = item; return {ok: true}; };
+    const actions = new GameActions(field);
+    const result = actions.useItem('natural_oil');
+    assert.strictEqual(result.ok, true);
+    assert.strictEqual(result.data.item, 'natural_oil');
+    assert.strictEqual(called, 'natural_oil');
+});
+
 console.log('All GameActions tests passed.');
