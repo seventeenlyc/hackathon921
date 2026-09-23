@@ -7,6 +7,7 @@ import {enemyManager} from "./EnemyManager";
 import {munitionManager} from "./MunitionManager";
 import {towerPlacer} from "./TowerPlacer";
 import './InterfaceManager';
+import {MiniMap} from "./MiniMap";
 import {interfaceManager} from "./InterfaceManager";
 import {waveManager} from "./WavesManager";
 import {submitRunScore} from "./leaderboard/LeaderboardUI";
@@ -48,6 +49,11 @@ function createDecisionSummary(): DecisionSummary | null {
 }
 const decisionSummary = createDecisionSummary();
 onLangChange(() => decisionSummary?.setUnavailable(t('reasoning.summaryUnavailable')));
+
+// The bottom-right minimap locator. Constructed once at module load; it caches
+// the static terrain overview and refreshes on `map.added`. Drawn in screen
+// space after the main `ctx.restore()`, so the camera transform never warps it.
+const miniMap = new MiniMap(map, camera, {width: 192, height: 96, margin: 24});
 
 class Game {
     private updateInterval: number = -1;
@@ -99,7 +105,28 @@ class Game {
             if (state === 'running' && runStartedAt === null) runStartedAt = Date.now();
         });
 
-        this.start()
+        this.start();
+
+        // Route clicks/drags landing inside the minimap rect to the minimap
+        // panner. These are screen-space window listeners checked before the
+        // map drag, so a minimap interaction never also pans the map.
+        // Coordinates are converted to canvas-pixel space (matching getRect()).
+        const toCanvasCoords = (e: MouseEvent) => {
+            const b = canvas.getElement().getBoundingClientRect();
+            return {x: e.clientX - b.left, y: e.clientY - b.top};
+        };
+        window.addEventListener('mousedown', event => {
+            const c = toCanvasCoords(event);
+            if (miniMap.onPointerDown(c.x, c.y)) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+            }
+        }, true);
+        window.addEventListener('mousemove', event => {
+            const c = toCanvasCoords(event);
+            miniMap.onPointerMove(c.x, c.y);
+        });
+        window.addEventListener('mouseup', () => miniMap.onPointerUp());
     }
 
     recordReachedWave(wave: number = waveManager.waveCounter) {
@@ -154,6 +181,9 @@ class Game {
         map.draw(ctx);
         if (playMode === 'human') towerPlacer.draw(ctx);
         ctx.restore();
+
+        // Drawn in screen space, independent of the camera transform.
+        miniMap.draw(ctx);
 
         if (this.looping) {
             requestAnimationFrame(this.drawLoop.bind(this))

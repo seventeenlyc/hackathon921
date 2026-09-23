@@ -214,6 +214,7 @@ async function test(name, fn) {
             './Controls': { controls: { on() {}, tabHasFocus: () => true } },
             './Map': { map: { on() {} } },
             './Camera': { camera: {} },
+            './MiniMap': { MiniMap: class { onPointerDown() { return false; } onPointerMove() {} onPointerUp() {} draw() {} getRect() { return {x: 0, y: 0, width: 0, height: 0}; } } },
             './EnemyManager': { enemyManager: {} },
             './MunitionManager': { munitionManager: {} },
             './TowerPlacer': { towerPlacer: { placing: false, update() {}, draw() {} } },
@@ -244,7 +245,7 @@ async function test(name, fn) {
             './narrative/NarrativeScript': { NARRATIVE_SCENES: [] },
             './narrative/NarrativeOverlay': { narrativeOverlay: { play: async () => {} } },
         }, {
-            window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {} },
+            window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {}, addEventListener() {} },
             setInterval: () => 1,
             requestAnimationFrame: () => 1,
             setTimeout: fn => fn(),
@@ -281,6 +282,7 @@ async function test(name, fn) {
             './Controls': { controls: { on() {}, tabHasFocus: () => true } },
             './Map': { map: { on() {}, grid: [] } },
             './Camera': { camera: {} },
+            './MiniMap': { MiniMap: class { onPointerDown() { return false; } onPointerMove() {} onPointerUp() {} draw() {} getRect() { return {x: 0, y: 0, width: 0, height: 0}; } } },
             './EnemyManager': { enemyManager: {} },
             './MunitionManager': { munitionManager: {} },
             './TowerPlacer': { towerPlacer: { placing: false, update() {}, draw() {} } },
@@ -311,7 +313,7 @@ async function test(name, fn) {
             './narrative/NarrativeScript': { NARRATIVE_SCENES: [] },
             './narrative/NarrativeOverlay': { narrativeOverlay: { play: async () => {} } },
         }, {
-            window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {} },
+            window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {}, addEventListener() {} },
             setInterval: () => 1,
             requestAnimationFrame: () => 1,
             setTimeout: fn => fn(),
