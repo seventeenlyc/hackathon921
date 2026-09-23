@@ -17,91 +17,146 @@
     <link rel="author" href="/humans.txt" />
     <link rel="icon" href="/img/icons/favicon.ico" sizes="any" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#0a121a" />
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="inert">
       <canvas id="canvas" tabindex="0" data-i18n-aria-label="aria.battlefield" aria-label="塔奇克马战术防御区域。双击打开作战终端。"></canvas>
-      <div id="control-layer" class="controls is-visible" data-i18n-aria-label="aria.battlefieldControls" aria-label="战场控制">
-        <section class="control-card status-panel" aria-labelledby="status-heading">
-          <div class="brand-lockup">
-            <div class="eyebrow" data-i18n="shell.eyebrow">公安九课 // 战术网络</div>
-            <h1 id="status-heading" data-i18n="app.name">保护笑脸男</h1>
-            <div class="subtitle" data-i18n="header.subtitle">公安九课 · 塔奇克马防御协议</div>
-          </div>
-          <div class="status-grid" data-i18n-aria-label="aria.battlefieldStatus" aria-label="战场状态">
-            <div class="status-metric"><span data-i18n="label.wave">防御波次：</span><strong><span id="wave">1</span> <span id="delay"></span></strong></div>
-            <div class="status-metric"><span data-i18n="label.state">作战状态：</span><strong id="state">STANDBY</strong></div>
-            <div class="status-metric"><span data-i18n="label.cash">战术资源：</span><strong><span id="cash">12</span></strong></div>
-          </div>
-        </section>
 
-        <div class="left-rail">
+      <header class="tactical-header">
+        <div class="header-side header-left">
+          <span class="eyebrow" data-i18n="shell.eyebrow">公安九课 // 战术网络</span>
+          <span class="header-sub" data-i18n="header.subtitle">公安九课 · 塔奇克马防御协议</span>
+          <span id="version" class="header-ver">v0.1.28</span>
+        </div>
+        <h1 class="header-title" data-i18n="app.name">保护笑脸男</h1>
+        <div class="header-side header-right">
+          <span class="live-indicator"><span class="live-dot" aria-hidden="true"></span><span data-i18n="map.live">LIVE</span></span>
+          <span id="header-clock" class="header-clock">--:--:--</span>
+          <svg class="header-logo" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="16" /><circle cx="18" cy="18" r="9" /><path d="M2 18h10M24 18h10" /></svg>
+        </div>
+      </header>
+
+      <div id="map-frame" class="map-frame" aria-hidden="true">
+        <div class="map-corner-label"><span data-i18n="map.sector">作战扇区 09-A</span><span class="map-sep">//</span><span data-i18n="map.layer">网络层 DEEP_3</span></div>
+        <div id="map-alert" class="map-alert" hidden><span class="map-alert-mark" aria-hidden="true">▲</span><span data-i18n="map.intrusion">入侵检测 — 自律清除程序接入中</span></div>
+        <div class="map-livebar"><span data-i18n="map.liveBar">战术地图 // 实况</span><span id="map-wave" class="map-wave-tag"></span></div>
+      </div>
+
+      <div id="control-layer" class="controls is-visible" data-i18n-aria-label="aria.battlefieldControls" aria-label="战场控制">
+        <div class="rail rail-left">
+          <section class="control-card status-panel" aria-labelledby="status-heading">
+            <div class="ghost-lockup">
+              <div class="ghost-avatar" aria-hidden="true"></div>
+              <h2 id="status-heading" class="panel-title" data-i18n="ghost.title">幽灵状态</h2>
+            </div>
+            <div class="status-grid" data-i18n-aria-label="aria.battlefieldStatus" aria-label="战场状态">
+              <div class="status-metric"><span data-i18n="label.cash">战术资源：</span><strong><span id="cash">200</span></strong></div>
+              <div class="status-metric"><span data-i18n="label.wave">防御波次：</span><strong><span id="wave">1</span> <span id="delay"></span></strong></div>
+              <div class="status-metric"><span data-i18n="label.state">作战状态：</span><strong id="state">STANDBY</strong></div>
+            </div>
+          </section>
+
+          <section class="control-card chatbox-panel" aria-labelledby="chatbox-heading">
+            <div class="panel-heading">
+              <div>
+                <div class="eyebrow" data-i18n="directive.eyebrow">战术指令</div>
+                <h2 id="chatbox-heading" data-i18n="directive.title">幽灵指令</h2>
+              </div>
+              <button id="controls-collapse" class="icon-button" type="button" data-i18n-aria-label="aria.hideControls" aria-label="隐藏作战终端" data-i18n-title="title.hideControls" title="隐藏终端">×</button>
+            </div>
+            <div class="strategy">
+              <label class="strategy-label" for="strategy-input"><span data-i18n="strategy.label">作战命令</span><span id="strategy-count" class="strategy-count"></span></label>
+              <textarea id="strategy-input" class="strategy-input" rows="5" spellcheck="false" data-i18n-placeholder="strategy.placeholder" placeholder="向塔奇克马下达自然语言作战命令…"></textarea>
+              <div class="strategy-actions">
+                <div id="strategy-status" class="strategy-status" aria-live="polite"></div>
+                <button id="strategy-apply" class="strategy-apply" type="button" disabled>下达命令并开始行动</button>
+                <button id="strategy-random" class="strategy-random" type="button" data-i18n="strategy.random">参谋模板</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="control-card flux-panel" aria-labelledby="flux-heading">
+            <h2 id="flux-heading" class="panel-title" data-i18n="flux.title">幽灵变动日志</h2>
+            <ul id="decision-log" class="decision-log"></ul>
+            <div id="decision-empty" class="decision-empty" data-i18n="decisions.empty">等待塔奇克马自主判断。</div>
+          </section>
+        </div>
+
+        <aside class="rail rail-right">
           <div id="leaderboard-slot" class="leaderboard-slot"></div>
 
-          <section class="tower-panel" aria-labelledby="towers-heading">
-            <h2 id="towers-heading" class="tower-panel-title" data-i18n="towers.heading">塔奇克马部署</h2>
-            <div id="towers-wrapper" class="tower-palette" data-i18n-aria-label="aria.deployableUnits" aria-label="可部署塔奇克马机体"></div>
+          <section class="control-card threat-panel" aria-labelledby="threat-heading">
+            <h2 id="threat-heading" class="panel-title" data-i18n="threat.title">敌性体情报</h2>
+            <div class="threat-wave">
+              <span data-i18n="threat.wave">当前波次</span>
+              <strong id="threat-wave">—</strong>
+            </div>
+            <ul id="threat-list" class="threat-list"></ul>
+            <div id="threat-idle" class="threat-idle" data-i18n="threat.idle">待机 — 未捕获敌性体信号</div>
+          </section>
+
+          <section class="control-card neural-panel" aria-labelledby="neural-heading" data-i18n-aria-label="aria.gameControls" aria-label="作战控制">
+            <h2 id="neural-heading" class="panel-title" data-i18n="neural.title">神经链接</h2>
+            <div class="state-controls mode-control">
+              <button id="mode" type="button">切换指挥模式</button>
+            </div>
+            <div class="state-controls">
+              <button id="pause" type="button" data-i18n="control.pause">暂停演算</button>
+              <button id="resume" type="button" data-i18n="control.resume">恢复演算</button>
+              <button id="speed" type="button">演算速度 x1</button>
+              <button id="audio-toggle" type="button" aria-pressed="false">音效开</button>
+              <button id="lang" type="button" data-i18n="control.lang" data-i18n-title="control.langTitle" title="切换语言（中 / EN）">EN</button>
+            </div>
+            <details class="settings-panel">
+              <summary data-i18n="settings.title">系统设置</summary>
+              <footer>
+                <div class="code">
+                  <span data-i18n="footer.source">源代码：</span>
+                  <a href="//github.com/CorentinTh/inert" target="_blank" data-i18n-aria-label="aria.githubRepository" aria-label="GitHub 源代码仓库" rel="noopener">
+                    <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22 0 0 1.005-.322 3.3 1.23 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" /></svg>
+                  </a>
+                </div>
+                <div>Made with <span class="accent">♥</span> by <a href="//github.com/CorentinTh" target="_blank" rel="noopener">Corentin Thomasset</a></div>
+              </footer>
+            </details>
+          </section>
+
+          <section class="control-card items-panel" aria-labelledby="items-heading">
+            <h2 id="items-heading" class="panel-title" data-i18n="items.title">支援道具</h2>
             <button id="natural-oil" class="natural-oil" type="button" disabled aria-describedby="natural-oil-status">
               <span class="natural-oil-icon" aria-hidden="true"></span>
               <span class="natural-oil-label" data-i18n="oil.label">天然机油</span>
               <span class="natural-oil-cost">1000 ¢</span>
             </button>
             <span id="natural-oil-status" class="natural-oil-status" role="status" aria-live="polite"></span>
+          </section>
+        </aside>
+
+        <section class="database-panel" aria-labelledby="database-heading">
+          <div class="database-header">
+            <h2 id="database-heading" class="panel-title" data-i18n="database.title">战术数据库</h2>
+            <div class="database-tabs">
+              <button id="db-tab-tachikoma" class="db-tab active" type="button" aria-selected="true" data-i18n="database.tabTachikoma">塔奇克马 // 思考战车</button>
+              <button id="db-tab-hostile" class="db-tab" type="button" aria-selected="false" data-i18n="database.tabHostile">敌性体 // 属性库</button>
+            </div>
+          </div>
+          <section class="tower-panel db-view active" id="db-view-tachikoma">
+            <div id="towers-wrapper" class="tower-palette" data-i18n-aria-label="aria.deployableUnits" aria-label="可部署塔奇克马机体"></div>
             <div id="towers-stats" class="tower-stats" aria-live="polite">选择塔奇克马机体以查看战术参数。</div>
           </section>
-        </div>
-
-        <section class="control-card chatbox-panel" aria-labelledby="chatbox-heading">
-          <div class="panel-heading">
-            <div>
-              <div class="eyebrow" data-i18n="console.eyebrow">塔奇克马指挥网络</div>
-              <h2 id="chatbox-heading" data-i18n="console.heading">战术命令终端</h2>
+          <section class="hostile-panel db-view" id="db-view-hostile" aria-labelledby="hostile-heading" hidden>
+            <h2 id="hostile-heading" class="visually-hidden" data-i18n="database.tabHostile">敌性体 // 属性库</h2>
+            <div class="hostile-grid">
+              <div class="hostile-card"><img data-enemy-img="simple" alt=""/><span class="hostile-name" data-i18n="enemy.simple.name">傀儡型</span><span class="hostile-code">PUPPET</span><span class="hostile-desc" data-i18n="enemy.simple.desc">数量最多的基础敌性体，成群涌向核心。</span></div>
+              <div class="hostile-card"><img data-enemy-img="fast" alt=""/><span class="hostile-name" data-i18n="enemy.fast.name">猎袭型</span><span class="hostile-code">HUNTER</span><span class="hostile-desc" data-i18n="enemy.fast.desc">高速突进型，行动最快，需要提前拦截。</span></div>
+              <div class="hostile-card"><img data-enemy-img="armored" alt=""/><span class="hostile-name" data-i18n="enemy.armored.name">装甲执行体</span><span class="hostile-code">ENFORCER</span><span class="hostile-desc" data-i18n="enemy.armored.desc">重装甲执行单位，需要集中火力击穿。</span></div>
+              <div class="hostile-card"><img data-enemy-img="healer" alt=""/><span class="hostile-name" data-i18n="enemy.healer.name">中继型</span><span class="hostile-code">RELAY</span><span class="hostile-desc" data-i18n="enemy.healer.desc">修复周围敌性体，应当优先排除。</span></div>
+              <div class="hostile-card"><img data-enemy-img="boss" alt=""/><span class="hostile-name" data-i18n="enemy.boss.name">压制体</span><span class="hostile-code">SUPPRESSOR</span><span class="hostile-desc" data-i18n="enemy.boss.desc">高耐久压制单位，突破后威胁最大。</span></div>
             </div>
-            <button id="controls-collapse" class="icon-button" type="button" data-i18n-aria-label="aria.hideControls" aria-label="隐藏作战终端" data-i18n-title="title.hideControls" title="隐藏终端">×</button>
-          </div>
-          <div class="strategy">
-            <label class="strategy-label" for="strategy-input"><span data-i18n="strategy.label">作战命令</span><span id="strategy-count" class="strategy-count"></span></label>
-            <textarea id="strategy-input" class="strategy-input" rows="5" spellcheck="false" data-i18n-placeholder="strategy.placeholder" placeholder="向塔奇克马下达自然语言作战命令…"></textarea>
-            <div class="strategy-actions">
-              <div id="strategy-status" class="strategy-status" aria-live="polite"></div>
-              <button id="strategy-apply" class="strategy-apply" type="button" disabled>下达命令并开始行动</button>
-              <button id="strategy-random" class="strategy-random" type="button" data-i18n="strategy.random">参谋模板</button>
-            </div>
-          </div>
-          <div class="decisions">
-            <div class="decisions-label" data-i18n="decisions.label">塔奇克马判断</div>
-            <ul id="decision-log" class="decision-log"></ul>
-            <div id="decision-empty" class="decision-empty" data-i18n="decisions.empty">等待塔奇克马自主判断。</div>
-          </div>
+          </section>
         </section>
-
-        <aside class="control-card operations-panel" data-i18n-aria-label="aria.gameControls" aria-label="作战控制">
-          <div class="state-controls mode-control">
-            <button id="mode" type="button">切换指挥模式</button>
-          </div>
-          <div class="state-controls">
-            <button id="pause" type="button" data-i18n="control.pause">暂停演算</button>
-            <button id="resume" type="button" data-i18n="control.resume">恢复演算</button>
-            <button id="speed" type="button">演算速度 x1</button>
-            <button id="audio-toggle" type="button" aria-pressed="false">音效开</button>
-            <button id="lang" type="button" data-i18n="control.lang" data-i18n-title="control.langTitle" title="切换语言（中 / EN）">EN</button>
-          </div>
-          <details class="settings-panel">
-            <summary data-i18n="settings.title">系统设置</summary>
-            <footer>
-              <div><span data-i18n="app.name">保护笑脸男</span> <span id="version" class="accent">v0.1.27</span></div>
-              <div class="code">
-                <span data-i18n="footer.source">源代码：</span>
-                <a href="//github.com/CorentinTh/inert" target="_blank" data-i18n-aria-label="aria.githubRepository" aria-label="GitHub 源代码仓库" rel="noopener">
-                  <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22 0 0 1.005-.322 3.3 1.23 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" /></svg>
-                </a>
-              </div>
-              <div>Made with <span class="accent">♥</span> by <a href="//github.com/CorentinTh" target="_blank" rel="noopener">Corentin Thomasset</a></div>
-            </footer>
-          </details>
-        </aside>
       </div>
       <div id="controls-hint" class="controls-hint" role="status" aria-live="polite" data-i18n="controls.hint">双击战场重新打开作战终端。</div>
       <div id="snackbar"></div>

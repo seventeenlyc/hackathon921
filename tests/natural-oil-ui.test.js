@@ -93,6 +93,14 @@ function mountedInterface() {
         './AudioManager': {audioManager: {isMuted: () => false, setMuted() {}, startMusic() {}}},
         './CashManager': {cashManager},
         './items/NaturalOil': {naturalOilController},
+        './tools/enemyCatalog': {
+            ENEMY_TYPE_IDS: ['simple', 'fast', 'armored', 'healer', 'boss'],
+            countEnemiesByType: () => ({simple: 0, fast: 0, armored: 0, healer: 0, boss: 0}),
+            enemyType: () => 'simple',
+        },
+        './tools/texturePaths': {
+            texturePaths: {enemies: {simple: 's.png', fast: 'f.png', armored: 'a.png', healer: 'h.png', boss: 'b.png'}},
+        },
     };
     const interfaceManager = loadSource('src/InterfaceManager.ts', dependencies, {document}).interfaceManager;
     return {button: document.getElementById('natural-oil'),
@@ -100,14 +108,17 @@ function mountedInterface() {
         naturalOilController, gameLoop, interfaceManager};
 }
 
+const itemsHeading = index.indexOf('id="items-heading"');
 const palette = index.indexOf('id="towers-wrapper"');
 const item = index.indexOf('id="natural-oil"');
 const stats = index.indexOf('id="towers-stats"');
-assert.ok(palette >= 0 && item > palette && item < stats,
-    'Natural Oil must appear below the tower choices in both modes');
-assert.match(index.slice(item, stats), /天然机油/);
-assert.match(index.slice(item, stats), /1000/);
-assert.match(index.slice(item, stats), /aria-live="polite"/);
+assert.ok(itemsHeading >= 0 && item > itemsHeading,
+    'Natural Oil must live inside the BATTLE ITEMS panel');
+assert.ok(palette >= 0 && stats > palette,
+    'the tower catalogue and its stats must keep their order in the database');
+assert.match(index.slice(item, item + 400), /天然机油/);
+assert.match(index.slice(item, item + 400), /1000/);
+assert.match(index.slice(item, item + 600), /aria-live="polite"/);
 assert.match(styles, /\.natural-oil-icon[\s\S]*background:/,
     'the item needs a CSS color-block icon');
 assert.match(gameSource, /for \(let step = 0; step < gameLoop\.speed; \+\+step\) \{[\s\S]*naturalOilController\.update\(1000 \/ fps, gameLoop\.state === 'running'\)/,

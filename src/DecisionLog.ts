@@ -30,7 +30,11 @@ export class DecisionLog {
     private append(text: string, kind: string) {
         const item = document.createElement('li');
         item.className = `decision ${kind}`;
-        item.textContent = text;
+        // Workstation-style telemetry stamp; the message itself stays textContent-only.
+        const time = document.createElement('span');
+        time.className = 'decision-time';
+        time.textContent = `[${new Date().toTimeString().slice(0, 8)}] `;
+        item.append(time, document.createTextNode(text));
 
         this.list.insertBefore(item, this.list.firstChild);
         while (this.list.children.length > this.maxEntries) {
