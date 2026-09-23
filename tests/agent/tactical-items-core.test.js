@@ -10,7 +10,12 @@ const {
 } = require('../../.test-build/items/TacticalItems.js');
 const {GameActions} = require('../../.test-build/agent/GameActions.js');
 const {gameLoop} = require('../../.test-build/agent/GameLoop.js');
-const {activateModelItem, useModelItem} = require('../../.test-build/agent/modelItemActivation.js');
+const {
+    activateModelItem,
+    useModelItem,
+    PendingModelItemActivations,
+    requestModelItem,
+} = require('../../.test-build/agent/modelItemActivation.js');
 
 /**
  * Independent, DOM-free audit of the tactical item core (issue #69).
@@ -438,8 +443,17 @@ console.log('TacticalItems core audit (issue #69)');
 // ---------------------------------------------------------------------------
 const battlefieldSource = fs.readFileSync(path.join(__dirname, '../../src/agent/InertBattlefield.ts'), 'utf8');
 const uiSource = fs.readFileSync(path.join(__dirname, '../../src/InterfaceManager.ts'), 'utf8');
-assert.match(battlefieldSource, /return useModelItem\(item, tacticalItemsController, cashManager, \{/,
-    'the concrete battlefield must delegate to the tested production seam');
+const gameSource = fs.readFileSync(path.join(__dirname, '../../src/Game.ts'), 'utf8');
+assert.match(battlefieldSource, /return requestModelItem\(item, tacticalItemsController, cashManager, \{/,
+    'the concrete battlefield must delegate to the tested production request seam');
+assert.match(battlefieldSource, /takePendingModelItems\(\)/,
+    'the concrete battlefield must expose pending requests for the wave-start engine hook');
+assert.match(gameSource, /waveManager\.onWaveStarted = wave =>/,
+    'the game must execute pending requests from the engine wave-start event');
+assert.match(gameSource, /for \(const item of battlefield\.takePendingModelItems\(\)\)/,
+    'the wave-start handler must drain each queued item exactly once');
+assert.match(gameSource, /action: 'use_item',[\s\S]*message: result\.message,/,
+    'the execution result must be written to the decision log');
 assert.doesNotMatch(battlefieldSource, /tacticalItemsController\.activate\(item,\s*true,/, 'no hard-coded model RUNNING');
 assert.match(uiSource, /tacticalItemsController\.activate\(key, gameLoop\.state === 'running'/,
     'the UI and model must read the same game-loop running state');
@@ -449,13 +463,15 @@ assert.match(fs.readFileSync(path.join(__dirname, '../../index.html'), 'utf8'), 
 // The only Battlefield stub delegates useItem to the *production* forwarding
 // implementation. No activation logic or running-state predicate is copied here.
 function makeBattlefield(controller, wallet, context = {}) {
+    const pendingItems = new PendingModelItemActivations();
     return {
         gridWidth: 10, gridHeight: 10, maxTowerLevel: 5,
         cash: () => wallet.balance,
         towerOptions: () => [], towers: () => [], towerAt: () => undefined,
         canPlaceAt: () => ({ok: true}), canAfford: amount => wallet.canWithdraw(amount),
         build: () => undefined, upgrade: () => false, snapshot: () => ({}),
-        useItem: item => useModelItem(item, controller, wallet, context),
+        useItem: item => requestModelItem(item, controller, wallet, context, pendingItems),
+        takePendingModelItems: () => pendingItems.takeAll(),
     };
 }
 
@@ -469,8 +485,15 @@ function assertFrozen(label) {
         const before = controller.getAllItemSnapshots();
         assert.deepStrictEqual(activateModelItem(key, controller, wallet, context),
             {ok: false, reason: 'NOT_RUNNING'}, `${label}: ${key} rejects before effects`);
-        assert.deepStrictEqual(useModelItem(key, controller, wallet, context),
-            {ok: false, error: 'ITEM_NOT_READY'}, `${label}: existing action error schema is unchanged`);
+        const pendingItems = new PendingModelItemActivations();
+        const modelResult = requestModelItem(key, controller, wallet, context, pendingItems);
+        if (label === 'PLANNING') {
+            assert.deepStrictEqual(modelResult, {ok: true, queued: true}, `${label}: ${key} queues for the upcoming wave`);
+            assert.deepStrictEqual(pendingItems.takeAll(), [key], `${label}: queued items preserve request order`);
+        } else {
+            assert.deepStrictEqual(modelResult, {ok: false, error: 'ITEM_NOT_READY'}, `${label}: model use is rejected outside planning/running`);
+            assert.deepStrictEqual(pendingItems.takeAll(), [], `${label}: rejected requests are not queued`);
+        }
         assert.deepStrictEqual(controller.getAllItemSnapshots(), before, `${label}: no item state or free-use mutation`);
         assert.strictEqual(wallet.balance, 5000, `${label}: no withdrawal`);
         assert.strictEqual(enemy.damageTaken, 0, `${label}: no enemy effect`);
@@ -500,8 +523,16 @@ function assertFrozen(label) {
     assert.deepStrictEqual(activateModelItem('hypershell', freshController(), freeWallet, {}),
         {ok: false, reason: 'NOT_RUNNING'}, `${label}: frozen state wins over insufficient funds`);
 
-    const actions = new GameActions(makeBattlefield(freshController(), makeWallet(1000)));
-    assert.strictEqual(actions.useItem('tripo').error, 'ITEM_NOT_READY', `${label}: model action rejects`);
+    const battlefield = makeBattlefield(freshController(), makeWallet(1000));
+    const actions = new GameActions(battlefield);
+    const actionResult = actions.useItem('tripo');
+    if (label === 'PLANNING') {
+        assert.strictEqual(actionResult.ok, true, `${label}: model action accepts a queued activation`);
+        assert.match(actionResult.message, /queued|排队/i, `${label}: the model is told the activation is queued`);
+        assert.deepStrictEqual(battlefield.takePendingModelItems(), ['tripo']);
+    } else {
+        assert.strictEqual(actionResult.error, 'ITEM_NOT_READY', `${label}: model action rejects`);
+    }
 }
 
 assertFrozen('IDLE');
@@ -586,11 +617,55 @@ assert.strictEqual(gameLoop.state, 'paused');
 assertFrozen('PAUSED');
 gameLoop.resume();
 
-// PLANNING is also a real GameLoop transition, not a simulated boolean.
+// PLANNING is a real GameLoop transition. Requests stay inert until the engine
+// reaches the first-spawn hook for this wave, then legality is rechecked.
+const planningQueue = new PendingModelItemActivations();
+const planningController = freshController();
+const planningWallet = makeWallet(1000);
+const spawnedEnemies = {all: () => planningEnemyList};
+const planningEnemyList = [];
+const planningEnemy = new FakeEnemy(100);
+const planningBase = new FakeBase(20, 10);
+const planningContext = {enemyManager: spawnedEnemies, homeBase: planningBase};
 gameLoop.holdForPlanning({plan: async () => {
     assert.strictEqual(gameLoop.state, 'planning');
     assertFrozen('PLANNING');
+    const evomap = requestModelItem('evomap', planningController, planningWallet, planningContext, planningQueue);
+    const tripo = requestModelItem('tripo', planningController, planningWallet, planningContext, planningQueue);
+    assert.deepStrictEqual(evomap, {ok: true, queued: true});
+    assert.deepStrictEqual(tripo, {ok: true, queued: true});
+    assert.strictEqual(planningWallet.balance, 1000, 'planning does not charge for pending actions');
+    assert.strictEqual(planningEnemy.damageTaken, 0, 'EvoMap waits until enemies spawn');
+    assert.deepStrictEqual(planningController.getState('evomap'), {kind: 'ready'});
+    assert.deepStrictEqual(planningController.getState('tripo'), {kind: 'ready'});
 }}).then(() => {
     assert.strictEqual(gameLoop.state, 'running');
-    console.log('All TacticalItems core audit checks passed.');
+    planningEnemyList.push(planningEnemy); // the wave manager invokes this after its first spawn batch
+    const items = planningQueue.takeAll();
+    assert.deepStrictEqual(items, ['evomap', 'tripo']);
+    const outcomes = items.map(item => useModelItem(item, planningController, planningWallet, planningContext));
+    assert.deepStrictEqual(outcomes, [{ok: true}, {ok: true}]);
+    assert.strictEqual(planningEnemy.damageTaken, 2, 'queued EvoMap hits the newly spawned enemy');
+    assert.strictEqual(planningWallet.balance, 0, 'queued Tripo is charged when the engine executes it');
+    assert.strictEqual(planningController.getState('tripo').kind, 'active');
+    assert.deepStrictEqual(planningQueue.takeAll(), [], 'draining is one-shot');
+
+    // If later planning actions spend the funds, execution fails closed without
+    // activating the item or charging a second time.
+    const insufficientQueue = new PendingModelItemActivations();
+    const insufficientController = freshController();
+    const insufficientWallet = makeWallet(1000);
+    gameLoop.holdForPlanning({plan: async () => {
+        assert.deepStrictEqual(requestModelItem('hypershell', insufficientController, insufficientWallet, {}, insufficientQueue),
+            {ok: true, queued: true});
+        insufficientWallet.withdraw(1); // a tower build during planning consumes the remaining margin
+    }}).then(() => {
+        const [item] = insufficientQueue.takeAll();
+        const failure = useModelItem(item, insufficientController, insufficientWallet, {homeBase: planningBase});
+        assert.deepStrictEqual(failure, {ok: false, error: 'INSUFFICIENT_FUNDS'});
+        assert.strictEqual(planningBase.getLife(), 10, 'a deferred failure has no effect');
+        assert.strictEqual(insufficientWallet.balance, 999);
+        assert.deepStrictEqual(insufficientController.getState('hypershell'), {kind: 'ready'});
+        console.log('All TacticalItems core audit checks passed.');
+    }).catch(error => { console.error(error); process.exitCode = 1; });
 }).catch(error => { console.error(error); process.exitCode = 1; });

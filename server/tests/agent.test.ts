@@ -281,6 +281,8 @@ test('成功时下发给 provider 的是服务端系统指令与工具 schema，
         'evomap',
         'hypershell',
     ]);
+    assert.match(itemTool.function.description, /queued.*first enemy batch.*execution log/i);
+    assert.match(sent.body.messages[0].content, /accepted item request is queued.*first enemy batch/i);
     assert.equal(sent.init.headers.authorization, 'Bearer secret-key');
 });
 

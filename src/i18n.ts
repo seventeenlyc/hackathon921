@@ -275,6 +275,7 @@ const STRINGS: { [key: string]: Entry } = {
     'action.upgraded': {zh: '机体 {id} 已强化至 LEVEL {level}，消耗 {cost} 战术资源。', en: 'Unit {id} enhanced to LEVEL {level}; {cost} resources consumed.'},
     'action.unknownItem': {zh: '未知战术道具「{item}」。', en: 'Unknown tactical item "{item}".'},
     'action.usedItem': {zh: '已使用战术道具「{item}」。', en: 'Used tactical item "{item}".'},
+    'action.itemQueued': {zh: '已排队：将在本波首批敌人出现后尝试使用「{item}」。', en: 'Queued: "{item}" will be attempted after this wave’s first enemies spawn.'},
     'action.itemCooldown': {zh: '战术道具「{item}」正在冷却中。', en: 'Tactical item "{item}" is on cooldown.'},
     'action.itemAlreadyActive': {zh: '战术道具「{item}」正在生效中。', en: 'Tactical item "{item}" is already active.'},
     'action.insufficientItem': {zh: '使用「{item}」需要 {cost} 战术资源，当前仅剩 {cash}。', en: 'Using "{item}" requires {cost} resources; {cash} available.'},
