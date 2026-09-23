@@ -93,6 +93,7 @@ function mountedInterface() {
         './AudioManager': {audioManager: {isMuted: () => false, setMuted() {}, startMusic() {}}},
         './CashManager': {cashManager},
         './items/NaturalOil': {naturalOilController},
+        './items/TacticalItems': {tacticalItemsController: {getState: () => ({kind: 'ready'}), cost: () => 1000, activate: () => ({ok: true})}},
         './tools/enemyCatalog': {
             ENEMY_TYPE_IDS: ['simple', 'fast', 'armored', 'healer', 'boss'],
             countEnemiesByType: () => ({simple: 0, fast: 0, armored: 0, healer: 0, boss: 0}),

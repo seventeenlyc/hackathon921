@@ -41,6 +41,10 @@ class Game {
     private gameOverScheduled = false;
 
     constructor() {
+        tacticalItemsController.setContext({
+            enemyManager,
+            homeBase: map.homeBase,
+        });
         map.on('added', () => {
             enemyManager.updatePaths()
         });

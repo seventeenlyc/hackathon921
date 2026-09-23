@@ -16,6 +16,7 @@ import {applyStaticTranslations, onLangChange, t, toggleLang} from './i18n';
 import {audioManager} from './AudioManager';
 import {cashManager} from './CashManager';
 import {naturalOilController, OilActivationResult} from './items/NaturalOil';
+import {tacticalItemsController} from './items/TacticalItems';
 import {ENEMY_TYPE_IDS, countEnemiesByType, EnemyTypeId, isEnemyTypeId} from './tools/enemyCatalog';
 import {texturePaths} from './tools/texturePaths';
 
@@ -59,6 +60,11 @@ class InterfaceManager {
     private naturalOilButton = document.getElementById('natural-oil') as HTMLButtonElement;
     private naturalOilStatus = document.getElementById('natural-oil-status')!;
     private naturalOilFailure: OilFailureReason | null = null;
+    private tripoButton = document.getElementById('item-tripo') as HTMLButtonElement | null;
+    private seeedButton = document.getElementById('item-seeed') as HTMLButtonElement | null;
+    private evomapButton = document.getElementById('item-evomap') as HTMLButtonElement | null;
+    private hypershellButton = document.getElementById('item-hypershell') as HTMLButtonElement | null;
+    private evomapCostElement = document.getElementById('evomap-cost');
     private controlLayer = getControlLayer();
     private lastTower: Tower | null = null;
     private lastWave = 0;
@@ -101,6 +107,34 @@ class InterfaceManager {
             this.naturalOilFailure = result.ok ? null : result.reason;
             this.updateNaturalOil();
         });
+
+        this.bindItemHover(this.naturalOilButton, t('oil.label'), 'oil.desc');
+        this.bindItemHover(this.tripoButton, 'Tripo', 'item.tripo.desc');
+        this.bindItemHover(this.seeedButton, 'Seeed Studio', 'item.seeed.desc');
+        this.bindItemHover(this.evomapButton, 'EvoMap', 'item.evomap.desc');
+        this.bindItemHover(this.hypershellButton, 'HyperShell', 'item.hypershell.desc');
+
+        this.tripoButton?.addEventListener('click', () => {
+            const result = tacticalItemsController.activate('tripo', gameLoop.state === 'running', cashManager);
+            if (!result.ok) this.snackbar.toast(t(`oil.failure.${result.reason}`) || result.reason);
+            this.updateNaturalOil();
+        });
+        this.seeedButton?.addEventListener('click', () => {
+            const result = tacticalItemsController.activate('seeed_studio', gameLoop.state === 'running', cashManager);
+            if (!result.ok) this.snackbar.toast(t(`oil.failure.${result.reason}`) || result.reason);
+            this.updateNaturalOil();
+        });
+        this.evomapButton?.addEventListener('click', () => {
+            const result = tacticalItemsController.activate('evomap', gameLoop.state === 'running', cashManager);
+            if (!result.ok) this.snackbar.toast(t(`oil.failure.${result.reason}`) || result.reason);
+            this.updateNaturalOil();
+        });
+        this.hypershellButton?.addEventListener('click', () => {
+            const result = tacticalItemsController.activate('hypershell', gameLoop.state === 'running', cashManager);
+            if (!result.ok) this.snackbar.toast(t(`oil.failure.${result.reason}`) || result.reason);
+            this.updateNaturalOil();
+        });
+
         this.setState(gameLoop.state);
         this.updateSpeedLabel();
         this.updateAudioLabel();
@@ -184,11 +218,56 @@ class InterfaceManager {
         if (state.kind === 'active' || state.kind === 'cooldown') {
             const seconds = Math.ceil(state.remainingMs / 1000);
             this.naturalOilStatus.textContent = t(`oil.${state.kind}`, {seconds});
-            return;
+        } else {
+            this.naturalOilStatus.textContent = this.naturalOilFailure
+                ? t(`oil.failure.${this.naturalOilFailure}`)
+                : t(gameLoop.state === 'running' ? 'oil.ready' : 'oil.notRunning');
         }
-        this.naturalOilStatus.textContent = this.naturalOilFailure
-            ? t(`oil.failure.${this.naturalOilFailure}`)
-            : t(gameLoop.state === 'running' ? 'oil.ready' : 'oil.notRunning');
+
+        const running = gameLoop.state === 'running';
+        if (this.tripoButton) {
+            const s = tacticalItemsController.getState('tripo');
+            this.tripoButton.disabled = s.kind !== 'ready' || !running;
+        }
+        if (this.seeedButton) {
+            const s = tacticalItemsController.getState('seeed_studio');
+            this.seeedButton.disabled = s.kind !== 'ready' || !running;
+        }
+        if (this.evomapButton) {
+            const s = tacticalItemsController.getState('evomap');
+            this.evomapButton.disabled = s.kind !== 'ready' || !running;
+            if (this.evomapCostElement) {
+                this.evomapCostElement.textContent = tacticalItemsController.cost('evomap') === 0 ? 'FREE' : '1000 ¢';
+            }
+        }
+        if (this.hypershellButton) {
+            const s = tacticalItemsController.getState('hypershell');
+            this.hypershellButton.disabled = s.kind !== 'ready' || !running;
+        }
+    }
+
+    private bindItemHover(button: HTMLElement | null, title: string, descKey: string) {
+        if (!button) return;
+        const show = () => {
+            const desc = t(descKey);
+            button.setAttribute('title', `${title}: ${desc}`);
+            this.towersStatsElement.innerHTML = `
+                <div class="title">${title}</div>
+                <div class="description">${desc}</div>
+            `;
+        };
+        const hide = () => {
+            if (this.lastTower) {
+                this.showTowerStats(this.lastTower);
+            } else {
+                this.towersStatsElement.textContent = t('towers.selectHint');
+            }
+        };
+        button.addEventListener('mouseenter', show);
+        button.addEventListener('mouseleave', hide);
+        button.addEventListener('focus', show);
+        button.addEventListener('blur', hide);
+        button.setAttribute('title', `${title}: ${t(descKey)}`);
     }
 
     updateSpeedLabel() {
@@ -339,6 +418,14 @@ class InterfaceManager {
             textureManager.onLoaded(tower.texturePath, () => tower.draw(ctx));
 
             const selectTower = () => {
+                if (selectedCard === card) {
+                    selectedCard.classList.remove('selected');
+                    selectedCard = null;
+                    this.lastTower = null;
+                    if (playMode === 'human') towerPlacer.cancel();
+                    this.towersStatsElement.textContent = t('towers.selectHint');
+                    return;
+                }
                 selectedCard?.classList.remove('selected');
                 selectedCard = card;
                 card.classList.add('selected');

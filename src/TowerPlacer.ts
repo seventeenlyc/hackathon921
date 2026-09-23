@@ -15,6 +15,7 @@ class TowerPlacer extends Renderable {
     private i = 0;
     private shouldBeDrawn = false;
     private actions: GameActions | null = null;
+    private currentTowerClass: (new (...args: any[]) => Tower) | null = null;
 
     constructor() {
         super();
@@ -24,7 +25,7 @@ class TowerPlacer extends Renderable {
         controls.on('click', () => this.handleClick());
 
         controls.on('keydown:ESCAPE', () => {
-            if (this.placing) this.placing = false;
+            if (this.placing) this.cancel();
         });
     }
 
@@ -38,8 +39,10 @@ class TowerPlacer extends Renderable {
         const result = this.actions.buildTower(this.tower.towerType, this.i, this.j);
         interfaceManager.snackbar.toast(result.message);
         if (result.ok) {
-            this.placing = false;
-            this.shouldBeDrawn = false;
+            // Continuous placement: prepare a new tower instance of the same class for the next placement
+            if (this.currentTowerClass) {
+                this.tower = new this.currentTowerClass(0, 0, Map.TILE_SIZE);
+            }
         }
     }
 
@@ -88,7 +91,14 @@ class TowerPlacer extends Renderable {
     place(TowerClass: new (...args: any[]) => Tower) {
         this.shouldBeDrawn = false;
         this.placing = true;
+        this.currentTowerClass = TowerClass;
         this.tower = new TowerClass(0, 0, Map.TILE_SIZE);
+    }
+
+    cancel() {
+        this.placing = false;
+        this.shouldBeDrawn = false;
+        this.currentTowerClass = null;
     }
 }
 

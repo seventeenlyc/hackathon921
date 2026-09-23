@@ -44,11 +44,16 @@ export type ItemActivationResult =
 export class TacticalItemsController {
     private itemStates = new Map<ItemKey, ItemState>();
     private evomapUses = 0;
+    private context?: ItemActivationContext;
 
     constructor() {
         for (const key of ITEM_KEYS) {
             this.itemStates.set(key, { kind: 'ready' });
         }
+    }
+
+    setContext(context: ItemActivationContext) {
+        this.context = context;
     }
 
     get attackSpeedMultiplier(): number {
@@ -99,6 +104,8 @@ export class TacticalItemsController {
             }
         }
 
+        const effectiveContext = context || this.context;
+
         switch (key) {
             case 'natural_oil':
             case 'seeed_studio':
@@ -107,8 +114,8 @@ export class TacticalItemsController {
                 break;
             case 'evomap':
                 this.evomapUses += 1;
-                if (context?.enemyManager) {
-                    const enemies = context.enemyManager.all();
+                if (effectiveContext?.enemyManager) {
+                    const enemies = effectiveContext.enemyManager.all();
                     for (const enemy of enemies) {
                         if (enemy.alive) {
                             const damage = Math.max(1, Math.round(enemy.life * 0.02));
@@ -119,9 +126,9 @@ export class TacticalItemsController {
                 this.itemStates.set(key, { kind: 'cooldown', remainingMs: ITEM_COOLDOWN_MS });
                 break;
             case 'hypershell':
-                if (context?.homeBase) {
-                    const healAmount = Math.max(1, Math.round(context.homeBase.getMaxLife() * 0.25));
-                    context.homeBase.heal(healAmount);
+                if (effectiveContext?.homeBase) {
+                    const healAmount = Math.max(1, Math.round(effectiveContext.homeBase.getMaxLife() * 0.25));
+                    effectiveContext.homeBase.heal(healAmount);
                 }
                 this.itemStates.set(key, { kind: 'cooldown', remainingMs: ITEM_COOLDOWN_MS });
                 break;

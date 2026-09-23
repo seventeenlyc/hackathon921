@@ -96,6 +96,12 @@ const STRINGS: { [key: string]: Entry } = {
     'oil.failure.COOLDOWN': {zh: '机油仍在冷却', en: 'Natural Oil is cooling down'},
     'oil.failure.INSUFFICIENT_FUNDS': {zh: '金币不足，需要 1000 ¢', en: 'Insufficient cash: 1000 ¢ required'},
 
+    'oil.desc': {zh: '5 秒内所有塔奇克马攻击速度提升 150%。冷却时间 10 秒。消耗 1000 战术资源。', en: 'Increases attack speed of all Tachikomas by 150% for 5s. 10s cooldown. Costs 1000.'},
+    'item.tripo.desc': {zh: '5 秒内所有塔奇克马火力提升至 300%（单发伤害 ×3）。冷却时间 10 秒。消耗 1000 战术资源。', en: 'Increases firepower of all Tachikomas to 300% (damage x3) for 5s. 10s cooldown. Costs 1000.'},
+    'item.seeed.desc': {zh: '5 秒内所有塔奇克马攻击速度提升至 150%。冷却时间 10 秒。消耗 1000 战术资源。', en: 'Increases attack speed of all Tachikomas to 150% for 5s. 10s cooldown. Costs 1000.'},
+    'item.evomap.desc': {zh: '对全图所有存活敌方单位造成 2% 最大生命值的全屏 AOE 伤害（至少 1 点）。前 2 次使用免费，随后 1000 战术资源/次。冷却时间 10 秒。', en: 'Deals 2% max HP AOE damage to all living enemies (min 1). First 2 uses free, then 1000 each. 10s cooldown.'},
+    'item.hypershell.desc': {zh: '主基地恢复 25% 最大生命值（上限不超过最大值）。冷却时间 10 秒。消耗 1000 战术资源。', en: 'Repairs home base by 25% max HP (capped at max). 10s cooldown. Costs 1000.'},
+
     'result.gameOver': {zh: '防御终止', en: 'DEFENSE TERMINATED'},
     'result.wave': {zh: '防御波次', en: 'Wave Reached'},
     'result.rank': {zh: '作战排名', en: 'Operation Rank'},
