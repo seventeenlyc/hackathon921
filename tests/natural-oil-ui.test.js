@@ -105,6 +105,7 @@ function mountedInterface() {
         './tools/texturePaths': {
             texturePaths: {enemies: {simple: 's.png', fast: 'f.png', armored: 'a.png', healer: 'h.png', boss: 'b.png'}},
         },
+        './DevPanel': {DevPanel: class { constructor() {} }},
     };
     const interfaceManager = loadSource('src/InterfaceManager.ts', dependencies, {document}).interfaceManager;
     return {button: document.getElementById('natural-oil'),

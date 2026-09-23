@@ -111,6 +111,9 @@ export class LeaderboardStore {
         }
 
         this.db.exec(`
+            CREATE TABLE IF NOT EXISTS dev_sessions (
+                user_id INTEGER PRIMARY KEY REFERENCES users (uid)
+            );
             CREATE INDEX IF NOT EXISTS idx_runs_user ON runs (user_id);
             CREATE INDEX IF NOT EXISTS idx_runs_username ON runs (username);
             CREATE INDEX IF NOT EXISTS idx_runs_mode ON runs (mode);
@@ -163,10 +166,27 @@ export class LeaderboardStore {
         };
     }
 
+    /** Permanently mark this page-session UID as unranked, but only before its first run. */
+    enableDevSession(uid: number): boolean {
+        if (!this.getUser(uid)) return false;
+        this.db.prepare(`
+            INSERT INTO dev_sessions (user_id)
+            SELECT uid FROM users WHERE uid = ?
+              AND NOT EXISTS (SELECT 1 FROM runs WHERE user_id = ?)
+            ON CONFLICT (user_id) DO NOTHING
+        `).run(uid, uid);
+        return this.isDevSession(uid);
+    }
+
+    isDevSession(uid: number): boolean {
+        return Boolean(this.db.prepare('SELECT 1 FROM dev_sessions WHERE user_id = ?').get(uid));
+    }
+
     createRun(id: string, uid: number, now: number, mode: PlayMode = 'ai'): void {
         if (mode !== 'ai' && mode !== 'human') throw new Error('INVALID_MODE');
         const user = this.getUser(uid);
         if (!user) throw new Error('USER_NOT_FOUND');
+        if (this.isDevSession(uid)) throw new Error('DEV_SESSION_UNRANKED');
         this.db
             .prepare('INSERT INTO runs (id, user_id, username, created_at, last_wave, mode) VALUES (?, ?, ?, ?, 0, ?)')
             .run(id, uid, user.username, now, mode);
