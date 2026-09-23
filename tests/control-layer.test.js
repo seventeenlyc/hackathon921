@@ -50,12 +50,22 @@ const root = { classList: classList(['is-visible']), setAttribute() {}, inert: f
 const mapFrame = { classList: classList() };
 const controlListeners = {};
 const eventSource = { on: (name, fn) => { controlListeners[name] = fn; } };
-const collapseButton = { addEventListener() {} };
+const collapseButton = {
+    addEventListener() {},
+    classList: classList([]),
+    attrs: {},
+    setAttribute(name, value) { this.attrs[name] = String(value); },
+    getAttribute(name) { return this.attrs[name] ?? null; },
+};
 const battlefield = { focus() {} };
 const layer = new ControlLayer(root, battlefield, collapseButton, eventSource, null, mapFrame);
 controlListeners.doubleclick();
 assert.strictEqual(mapFrame.classList.contains('is-hidden'), true,
     'double-clicking the battlefield must hide the center window border with the control layer');
+assert.strictEqual(collapseButton.classList.contains('is-off'), true,
+    'the panel toggle must switch to its off state while the layer is hidden');
+assert.strictEqual(collapseButton.getAttribute('aria-pressed'), 'false',
+    'the panel toggle must report aria-pressed=false while the layer is hidden');
 controlListeners.doubleclick();
 assert.strictEqual(mapFrame.classList.contains('is-hidden'), false,
     'showing the control layer must restore the center window border');

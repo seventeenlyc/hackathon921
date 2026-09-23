@@ -10,6 +10,7 @@ import {ArmoredEnemy} from "./entities/enemies/ArmoredEnemy";
 import {FastEnemy} from "./entities/enemies/FastEnemy";
 import {HealerEnemy} from "./entities/enemies/HealerEnemy";
 import {gameLoop, Planner} from "./agent/GameLoop";
+import {bossLifeRatio, earlyWaveReliefFactor, waveLifeRatio, waveSpeedMultiplier} from "./tools/enemyScaling";
 import {spawnCountForWave} from "./agent/SpawnRoutes";
 
 interface WaveGroup {
@@ -145,19 +146,18 @@ class WavesManager {
             }
         }
 
-        // Keep elite-wave bosses at their effective wave-152 life and speed.
-        if (this.waveCounter <= 200 || enemy instanceof BossEnemy) {
-            enemy.life *= 0.4;
-            enemy.speed *= 0.4;
-        }
+        // 前 200 波整体缓冲 0.4；精英 Boss 是例外，始终按 0.4（属性固定在等效第 152 波）。
+        const relief = earlyWaveReliefFactor(this.waveCounter, enemy instanceof BossEnemy);
+        enemy.life *= relief;
+        enemy.speed *= relief;
 
         return enemy;
     }
 
     private generateWave(): Wave {
         const wave = [];
-        const ratio = 1 + this.waveCounter / 10;
-        const bossRatio = this.waveCounter >= 201 ? 1 + 152 / 10 : ratio;
+        const ratio = waveLifeRatio(this.waveCounter);
+        const bossRatio = bossLifeRatio(this.waveCounter);
 
         if (this.waveCounter >= 201) {
             wave.push({
@@ -207,7 +207,7 @@ class WavesManager {
                     enemyClass: FastEnemy,
                     enemySpecsMultiplier: {
                         life: ratio,
-                        speed: Math.min(1 + this.waveCounter / 30, 1.7)
+                        speed: waveSpeedMultiplier(this.waveCounter, 1.7)
                     },
                     quantity: 2 + this.waveCounter / 5,
                     delay: 200
@@ -223,7 +223,7 @@ class WavesManager {
                         enemyClass: ArmoredEnemy,
                         enemySpecsMultiplier: {
                             life: ratio,
-                            speed: Math.min(1 + this.waveCounter / 30, 1.5)
+                            speed: waveSpeedMultiplier(this.waveCounter, 1.5)
                         },
                         quantity: quantity / split,
                         delay: Math.max(500 - this.waveCounter, 100)
@@ -233,7 +233,7 @@ class WavesManager {
                         enemyClass: HealerEnemy,
                         enemySpecsMultiplier: {
                             life: ratio,
-                            speed: Math.min(1 + this.waveCounter / 30, 1.5)
+                            speed: waveSpeedMultiplier(this.waveCounter, 1.5)
                         },
                         quantity: 1,
                         delay: Math.max(400 - this.waveCounter, 100)
@@ -244,7 +244,7 @@ class WavesManager {
                     enemyClass: ArmoredEnemy,
                     enemySpecsMultiplier: {
                         life: ratio,
-                        speed: Math.min(1 + this.waveCounter / 30, 1.5)
+                        speed: waveSpeedMultiplier(this.waveCounter, 1.5)
                     },
                     quantity: 10 + this.waveCounter,
                     delay: Math.max(500 - this.waveCounter, 100)

@@ -3,6 +3,17 @@ const fs = require('fs');
 const path = require('path');
 const ts = require('typescript');
 
+// WavesManager 依赖的共享成长系数（纯模块），预转译后注入各加载器。
+const scalingModule = (() => {
+    const source = fs.readFileSync(path.join(__dirname, '..', 'src', 'tools', 'enemyScaling.ts'), 'utf8');
+    const js = ts.transpileModule(source, {
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2017 },
+    }).outputText;
+    const moduleObj = { exports: {} };
+    new Function('module', 'exports', js)(moduleObj, moduleObj.exports);
+    return moduleObj.exports;
+})();
+
 function loadSource(file, dependencies, globals = {}) {
     const source = fs.readFileSync(path.join(__dirname, '..', 'src', file), 'utf8');
     const js = ts.transpileModule(source, {
@@ -11,7 +22,11 @@ function loadSource(file, dependencies, globals = {}) {
     const moduleObj = { exports: {} };
     const names = ['module', 'exports', 'require', ...Object.keys(globals)];
     const values = [moduleObj, moduleObj.exports, name => {
-        if (!(name in dependencies)) throw new Error('Unexpected dependency: ' + name);
+        if (!(name in dependencies)) {
+            // 共享的敌方成长系数是纯模块，任何加载 WavesManager 的用例都可直连。
+            if (name === './tools/enemyScaling') return scalingModule;
+            throw new Error('Unexpected dependency: ' + name);
+        }
         return dependencies[name];
     }, ...Object.values(globals)];
     new Function(...names, js)(...values);
@@ -66,6 +81,12 @@ async function test(name, fn) {
             './Map': { map: { enemyBases: [], setSpawnCount() {} } },
             './tools/helphers': { rand: () => 0 },
             './agent/SpawnRoutes': { spawnCountForWave: () => 1 },
+        './tools/enemyScaling': {
+            waveLifeRatio: wave => 1 + wave / 10,
+            waveSpeedMultiplier: (wave, cap) => Math.min(1 + wave / 30, cap),
+            earlyWaveReliefFactor: (wave, isBoss) => (wave <= 200 || isBoss ? 0.4 : 1),
+            bossLifeRatio: wave => (wave >= 201 ? 1 + 152 / 10 : 1 + wave / 10),
+        },
             './agent/GameLoop': { gameLoop: {
                 sleep: async () => {},
                 holdForPlanning: async () => {
@@ -109,6 +130,12 @@ async function test(name, fn) {
             './Map': { map: { enemyBases: [], setSpawnCount() {} } },
             './tools/helphers': { rand: () => 0 },
             './agent/SpawnRoutes': { spawnCountForWave: () => 1 },
+        './tools/enemyScaling': {
+            waveLifeRatio: wave => 1 + wave / 10,
+            waveSpeedMultiplier: (wave, cap) => Math.min(1 + wave / 30, cap),
+            earlyWaveReliefFactor: (wave, isBoss) => (wave <= 200 || isBoss ? 0.4 : 1),
+            bossLifeRatio: wave => (wave >= 201 ? 1 + 152 / 10 : 1 + wave / 10),
+        },
             './agent/GameLoop': { gameLoop: {
                 sleep: async () => {},
                 // Stop the run during the planning window that precedes wave 2.
@@ -146,6 +173,12 @@ async function test(name, fn) {
             './Map': { map: { enemyBases: [], setSpawnCount() {} } },
             './tools/helphers': { rand: () => 0 },
             './agent/SpawnRoutes': { spawnCountForWave: () => 1 },
+        './tools/enemyScaling': {
+            waveLifeRatio: wave => 1 + wave / 10,
+            waveSpeedMultiplier: (wave, cap) => Math.min(1 + wave / 30, cap),
+            earlyWaveReliefFactor: (wave, isBoss) => (wave <= 200 || isBoss ? 0.4 : 1),
+            bossLifeRatio: wave => (wave >= 201 ? 1 + 152 / 10 : 1 + wave / 10),
+        },
             './agent/GameLoop': { gameLoop: {
                 sleep: async () => {},
                 holdForPlanning: async () => {},
