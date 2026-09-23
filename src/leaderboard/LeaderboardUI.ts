@@ -14,18 +14,20 @@ import { fetchSharedLeaderboard } from './LeaderboardClient';
 import type { RemoteLeaderboard } from './LeaderboardClient';
 import {runSync} from './RunSync';
 import {PromptHistoryDialog} from './PromptHistoryDialog';
-import {onLangChange, t} from '../i18n';
+import {onLangChange, t, toggleLang} from '../i18n';
 import {playMode} from '../PlayMode';
 
 const TOP_N = 10;
 
 // 登录浮窗：AI 模式每次页面加载都要求确认作战档案；昵称与头像只活在当前页面内存。
-// 浮窗装饰文案（顶部条/标题/分区编号/底条）是固定双语视觉元素，zh/en 同值地收敛在 i18n 表里。
+// 文案全部经 i18n 区分中英文，标题/眉标复用 app.name、header.subtitle、shell.eyebrow；
+// 浮窗自带语言切换按钮，语言变化时整体重渲染（保留已选头像与已输入内容）。
 export class UsernameGate {
     private overlay: HTMLElement;
-    private input: HTMLInputElement;
-    private errorEl: HTMLElement;
-    private counterEl: HTMLElement;
+    // render() 在构造函数中立即执行并赋值这三个引用；语言切换时会整体重渲染重建。
+    private input!: HTMLInputElement;
+    private errorEl!: HTMLElement;
+    private counterEl!: HTMLElement;
     private selectedAvatar: AvatarId;
     private onDone: (name: string) => void;
 
@@ -34,6 +36,12 @@ export class UsernameGate {
         this.selectedAvatar = randomAvatarId();
         this.overlay = document.createElement('div');
         this.overlay.className = 'username-overlay';
+        this.render();
+        onLangChange(() => this.render());
+    }
+
+    private render() {
+        const value = this.input ? this.input.value : '';
         this.overlay.innerHTML = this.buildTemplate();
         this.input = this.overlay.querySelector('input') as HTMLInputElement;
         this.errorEl = this.overlay.querySelector('.error') as HTMLElement;
@@ -52,36 +60,45 @@ export class UsernameGate {
         });
         const randomButton = this.overlay.querySelector('.gate-random') as HTMLButtonElement;
         randomButton.addEventListener('click', () => this.selectAvatar(randomAvatarId()));
+        const langButton = this.overlay.querySelector('.gate-lang') as HTMLButtonElement;
+        langButton.addEventListener('click', () => toggleLang());
+        this.input.value = value;
         this.selectAvatar(this.selectedAvatar);
+        this.updateCounter();
     }
 
     // 全部走受控 i18n 字典与代码常量；用户输入只经 value/textContent，不进 innerHTML。
     private buildTemplate(): string {
-        const cards = AVATARS.map((avatar) =>
-            '<button type="button" class="gate-avatar" role="radio" aria-checked="false"'
-            + ' data-avatar-id="' + avatar.id + '"'
-            + ' aria-label="' + t(avatar.nameKey) + ' ' + avatar.romaji + '">'
-            + '<img src="' + AVATAR_SRC[avatar.id] + '" alt=""/>'
-            + '<span class="gate-avatar-name">' + t(avatar.nameKey) + '</span>'
-            + '<span class="gate-avatar-romaji">' + avatar.romaji + '</span>'
-            + '</button>').join('');
+        const cards = AVATARS.map((avatar) => {
+            const name = t(avatar.nameKey);
+            // 罗马音与当前语言名称相同时（如英文下的 BATOU/BATOU）不再重复展示。
+            const romaji = avatar.romaji === name
+                ? ''
+                : '<span class="gate-avatar-romaji">' + avatar.romaji + '</span>';
+            return '<button type="button" class="gate-avatar" role="radio" aria-checked="false"'
+                + ' data-avatar-id="' + avatar.id + '"'
+                + ' aria-label="' + name + ' ' + avatar.romaji + '">'
+                + '<img src="' + AVATAR_SRC[avatar.id] + '" alt=""/>'
+                + '<span class="gate-avatar-name">' + name + '</span>'
+                + romaji
+                + '</button>';
+        }).join('');
         return (
             '<form class="username-card">'
             + '<header class="gate-topbar">'
-            + '<div class="gate-topbar-brand"><span class="gate-brand">' + t('gate.brand') + '</span>'
-            + '<span class="gate-brand-sub">' + t('gate.brandSub') + '</span></div>'
+            + '<span class="gate-brand">' + t('shell.eyebrow') + '</span>'
+            + '<span class="gate-topbar-right">'
+            + '<button type="button" class="gate-lang">' + t('gate.langToggle') + '</button>'
             + '<span class="gate-online">' + t('gate.systemOnline') + '</span>'
+            + '</span>'
             + '</header>'
-            + '<div class="gate-heading"><h2>' + t('gate.title') + '</h2><p>' + t('gate.titleSub') + '</p></div>'
+            + '<div class="gate-heading"><h2>' + t('app.name') + '</h2><p>' + t('header.subtitle') + '</p></div>'
             + '<div class="gate-intro"><h3>' + t('gate.identTitle') + '</h3>'
-            + '<p>' + t('gate.identEn') + '</p>'
-            + '<p>' + t('gate.identZh') + '</p></div>'
+            + '<p>' + t('gate.ident') + '</p></div>'
             + '<section class="gate-section"><h3 class="gate-section-title">' + t('gate.profileTitle') + '</h3>'
-            + '<p class="gate-section-sub">' + t('gate.profileSub') + '</p>'
-            + '<div class="gate-avatar-grid" role="radiogroup" aria-label="' + t('gate.profileSub') + '">' + cards + '</div>'
+            + '<div class="gate-avatar-grid" role="radiogroup" aria-label="' + t('gate.profileTitle') + '">' + cards + '</div>'
             + '</section>'
             + '<section class="gate-section"><h3 class="gate-section-title">' + t('gate.codenameTitle') + '</h3>'
-            + '<p class="gate-section-sub">' + t('gate.codenameSub') + '</p>'
             + '<div class="gate-codename-row">'
             + '<input type="text" maxlength="16" placeholder="' + t('gate.placeholder') + '"/>'
             + '<span class="gate-counter">0 / 16</span>'
