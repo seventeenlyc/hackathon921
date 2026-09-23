@@ -32,6 +32,9 @@ import {playMode, switchPlayMode} from "./PlayMode";
 import {naturalOilController} from "./items/NaturalOil";
 import {tacticalItemsController} from "./items/TacticalItems";
 import {devController} from "./dev";
+import {NarrativeDirector} from "./narrative/NarrativeDirector";
+import {NARRATIVE_SCENES} from "./narrative/NarrativeScript";
+import {narrativeOverlay} from "./narrative/NarrativeOverlay";
 
 // Settlement stats gathered across the run (see the result screen).
 let runStartedAt: number | null = null;
@@ -246,6 +249,23 @@ const agentRuntime = new AgentRuntime({
 // it once per PLANNING round (issue #25). In human mode there is no AI planner at
 // all and the wave manager uses a fixed pause instead.
 waveManager.setPlanner(playMode === 'ai' ? agentRuntime : humanPlanner);
+
+// Story scenes (issue #100). Trigger rules live in the director; the overlay is
+// the view. Both play modes share the same beats, and the scene runs inside
+// `holdForNarrative`, so reading it freezes the simulation without touching the
+// Prompt/planning path.
+const narrativeDirector = new NarrativeDirector(
+    NARRATIVE_SCENES,
+    {
+        hold: hold => gameLoop.holdForNarrative(hold),
+        sleep: ms => gameLoop.sleep(ms),
+        hasLivingEnemies: () => enemyManager.all().some(enemy => enemy.alive),
+        baseAlive: () => map.homeBase.getLife() > 0,
+        stillRunning: () => waveManager.looping,
+    },
+    narrativeOverlay,
+);
+waveManager.setNarrative(narrativeDirector);
 
 /** Old inert `delayBetweenWaves`: human mode needs a real break between waves. */
 const HUMAN_INTER_WAVE_MS = 7000;

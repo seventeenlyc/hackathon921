@@ -46,7 +46,7 @@ function tableValue(key, locale) {
     return match[locale === 'zh' ? 1 : 2];
 }
 
-for (const state of ['idle', 'running', 'paused', 'planning']) {
+for (const state of ['idle', 'running', 'paused', 'planning', 'narrative']) {
     // 主值随界面语言：zh 界面显示中文、en 界面显示英文；副行固定给另一语言作对照。
     assert.ok(
         /[\u4e00-\u9fff]/.test(tableValue(`state.${state}`, 'zh')),

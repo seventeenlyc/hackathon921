@@ -40,6 +40,15 @@ export const humanPlanner: Planner = {
     plan: () => Promise.resolve()
 };
 
+/**
+ * Story hook (issue #100). `Game.ts` supplies a `NarrativeDirector`; tests can
+ * supply a light double. A null hook means "no narrative", which keeps the wave
+ * loop identical to before for every caller that does not opt in.
+ */
+export interface WaveNarrative {
+    beforeWave(wave: number): Promise<void>;
+}
+
 class WavesManager {
     public waveCounter = 1
     public looping = true;
@@ -47,6 +56,7 @@ class WavesManager {
     public onWaveStarted: ((wave: number) => void) | null = null;
     private planner: Planner = idlePlanner;
     private started = false;
+    private narrative: WaveNarrative | null = null;
     /** Breathing room between waves in human mode; 0 in AI mode. */
     private interWaveDelayMs = 0;
 
@@ -56,6 +66,11 @@ class WavesManager {
     /** The agent runtime plugs in here. */
     setPlanner(planner: Planner) {
         this.planner = planner;
+    }
+
+    /** Story scenes plug in here (issue #100). */
+    setNarrative(narrative: WaveNarrative | null) {
+        this.narrative = narrative;
     }
 
     /**
@@ -80,6 +95,16 @@ class WavesManager {
         while (this.looping) {
             // Apply this wave's routes before planning so the agent sees them.
             map.setSpawnCount(spawnCountForWave(this.waveCounter));
+
+            // Story beat for this boundary (issue #100). It runs while the
+            // simulation is frozen, before the inter-wave countdown and before
+            // PLANNING, so neither elapses behind the dialogue. `beforeWave`
+            // itself decides whether a scene applies and whether it must wait
+            // for the previous wave to be cleared.
+            if (this.narrative) {
+                await this.narrative.beforeWave(this.waveCounter);
+                if (!this.looping) break;
+            }
 
             // Human mode: a fixed pause between waves, since there is no AI think
             // time to create one. It elapses only while stepping, so PAUSE freezes
