@@ -29,7 +29,7 @@ const dependencies = {
             enqueuePrompt: (username, version) => events.push(['prompt', username, version]),
         },
     },
-    './AudioManager': { audioManager: { setWave: wave => events.push(['music-wave', wave]), startMusic: () => events.push('music-start') } },
+    './AudioManager': { audioManager: { beginRun: wave => events.push(['music-start-at-wave', wave]) } },
     './CashManager': { cashManager: { setBalance() {} } },
     './InterfaceManager': { interfaceManager: { setWave() {} } },
     './dev': { devController: { isUnlocked: false, getConfig: () => ({ startWave: 1, startCash: 200 }), onChange() {} }, DEV_MAX_START_WAVE: 9999, DEV_MAX_START_CASH: 1000000000 },
@@ -53,7 +53,7 @@ assert.deepStrictEqual(promptEvent, ['prompt', 'Alice', openingPrompt],
 assert.ok(events.findIndex(event => Array.isArray(event) && event[0] === 'prepare')
     < events.findIndex(event => Array.isArray(event) && event[0] === 'prompt'),
 'the run must be prepared before its opening prompt is appended');
-assert.ok(events.findIndex(event => Array.isArray(event) && event[0] === 'music-wave' && event[1] === 1)
-    < events.indexOf('music-start'), 'the opening wave is sent to audio before music playback starts');
+assert.ok(events.some(event => Array.isArray(event) && event[0] === 'music-start-at-wave' && event[1] === 1),
+    'music begins with the opening wave, not a random pre-run track');
 
 console.log('Opening prompt run recording passed.');
