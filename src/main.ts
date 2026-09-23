@@ -5,7 +5,7 @@ import './Game';
 import { startHumanRun } from './Game';
 import { strategyPanel } from "./StrategyPanel";
 import { UsernameGate, leaderboardPanel } from './leaderboard/LeaderboardUI';
-import { clearLegacyUsernameCookie } from './leaderboard/SessionIdentity';
+import { clearLegacyUsernameCookie, getSessionAvatar } from './leaderboard/SessionIdentity';
 import { ensureSessionToken } from './leaderboard/LeaderboardClient';
 import { playMode } from './PlayMode';
 import { audioManager } from './AudioManager';
@@ -21,7 +21,7 @@ const gate = new UsernameGate((name) => {
     audioManager.startMusic();
     // 建立会话（AI 代理需要 token）但**不记分**：一局还没开始（IDLE），
     // 服务端第一次记录波次发生在第 1 波真正开始时。
-    void ensureSessionToken(name);
+    void ensureSessionToken(name, getSessionAvatar());
     leaderboardPanel.refresh();
     if (playMode === 'human') {
         startHumanRun(name);

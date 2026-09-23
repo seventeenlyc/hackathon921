@@ -5,7 +5,7 @@
 
 import { LeaderboardStore } from './store';
 import { signToken, verifyToken } from './token';
-import { sanitizeLeaderboardMode, sanitizeLimit, sanitizeRunMode, sanitizeUsername, sanitizeWave } from './validate';
+import { sanitizeAvatarId, sanitizeLeaderboardMode, sanitizeLimit, sanitizeRunMode, sanitizeUsername, sanitizeWave } from './validate';
 import type { AgentConfig } from './agent';
 import { MAX_PROMPT_LENGTH } from './prompts';
 
@@ -33,7 +33,7 @@ export interface ApiDeps {
 
 const WAVE_PATH = /^\/api\/runs\/([^/]+)\/waves$/;
 const PROMPT_WRITE_PATH = /^\/api\/runs\/([^/]+)\/prompts$/;
-const PROMPT_HISTORY_PATH = /^\/api\/leaderboard\/([^/]+)\/prompts$/;
+const PROMPT_HISTORY_PATH = /^\/api\/leaderboard\/(\d+)\/prompts$/;
 
 function json(status: number, body: any): ApiResponse {
     return { status, body };
@@ -54,41 +54,45 @@ export function handleApi(deps: ApiDeps, req: ApiRequest): ApiResponse {
         return json(200, { ok: true, providerConfigured: Boolean(deps.agent && deps.agent.apiKey) });
     }
 
-    // 用昵称换一个签名会话 token。无注册、无密码（docs/PRODUCT_CONCEPT.md §14）。
+    // 每次确认资料时创建全新的 UID；昵称和头像只作展示资料。
     if (req.pathname === '/api/session' && method === 'POST') {
         const username = sanitizeUsername(field(req.body, 'username'));
         if (!username) return json(400, { error: 'INVALID_USERNAME' });
-        return json(200, { token: signToken(deps.secret, username, deps.now()), username });
+        const avatarId = sanitizeAvatarId(field(req.body, 'avatarId'));
+        if (!avatarId) return json(400, { error: 'INVALID_AVATAR' });
+        const now = deps.now();
+        const uid = deps.store.createUser(username, avatarId, now);
+        return json(200, { token: signToken(deps.secret, uid, now), username });
     }
 
     // 开一局：服务端签发对局会话，后续波次必须挂在它下面。
     if (req.pathname === '/api/runs' && method === 'POST') {
-        const username = verifyToken(deps.secret, req.token, deps.now());
-        if (!username) return json(401, { error: 'INVALID_SESSION' });
+        const uid = verifyToken(deps.secret, req.token, deps.now());
+        if (!uid || !deps.store.getUser(uid)) return json(401, { error: 'INVALID_SESSION' });
         const rawMode = field(req.body, 'mode');
         const mode = sanitizeRunMode(rawMode);
         if (!mode) return json(400, { error: 'INVALID_MODE' });
         const runId = deps.newRunId();
-        deps.store.createRun(runId, username, deps.now(), mode);
+        deps.store.createRun(runId, uid, deps.now(), mode);
         return json(201, { runId });
     }
 
     // 上报「到达第 N 波」。这是唯一的成绩来源。
     const waveMatch = WAVE_PATH.exec(req.pathname);
     if (waveMatch && method === 'POST') {
-        const username = verifyToken(deps.secret, req.token, deps.now());
-        if (!username) return json(401, { error: 'INVALID_SESSION' });
+        const uid = verifyToken(deps.secret, req.token, deps.now());
+        if (!uid || !deps.store.getUser(uid)) return json(401, { error: 'INVALID_SESSION' });
 
         const wave = sanitizeWave(field(req.body, 'wave'));
         if (wave == null) return json(400, { accepted: false, reason: 'WAVE_OUT_OF_RANGE' });
 
-        const result = deps.store.recordWave(waveMatch[1], username, wave, deps.now());
+        const result = deps.store.recordWave(waveMatch[1], uid, wave, deps.now());
         if (!result.accepted) {
             // 状态码让客户端能区分「这一局不能用了，重开」与「这条上报不合法」。
             const status =
                 result.reason === 'RUN_NOT_FOUND' || result.reason === 'RUN_EXPIRED'
                     ? 404
-                    : result.reason === 'USERNAME_MISMATCH'
+                    : result.reason === 'UID_MISMATCH'
                       ? 403
                       : 409;
             return json(status, { accepted: false, reason: result.reason });
@@ -99,8 +103,8 @@ export function handleApi(deps: ApiDeps, req: ApiRequest): ApiResponse {
     // Store only versions that the client reports after StrategyStore.lock().
     const promptWriteMatch = PROMPT_WRITE_PATH.exec(req.pathname);
     if (promptWriteMatch && method === 'POST') {
-        const username = verifyToken(deps.secret, req.token, deps.now());
-        if (!username) return json(401, { error: 'INVALID_SESSION' });
+        const uid = verifyToken(deps.secret, req.token, deps.now());
+        if (!uid || !deps.store.getUser(uid)) return json(401, { error: 'INVALID_SESSION' });
 
         const version = field(req.body, 'version');
         const prompt = field(req.body, 'prompt');
@@ -116,7 +120,7 @@ export function handleApi(deps: ApiDeps, req: ApiRequest): ApiResponse {
 
         const result = deps.store.recordPrompt(
             promptWriteMatch[1],
-            username,
+            uid,
             { version: version as number, prompt, fromWave: safeWave },
             deps.now()
         );
@@ -124,7 +128,7 @@ export function handleApi(deps: ApiDeps, req: ApiRequest): ApiResponse {
         const status =
             result.reason === 'RUN_NOT_FOUND' || result.reason === 'RUN_EXPIRED'
                 ? 404
-                : result.reason === 'USERNAME_MISMATCH'
+                : result.reason === 'UID_MISMATCH'
                   ? 403
                   : result.reason.startsWith('PROMPT_VERSION_') || result.reason === 'PROMPT_WAVE_BEHIND'
                     ? 409
@@ -135,15 +139,10 @@ export function handleApi(deps: ApiDeps, req: ApiRequest): ApiResponse {
     // Prompt history is public by design, but only for the server-selected best run.
     const promptHistoryMatch = PROMPT_HISTORY_PATH.exec(req.pathname);
     if (promptHistoryMatch && method === 'GET') {
-        let decoded: string;
-        try {
-            decoded = decodeURIComponent(promptHistoryMatch[1]);
-        } catch (e) {
-            return json(400, { error: 'INVALID_USERNAME' });
-        }
-        const username = sanitizeUsername(decoded);
-        if (!username) return json(400, { error: 'INVALID_USERNAME' });
-        return json(200, deps.store.bestRunPrompts(username));
+        const uid = Number(promptHistoryMatch[1]);
+        if (!Number.isSafeInteger(uid) || uid < 1) return json(400, { error: 'INVALID_UID' });
+        if (!deps.store.getUser(uid)) return json(404, { error: 'USER_NOT_FOUND' });
+        return json(200, deps.store.bestRunPrompts(uid));
     }
 
     // 读取共享排行榜；带 token 时额外返回本人的名次。
@@ -153,29 +152,36 @@ export function handleApi(deps: ApiDeps, req: ApiRequest): ApiResponse {
         const limit = sanitizeLimit(req.searchParams.limit);
         const entries = deps.store.top(limit, mode).map((entry, index) => ({
             rank: index + 1,
+            uid: entry.uid,
             username: entry.username,
+            avatarId: entry.avatarId,
             wave: entry.wave,
             achievedAt: entry.achievedAt,
             mode: entry.mode,
         }));
 
         let me: any = null;
-        const viewer = verifyToken(deps.secret, req.token, deps.now());
+        const viewerUid = verifyToken(deps.secret, req.token, deps.now());
+        const viewer = viewerUid ? deps.store.getUser(viewerUid) : null;
         if (viewer) {
             if (mode === 'total') {
-                const totalRank = deps.store.rankOf(viewer, 'total');
-                const best = deps.store.bestRecordOf(viewer);
+                const totalRank = deps.store.rankOf(viewer.uid, 'total');
+                const best = deps.store.bestRecordOf(viewer.uid);
                 me = {
-                    username: viewer,
+                    uid: viewer.uid,
+                    username: viewer.username,
+                    avatarId: viewer.avatarId,
                     rank: totalRank,
                     wave: best ? best.wave : null,
                     mode: best ? best.mode : 'ai',
                 };
             } else {
                 me = {
-                    username: viewer,
-                    rank: deps.store.rankOf(viewer, mode),
-                    wave: deps.store.bestWaveOf(viewer, mode),
+                    uid: viewer.uid,
+                    username: viewer.username,
+                    avatarId: viewer.avatarId,
+                    rank: deps.store.rankOf(viewer.uid, mode),
+                    wave: deps.store.bestWaveOf(viewer.uid, mode),
                     mode,
                 };
             }

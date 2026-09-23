@@ -81,7 +81,7 @@ npm run test:server  # 后端 API 测试：tsc 编译后由 Node 内置 test run
 
 #### SQLite 增量迁移与回滚
 
-提示词溯源使用与排行榜相同的 SQLite 文件。升级到包含溯源功能的版本时，服务启动会执行幂等的增量迁移：仅在 `runs.prompt_head_id` 不存在时增加该列，并创建 `prompt_nodes` 表及其索引；既有 `runs`、`wave_events` 和成绩数据不会被重写或删除。重复启动不会重复增加列或节点表。
+身份、排行榜与提示词溯源使用同一个 SQLite 文件。身份迁移会创建 `users` 表与 UID 索引，并为旧 `runs` 补 `user_id`；服务启动时按昵称大小写不敏感分组，为既有 run 回填 legacy UID。旧系统已合并的同名玩家无法由迁移拆分，历史头像保持为空，旧成绩与 Prompt 链会保留。提示词迁移还会在需要时补 `runs.prompt_head_id`，并创建 `prompt_nodes` 表及其索引。迁移可重复执行，不删除历史 run、波次事件、成绩或 Prompt 节点。
 
 升级生产服务前，先在运维侧备份 SQLite 文件（示例：`cp leaderboard.sqlite3 leaderboard.sqlite3.bak-$(date +%Y%m%d%H%M%S)`），再切换编译产物。迁移验证必须使用独立的临时 SQLite 文件，不能用生产库做测试。
 

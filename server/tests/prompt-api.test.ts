@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { ApiDeps, ApiRequest, handleApi } from '../src/http';
 import { LeaderboardStore } from '../src/store';
-import { signToken } from '../src/token';
+import { signToken, verifyToken } from '../src/token';
 
 const T0 = 1_000_000;
 
@@ -25,12 +25,18 @@ function request(over: Partial<ApiRequest>): ApiRequest {
 }
 
 function openRun(deps: ApiDeps, username: string): { token: string; runId: string } {
-    const session = handleApi(deps, request({ method: 'POST', pathname: '/api/session', body: { username } }));
+    const session = handleApi(deps, request({ method: 'POST', pathname: '/api/session', body: { username, avatarId: 'aramaki' } }));
     assert.equal(session.status, 200);
     const token = session.body.token as string;
     const run = handleApi(deps, request({ method: 'POST', pathname: '/api/runs', token }));
     assert.equal(run.status, 201);
     return { token, runId: run.body.runId as string };
+}
+
+function createRun(deps: ApiDeps, token: string): string {
+    const run = handleApi(deps, request({ method: 'POST', pathname: '/api/runs', token }));
+    assert.equal(run.status, 201);
+    return run.body.runId as string;
 }
 
 test('POST prompts records a prompt and GET returns the best run chain without a token', () => {
@@ -48,7 +54,7 @@ test('POST prompts records a prompt and GET returns the best run chain without a
 
     const read = handleApi(deps, request({
         method: 'GET',
-        pathname: '/api/leaderboard/%E7%8E%A9%E5%AE%B6/prompts',
+        pathname: `/api/leaderboard/${verifyToken(deps.secret, token, deps.now())}/prompts`,
     }));
     assert.equal(read.status, 200);
     assert.equal(read.body.username, '玩家');
@@ -56,6 +62,40 @@ test('POST prompts records a prompt and GET returns the best run chain without a
     assert.equal(read.body.wave, 3);
     assert.deepEqual(read.body.prompts.map((node: any) => [node.version, node.prompt, node.fromWave]), [[1, '先观察再建塔', 1]]);
     assert.equal(JSON.stringify(read.body).includes(token), false);
+});
+
+test('每局从空链记录 Prompt，低分局保留但不替换纪录链，破纪录后完整更新', () => {
+    const deps = makeDeps();
+    const { token, runId: firstRun } = openRun(deps, 'Alice');
+    const recordPrompt = (runId: string, version: number, prompt: string) => handleApi(deps, request({
+        method: 'POST', pathname: `/api/runs/${runId}/prompts`, token,
+        body: { version, prompt, fromWave: version },
+    }));
+    const recordWave = (runId: string, wave: number) => handleApi(deps, request({
+        method: 'POST', pathname: `/api/runs/${runId}/waves`, token, body: { wave },
+    }));
+    recordPrompt(firstRun, 1, 'first opening');
+    recordWave(firstRun, 5);
+
+    const nextRun = createRun(deps, token);
+    assert.equal(recordPrompt(nextRun, 1, 'second opening').status, 200);
+    assert.equal(recordPrompt(nextRun, 2, 'second revision').status, 200);
+    recordWave(nextRun, 3);
+
+    const boardBeforeRecord = handleApi(deps, request({ pathname: '/api/leaderboard' }));
+    const uid = boardBeforeRecord.body.entries[0].uid;
+    const getHistory = () => handleApi(deps, request({ pathname: `/api/leaderboard/${uid}/prompts` }));
+    const beforeRecord = getHistory();
+    assert.equal(beforeRecord.body.runId, firstRun, '低分局不能替换当前最佳链');
+    assert.deepEqual(beforeRecord.body.prompts.map((node: any) => node.prompt), ['first opening']);
+
+    recordWave(nextRun, 6);
+    const afterRecord = getHistory();
+    assert.equal(afterRecord.body.runId, nextRun);
+    assert.deepEqual(afterRecord.body.prompts.map((node: any) => [node.version, node.prompt, node.prevId]), [
+        [1, 'second opening', null],
+        [2, 'second revision', afterRecord.body.prompts[0].id],
+    ]);
 });
 
 test('prompt write maps authentication, ownership, validation, conflict and expiry failures', () => {
@@ -89,10 +129,14 @@ test('prompt write maps authentication, ownership, validation, conflict and expi
 
 test('public prompt history returns an empty result for users without a score and rejects bad path encoding', () => {
     const deps = makeDeps();
-    const empty = handleApi(deps, request({ pathname: '/api/leaderboard/Nobody/prompts' }));
-    assert.deepEqual(empty, { status: 200, body: { username: 'Nobody', runId: null, wave: null, prompts: [] } });
+    const session = handleApi(deps, request({ method: 'POST', pathname: '/api/session', body: { username: 'Nobody', avatarId: 'aramaki' } }));
+    const uid = verifyToken(deps.secret, session.body.token, deps.now());
+    const empty = handleApi(deps, request({ pathname: `/api/leaderboard/${uid}/prompts` }));
+    assert.deepEqual(empty, { status: 200, body: { uid, username: 'Nobody', runId: null, wave: null, prompts: [] } });
+    assert.equal(handleApi(deps, request({ pathname: '/api/leaderboard/999/prompts' })).status, 404);
+    assert.equal(handleApi(deps, request({ pathname: '/api/leaderboard/0/prompts' })).status, 400);
     const malformed = handleApi(deps, request({ pathname: '/api/leaderboard/%E0%A4%A/prompts' }));
-    assert.equal(malformed.status, 400);
+    assert.equal(malformed.status, 404);
 });
 
 test('a prompt POST accepts 5000 Chinese characters after validation', () => {

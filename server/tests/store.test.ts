@@ -8,12 +8,30 @@ import { LeaderboardStore, RUN_TTL_MS } from '../src/store';
 
 const T0 = 1_000_000;
 
-function freshStore(): LeaderboardStore {
+function freshStore(): any {
     const db = new DatabaseSync(':memory:');
     db.exec('PRAGMA foreign_keys = ON;');
     const store = new LeaderboardStore(db);
     store.migrate();
-    return store;
+    // Keep these business-rule tests concise: each lower-case name represents
+    // one stable UID. API tests cover repeated profiles creating distinct UIDs.
+    const ids = new Map<string, number>();
+    const uid = (name: string) => {
+        const key = name.toLowerCase();
+        let id = ids.get(key);
+        if (!id) {
+            id = store.createUser(name, 'aramaki', T0);
+            ids.set(key, id);
+        }
+        return id;
+    };
+    const view: any = Object.create(store);
+    view.createRun = (id: string, name: string, now: number, mode?: 'ai' | 'human') => store.createRun(id, uid(name), now, mode);
+    view.recordWave = (id: string, name: string, wave: number, now: number) => store.recordWave(id, uid(name), wave, now);
+    view.bestWaveOf = (name: string, mode?: 'ai' | 'human') => store.bestWaveOf(uid(name), mode);
+    view.bestRecordOf = (name: string) => store.bestRecordOf(uid(name));
+    view.rankOf = (name: string, mode?: 'ai' | 'human' | 'total') => store.rankOf(uid(name), mode);
+    return view;
 }
 
 test('记录波次：首次上报即被接受，最佳波次随之更新', () => {
@@ -50,12 +68,12 @@ test('未知对局返回 RUN_NOT_FOUND', () => {
     });
 });
 
-test('别人不能往你的对局里写成绩（USERNAME_MISMATCH）', () => {
+test('不同 UID 不能往对方的对局里写成绩（UID_MISMATCH）', () => {
     const store = freshStore();
     store.createRun('r1', 'Alice', T0);
     assert.deepEqual(store.recordWave('r1', 'Bob', 9, T0), {
         accepted: false,
-        reason: 'USERNAME_MISMATCH',
+        reason: 'UID_MISMATCH',
     });
     assert.equal(store.bestWaveOf('Bob'), null);
 });
@@ -92,7 +110,7 @@ test('排行榜：波次降序，平局时更早达成者靠前', () => {
 
     const top = store.top(10);
     assert.deepEqual(
-        top.map(e => [e.username, e.wave]),
+        top.map((e: any) => [e.username, e.wave]),
         [
             ['Carol', 9],
             ['Alice', 5],
@@ -102,7 +120,7 @@ test('排行榜：波次降序，平局时更早达成者靠前', () => {
     assert.ok(top[1].achievedAt < top[2].achievedAt, '平局时先达成者 achievedAt 更小');
 });
 
-test('排行榜：同一昵称只出现一次，取最佳波次（大小写不敏感）', () => {
+test('排行榜：同一 UID 只出现一次，取最佳波次', () => {
     const store = freshStore();
     store.createRun('r1', 'Alice', T0);
     store.createRun('r2', 'alice', T0);
@@ -203,7 +221,7 @@ test('AI 与人类模式隔离，总榜合并同昵称不同模式成绩', () =>
     const totalTop = store.top(10, 'total');
     assert.equal(totalTop.length, 2);
     assert.deepEqual(
-        totalTop.map(e => [e.username, e.wave, e.mode]),
+        totalTop.map((e: any) => [e.username, e.wave, e.mode]),
         [
             ['Alice', 16, 'human'],
             ['Alice', 12, 'ai'],

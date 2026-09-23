@@ -12,6 +12,19 @@ let username: string | null = null;
 /** Same lifecycle as the nickname: page-scoped, validated against a whitelist. */
 let avatarId: AvatarId | null = null;
 
+// Offline-only scores still need page-scoped identity semantics while the
+// shared service is unavailable. This key is never displayed or sent to server.
+const localSessionId = (() => {
+    try {
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+    } catch (e) { /* privacy-restricted browser */ }
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+})();
+
+export function getLocalSessionId(): string {
+    return localSessionId;
+}
+
 export function getSessionUsername(): string | null {
     return username;
 }
