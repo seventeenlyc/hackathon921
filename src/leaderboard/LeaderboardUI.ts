@@ -147,7 +147,7 @@ class LeaderboardPanel {
         const shared = this.remote != null;
         const local: LeaderboardEntry[] = readStoredLeaderboard() || [];
         const entries: LeaderboardEntry[] = shared
-            ? this.remote!.entries.map(e => ({ username: e.username, wave: e.wave, timestamp: e.achievedAt }))
+            ? this.remote!.entries.map(e => ({ username: e.username, wave: e.wave, timestamp: e.achievedAt, mode: e.mode }))
             : local;
         const top = entries.slice(0, TOP_N);
         this.listEl.textContent = '';

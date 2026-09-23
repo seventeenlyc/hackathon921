@@ -1,15 +1,19 @@
 import {sanitizeUsername} from './LeaderboardStore';
 
+export type PlayMode = 'ai' | 'human';
+export type LeaderboardMode = PlayMode | 'total';
+
 export interface RemoteEntry {
     rank: number;
     username: string;
     wave: number;
     achievedAt: number;
+    mode: PlayMode;
 }
 
 export interface RemoteLeaderboard {
     entries: RemoteEntry[];
-    me: { username: string; rank: number | null; wave: number | null } | null;
+    me: { username: string; rank: number | null; wave: number | null; mode?: PlayMode } | null;
 }
 
 export interface StrategyVersionLike {
@@ -49,6 +53,7 @@ interface SessionState {
     username: string;
     token: string;
     runId: string | null;
+    mode: PlayMode;
     lastWave: number;
     generation: number;
 }
@@ -58,7 +63,7 @@ const REQUEST_TIMEOUT_MS = 5000;
 
 let session: SessionState | null = null;
 let sessionPromise: { username: string; generation: number; promise: Promise<ClientResult<string>> } | null = null;
-let runPromise: { generation: number; promise: Promise<ClientResult<string>> } | null = null;
+let runPromise: { generation: number; mode: PlayMode; promise: Promise<ClientResult<string>> } | null = null;
 let generation = 0;
 
 function withTimeout(): { signal: AbortSignal | undefined; done: () => void } {
@@ -134,6 +139,7 @@ async function ensureSessionResult(username: string): Promise<ClientResult<strin
                 username: typeof result.value.username === 'string' ? result.value.username : clean,
                 token: result.value.token,
                 runId: null,
+                mode: 'ai',
                 lastWave: 0,
                 generation: requestGeneration,
             };
@@ -149,30 +155,42 @@ async function ensureSessionResult(username: string): Promise<ClientResult<strin
     return promise;
 }
 
-export async function ensureRunResult(username: string): Promise<ClientResult<string>> {
+export async function ensureRunResult(username: string, mode: PlayMode = 'ai'): Promise<ClientResult<string>> {
+    const safeMode: PlayMode = mode === 'human' ? 'human' : 'ai';
     const tokenResult = await ensureSessionResult(username);
     if (!tokenResult.ok) return tokenResult;
     const current = session;
     if (!current || current.username.toLowerCase() !== username.toLowerCase()) {
         return { ok: false, status: 409, retryable: false, reason: 'STALE_SESSION' };
     }
-    if (current.runId) return { ok: true, value: current.runId };
-    if (runPromise && runPromise.generation === current.generation) return runPromise.promise;
+    if (current.runId && current.mode === safeMode) return { ok: true, value: current.runId };
+    if (runPromise && runPromise.generation === current.generation && runPromise.mode === safeMode) {
+        return runPromise.promise;
+    }
 
     const requestGeneration = current.generation;
     const promise = (async (): Promise<ClientResult<string>> => {
-        const result = await request<{ runId?: unknown }>('/runs', { method: 'POST' }, current.token);
+        const result = await request<{ runId?: unknown }>(
+            '/runs',
+            {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ mode: safeMode }),
+            },
+            current.token
+        );
         if (!result.ok) return result;
         if (typeof result.value.runId !== 'string') {
             return { ok: false, status: 502, retryable: true, reason: 'INVALID_RUN_RESPONSE' };
         }
         if (session && session.generation === requestGeneration && session.token === current.token) {
             session.runId = result.value.runId;
+            session.mode = safeMode;
             session.lastWave = 0;
         }
         return { ok: true, value: result.value.runId };
     })();
-    runPromise = { generation: requestGeneration, promise };
+    runPromise = { generation: requestGeneration, mode: safeMode, promise };
     void promise.then(
         () => { if (runPromise && runPromise.promise === promise) runPromise = null; },
         () => { if (runPromise && runPromise.promise === promise) runPromise = null; }
@@ -185,8 +203,8 @@ export async function ensureSessionToken(username: string): Promise<string | nul
     return result.ok ? result.value : null;
 }
 
-export async function ensureRun(username: string): Promise<string | null> {
-    const result = await ensureRunResult(username);
+export async function ensureRun(username: string, mode: PlayMode = 'ai'): Promise<string | null> {
+    const result = await ensureRunResult(username, mode);
     return result.ok ? result.value : null;
 }
 
@@ -194,7 +212,7 @@ export async function recordPromptVersionResult(
     username: string,
     version: StrategyVersionLike
 ): Promise<ClientResult<PromptWriteResult>> {
-    const runResult = await ensureRunResult(username);
+    const runResult = await ensureRunResult(username, 'ai');
     if (!runResult.ok) return runResult;
     const current = session;
     if (!current || current.runId !== runResult.value) {
@@ -216,9 +234,13 @@ export async function recordPromptVersion(username: string, version: StrategyVer
     return result.ok ? result.value : null;
 }
 
-export async function syncReachedWaveResult(username: string, wave: number): Promise<ClientResult<number>> {
+export async function syncReachedWaveResult(
+    username: string,
+    wave: number,
+    mode: PlayMode = 'ai'
+): Promise<ClientResult<number>> {
     if (!Number.isInteger(wave) || wave < 1) return { ok: false, status: 400, retryable: false, reason: 'WAVE_INVALID' };
-    const runResult = await ensureRunResult(username);
+    const runResult = await ensureRunResult(username, mode);
     if (!runResult.ok) return runResult;
     const current = session;
     if (!current || current.runId !== runResult.value) {
@@ -242,16 +264,25 @@ export async function syncReachedWaveResult(username: string, wave: number): Pro
     return { ok: true, value: typeof result.value.bestWave === 'number' ? result.value.bestWave : wave };
 }
 
-export async function syncReachedWave(username: string, wave: number): Promise<number | null> {
-    const result = await syncReachedWaveResult(username, wave);
+export async function syncReachedWave(username: string, wave: number, mode: PlayMode = 'ai'): Promise<number | null> {
+    const result = await syncReachedWaveResult(username, wave, mode);
     return result.ok ? result.value : null;
 }
 
-export async function fetchSharedLeaderboard(username: string | null, limit = 10): Promise<RemoteLeaderboard | null> {
+export async function fetchSharedLeaderboard(
+    username: string | null,
+    modeOrLimit: LeaderboardMode | number = 'ai',
+    limit = 10
+): Promise<RemoteLeaderboard | null> {
+    const mode: LeaderboardMode = typeof modeOrLimit === 'number' ? 'ai' : modeOrLimit;
+    const finalLimit = typeof modeOrLimit === 'number' ? modeOrLimit : limit;
     let token: string | null = null;
     if (username) token = await ensureSessionToken(username);
+    const searchParams = new URLSearchParams();
+    searchParams.set('limit', String(finalLimit));
+    if (mode) searchParams.set('mode', mode);
     const result = await request<any>(
-        '/leaderboard?limit=' + encodeURIComponent(String(limit)),
+        '/leaderboard?' + searchParams.toString(),
         { method: 'GET' },
         token
     );
@@ -265,6 +296,7 @@ export async function fetchSharedLeaderboard(username: string | null, limit = 10
             username: raw.username,
             wave: raw.wave,
             achievedAt: typeof raw.achievedAt === 'number' ? raw.achievedAt : 0,
+            mode: raw.mode === 'human' ? 'human' : 'ai',
         });
     }
     let me: RemoteLeaderboard['me'] = null;
@@ -273,6 +305,7 @@ export async function fetchSharedLeaderboard(username: string | null, limit = 10
             username: result.value.me.username,
             rank: typeof result.value.me.rank === 'number' ? result.value.me.rank : null,
             wave: typeof result.value.me.wave === 'number' ? result.value.me.wave : null,
+            mode: result.value.me.mode === 'human' ? 'human' : 'ai',
         };
     }
     return { entries, me };

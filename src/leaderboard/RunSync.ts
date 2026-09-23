@@ -6,11 +6,11 @@ import {
     syncReachedWave,
     syncReachedWaveResult,
 } from './LeaderboardClient';
-import type {ClientResult, PromptWriteResult, StrategyVersionLike} from './LeaderboardClient';
+import type {ClientResult, PlayMode, PromptWriteResult, StrategyVersionLike} from './LeaderboardClient';
 
 type QueueItem =
     | { kind: 'prompt'; username: string; version: StrategyVersionLike }
-    | { kind: 'wave'; username: string; wave: number };
+    | { kind: 'wave'; username: string; wave: number; mode: PlayMode };
 
 export interface SyncStatus {
     state: 'idle' | 'syncing' | 'failed';
@@ -19,9 +19,9 @@ export interface SyncStatus {
 }
 
 export interface RunSyncClient {
-    ensureRun: (username: string) => Promise<string | null> | Promise<ClientResult<string>>;
+    ensureRun: (username: string, mode?: PlayMode) => Promise<string | null> | Promise<ClientResult<string>>;
     recordPromptVersion: (username: string, version: StrategyVersionLike) => Promise<PromptWriteResult | null> | Promise<ClientResult<PromptWriteResult>>;
-    syncReachedWave: (username: string, wave: number) => Promise<number | null> | Promise<ClientResult<number>>;
+    syncReachedWave: (username: string, wave: number, mode?: PlayMode) => Promise<number | null> | Promise<ClientResult<number>>;
 }
 
 interface RunSyncOptions {
@@ -76,8 +76,8 @@ export class RunSync {
     }
 
     /** Start run creation before the first PLANNING boundary without blocking gameplay. */
-    prepareRun(username: string): void {
-        void this.ensureRunFor(username).then(result => {
+    prepareRun(username: string, mode: PlayMode = 'ai'): void {
+        void this.ensureRunFor(username, mode).then(result => {
             if (!result.ok) this.fail(result);
         });
     }
@@ -89,8 +89,8 @@ export class RunSync {
         void this.pump();
     }
 
-    enqueueWave(username: string, wave: number): void {
-        this.queue.push({ kind: 'wave', username, wave });
+    enqueueWave(username: string, wave: number, mode: PlayMode = 'ai'): void {
+        this.queue.push({ kind: 'wave', username, wave, mode });
         void this.pump();
     }
 
@@ -112,11 +112,11 @@ export class RunSync {
         this.setStatus({ state: 'failed', message: '记录未同步', reason: result.reason });
     }
 
-    private ensureRunFor(username: string): Promise<ClientResult<string>> {
-        const key = username.toLowerCase();
+    private ensureRunFor(username: string, mode: PlayMode = 'ai'): Promise<ClientResult<string>> {
+        const key = `${username.toLowerCase()}#${mode}`;
         const existing = this.runPromises.get(key);
         if (existing) return existing;
-        const promise = Promise.resolve(this.client.ensureRun(username)).then(value => normalize(value));
+        const promise = Promise.resolve(this.client.ensureRun(username, mode)).then(value => normalize(value));
         this.runPromises.set(key, promise);
         void promise.then(result => {
             if (!result.ok) this.runPromises.delete(key);
@@ -125,12 +125,14 @@ export class RunSync {
     }
 
     private async runItem(item: QueueItem): Promise<ClientResult<unknown>> {
-        const runResult = await this.ensureRunFor(item.username);
-        if (!runResult.ok) return runResult;
         if (item.kind === 'prompt') {
+            const runResult = await this.ensureRunFor(item.username, 'ai');
+            if (!runResult.ok) return runResult;
             return normalize(await this.client.recordPromptVersion(item.username, item.version));
         }
-        return normalize(await this.client.syncReachedWave(item.username, item.wave));
+        const runResult = await this.ensureRunFor(item.username, item.mode);
+        if (!runResult.ok) return runResult;
+        return normalize(await this.client.syncReachedWave(item.username, item.wave, item.mode));
     }
 
     private async runWithRetry(item: QueueItem): Promise<ClientResult<unknown>> {
