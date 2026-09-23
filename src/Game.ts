@@ -43,7 +43,7 @@ function createDecisionSummary(): DecisionSummary | null {
     return panel && status && content ? new DecisionSummary(panel, status, content) : null;
 }
 const decisionSummary = createDecisionSummary();
-onLangChange(() => decisionSummary?.setUnavailable(t('reasoning.status.unavailable')));
+onLangChange(() => decisionSummary?.setUnavailable(t('reasoning.summaryUnavailable')));
 
 class Game {
     private updateInterval: number = -1;
@@ -213,7 +213,7 @@ const agentRuntime = new AgentRuntime({
     },
     onSummary: summary => {
         if (summary) decisionSummary?.setSummary(summary, t('reasoning.status.ready'));
-        else decisionSummary?.setUnavailable(t('reasoning.status.unavailable'));
+        else decisionSummary?.setUnavailable(t('reasoning.summaryUnavailable'));
     },
     onError: message => {
         decisionSummary?.setUnavailable(t('reasoning.status.unavailable'));

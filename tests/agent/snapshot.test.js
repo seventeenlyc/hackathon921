@@ -187,6 +187,21 @@ test('build candidates and path shaping candidates filter out invalidCells', () 
     assert.ok(snapshot.buildCandidates.every(c => ['frontline', 'midfield', 'base'].includes(c.zone)));
 });
 
+test('build candidates include a legal frontline position when the lane has one', () => {
+    const cells = [];
+    for (let i = 0; i < 20; ++i) cells.push({i, j: 2});
+
+    const snapshot = buildSnapshot(baseInput({
+        gridWidth: 24,
+        gridHeight: 5,
+        base: {i: 19, j: 2},
+        routes: [{spawn: {i: 0, j: 2}, cells}],
+    }));
+
+    assert.ok(snapshot.buildCandidates.some(candidate => candidate.zone === 'frontline'));
+    assert.ok(snapshot.buildCandidates.some(candidate => candidate.zone === 'base'));
+});
+
 test('build candidates cover every lane, not just the longest', () => {
     const longLane = [];
     for (let i = 0; i < 30; ++i) longLane.push({i, j: 0});

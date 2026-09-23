@@ -1,6 +1,6 @@
 const assert = require('assert');
 const {AgentRuntime} = require('../../.test-build/agent/AgentRuntime.js');
-const {setLang} = require('../../.test-build/i18n.js');
+const {getLang, setLang} = require('../../.test-build/i18n.js');
 
 // Assert against the English wording so the checks do not depend on the default UI language.
 setLang('en');
@@ -113,6 +113,37 @@ function makeStore(text = 'hold the base') {
         assert.deepStrictEqual(summaries, ['补强东侧路线，避免该侧火力覆盖不足。']);
     });
 
+    await test('does not display a stale-language summary when the language changes in flight', async () => {
+        const originalLang = getLang();
+        setLang('en');
+        const summaries = [];
+        let beginRequest;
+        let finishRequest;
+        const requestStarted = new Promise(resolve => { beginRequest = resolve; });
+        const responseGate = new Promise(resolve => { finishRequest = resolve; });
+        const runtime = new AgentRuntime({
+            actions: new FakeActions(),
+            store: makeStore('hold the base'),
+            fetchImpl: async () => {
+                beginRequest();
+                return responseGate;
+            },
+            onSummary: summary => summaries.push(summary),
+        });
+
+        try {
+            const planning = runtime.plan();
+            await requestStarted;
+            setLang('zh');
+            finishRequest(jsonResponse(200, {ok: true, summary: 'Protect the west lane.', actions: []}));
+            await planning;
+
+            assert.deepStrictEqual(summaries, [null]);
+        } finally {
+            setLang(originalLang);
+        }
+    });
+
     await test('executes use_item action returned by proxy', async () => {
         const actions = new FakeActions({state: {wave: 5, cash: 2500, baseLife: 15, towers: []}});
         const decisions = [];
@@ -185,7 +216,17 @@ function makeStore(text = 'hold the base') {
     await test('tracks BLOCKS_PATH and short-circuits repeated invalid placements', async () => {
         let attempts = 0;
         const actions = {
-            getState: () => ({wave: 2, cash: 1000, baseLife: 20, towers: []}),
+            getState: () => ({
+                wave: 2,
+                cash: 1000,
+                baseLife: 20,
+                towers: [],
+                buildCandidates: [
+                    {i: 5, j: 5, lane: 0, coverage: 1, distanceToBase: 2},
+                    {i: 6, j: 5, lane: 0, coverage: 1, distanceToBase: 1},
+                ],
+                pathShapingCandidates: [{i: 5, j: 5, lane: 0, addedTiles: 3}],
+            }),
             buildTower: (type, i, j) => {
                 attempts += 1;
                 return {ok: false, error: 'BLOCKS_PATH', message: 'Would block path'};
@@ -220,6 +261,8 @@ function makeStore(text = 'hold the base') {
         assert.strictEqual(decisions[1].ok, false);
         // Verify invalidCells is sent to server on next request
         assert.deepStrictEqual(sentBodies[1].state.invalidCells, ['5:5']);
+        assert.deepStrictEqual(sentBodies[1].state.buildCandidates.map(candidate => [candidate.i, candidate.j]), [[6, 5]]);
+        assert.deepStrictEqual(sentBodies[1].state.pathShapingCandidates, []);
         assert.ok(sentBodies[1].lang === 'zh' || sentBodies[1].lang === 'en');
     });
 

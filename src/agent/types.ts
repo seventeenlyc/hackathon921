@@ -112,7 +112,7 @@ export interface BuildCandidate {
     /** Route distance from this cell to the base, in tiles. Lower is nearer the base. */
     distanceToBase: number;
     /** Tactical route progression zone: frontline (near spawn), midfield, or base. */
-    zone?: 'frontline' | 'midfield' | 'base';
+    zone: 'frontline' | 'midfield' | 'base';
 }
 
 /**

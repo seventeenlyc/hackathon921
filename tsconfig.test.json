@@ -8,7 +8,6 @@
     "rootDir": "src",
     "module": "commonjs",
     "moduleResolution": "node",
-    "ignoreDeprecations": "6.0",
     "target": "ES2017",
     "noEmit": false,
     "declaration": false,

@@ -257,9 +257,34 @@ function buildCandidates(routes: LaneRoute[], input: SnapshotInput): BuildCandid
 
     const accepted: BuildCandidate[] = [];
     const seen = new Set<string>();
+    const probed = new Set<string>();
     let probes = 0;
     let rank = 0;
     let advanced = true;
+
+    // Reserve one legal candidate per route zone before filling by coverage.
+    // Otherwise the global coverage ranking can hide the frontline entirely.
+    const zones: Array<BuildCandidate['zone']> = ['frontline', 'midfield', 'base'];
+    for (const zone of zones) {
+        let reserved = false;
+        for (const lane of perLane) {
+            for (const candidate of lane) {
+                if (candidate.zone !== zone || accepted.length >= MAX_BUILD_CANDIDATES || probes >= MAX_BUILDABILITY_PROBES) continue;
+                const key = `${candidate.i}:${candidate.j}`;
+                if (seen.has(key) || probed.has(key) || invalidSet.has(key)) continue;
+
+                probed.add(key);
+                probes += 1;
+                if (input.isBuildable(candidate.i, candidate.j)) {
+                    seen.add(key);
+                    accepted.push(candidate);
+                    reserved = true;
+                    break;
+                }
+            }
+            if (reserved) break;
+        }
+    }
 
     while (advanced && accepted.length < MAX_BUILD_CANDIDATES && probes < MAX_BUILDABILITY_PROBES) {
         advanced = false;
@@ -272,8 +297,9 @@ function buildCandidates(routes: LaneRoute[], input: SnapshotInput): BuildCandid
             advanced = true;
 
             const key = `${candidate.i}:${candidate.j}`;
-            if (seen.has(key) || invalidSet.has(key)) continue;
+            if (seen.has(key) || probed.has(key) || invalidSet.has(key)) continue;
 
+            probed.add(key);
             probes += 1;
             if (input.isBuildable(candidate.i, candidate.j)) {
                 seen.add(key);

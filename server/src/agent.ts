@@ -83,6 +83,21 @@ export interface AgentAction {
     arguments: Record<string, unknown>;
 }
 
+type AgentToolResponseIssue =
+    | 'MISSING_MESSAGE'
+    | 'MALFORMED_TOOL_CALLS'
+    | 'MISSING_TOOL_CALLS'
+    | 'TOO_MANY_ACTIONS'
+    | 'UNREGISTERED_TOOL'
+    | 'INVALID_ARGUMENTS';
+
+class InvalidAgentToolResponse extends Error {
+    constructor(readonly issue: AgentToolResponseIssue) {
+        super(issue);
+        this.name = 'InvalidAgentToolResponse';
+    }
+}
+
 /**
  * 工具 schema 是服务端契约的一部分：客户端不发它，被篡改的客户端也无法扩大模型能做的事。
  */
@@ -193,6 +208,7 @@ export function buildSystemPrompt(lang: 'zh' | 'en' = 'zh'): string {
         '- Every tool call must include `decision_summary` in its arguments: a brief',
         '  player-facing macro tactical assessment (at most 120 characters) tied to the strategy and battlefield.',
         '  CRITICAL: NEVER recite coordinates (i, j), cell indices, or raw tool actions in decision_summary.',
+        '  Do not repeat which tower was built or where it was placed; the action log shows that separately.',
         '  Focus on tactical threats, choke coverage, or resource trade-offs.',
         '- If you call no tools, put a concise player-facing macro tactical reasoning in the',
         '  assistant message content (at most 240 characters) explaining your tactical choice to hold.',
@@ -265,41 +281,66 @@ export function composeAgentMessages(strategy: string, state: unknown, lang: 'zh
     ];
 }
 
-function parseArguments(raw: unknown): Record<string, unknown> {
-    if (raw === undefined || raw === null || raw === '') return {};
-    if (typeof raw === 'object') return raw as Record<string, unknown>;
+function parseArguments(raw: unknown): Record<string, unknown> | null {
+    if (raw && typeof raw === 'object' && !Array.isArray(raw)) return {...raw as Record<string, unknown>};
     if (typeof raw === 'string') {
         try {
             const parsed = JSON.parse(raw);
-            return parsed && typeof parsed === 'object' ? parsed : {};
+            return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+                ? {...parsed as Record<string, unknown>}
+                : null;
         } catch (e) {
-            return {};
+            return null;
         }
     }
-    return {};
+    return null;
 }
 
-/** 把 provider 的 tool calls 归一化成运行时消费的形状；未知工具名丢弃。 */
+/** Normalize provider tool calls; malformed or unregistered calls fail the decision closed. */
 export function extractAgentActions(payload: any): AgentAction[] {
     const choice = payload && Array.isArray(payload.choices) ? payload.choices[0] : undefined;
     const message = choice && choice.message;
-    const calls = message && Array.isArray(message.tool_calls) ? message.tool_calls : [];
+    if (!message || typeof message !== 'object') {
+        throw new InvalidAgentToolResponse('MISSING_MESSAGE');
+    }
 
-    return calls
-        .slice(0, MAX_ACTIONS_PER_DECISION)
-        .map((call: any) => {
-            const fn = call && call.function;
-            const args = { ...parseArguments(fn && fn.arguments) };
-            delete args.decision_summary;
-            return { name: fn && fn.name, arguments: args };
-        })
-        .filter((action: any) => typeof action.name === 'string' && AGENT_TOOL_NAMES.indexOf(action.name) !== -1);
+    if (message.tool_calls === undefined || message.tool_calls === null) {
+        if (choice.finish_reason === 'tool_calls' || choice.finish_reason === 'function_call' || choice.finish_reason === 'length') {
+            throw new InvalidAgentToolResponse('MISSING_TOOL_CALLS');
+        }
+        return [];
+    }
+    if (!Array.isArray(message.tool_calls)) {
+        throw new InvalidAgentToolResponse('MALFORMED_TOOL_CALLS');
+    }
+    if (message.tool_calls.length > MAX_ACTIONS_PER_DECISION) {
+        throw new InvalidAgentToolResponse('TOO_MANY_ACTIONS');
+    }
+
+    return message.tool_calls.map((call: any) => {
+        const fn = call && call.function;
+        if (!fn || typeof fn.name !== 'string') {
+            throw new InvalidAgentToolResponse('MALFORMED_TOOL_CALLS');
+        }
+        if (AGENT_TOOL_NAMES.indexOf(fn.name) === -1) {
+            throw new InvalidAgentToolResponse('UNREGISTERED_TOOL');
+        }
+        const args = parseArguments(fn.arguments);
+        if (!args) {
+            throw new InvalidAgentToolResponse('INVALID_ARGUMENTS');
+        }
+        delete args.decision_summary;
+        return { name: fn.name, arguments: args };
+    });
 }
 
 function publicSummary(value: unknown): string | null {
     if (typeof value !== 'string') return null;
     const summary = value.trim().replace(/\s+/g, ' ');
-    return summary.length > 0 && summary.length <= MAX_DECISION_SUMMARY_LENGTH ? summary : null;
+    const hasCoordinatePair = /(?:\(\s*-?\d+\s*[,，]\s*-?\d+\s*\)|（\s*-?\d+\s*[,，]\s*-?\d+\s*）|\b-?\d+\s*:\s*-?\d+\b|\b-?\d+\s*[,，]\s*-?\d+\b)/.test(summary);
+    return summary.length > 0 && summary.length <= MAX_DECISION_SUMMARY_LENGTH && !hasCoordinatePair
+        ? summary
+        : null;
 }
 
 /** Expose only the bounded assistant content intended for players, never provider reasoning fields. */
@@ -315,7 +356,8 @@ export function extractAgentSummary(payload: any): string | null {
     for (const call of calls.slice(0, MAX_ACTIONS_PER_DECISION)) {
         const fn = call && call.function;
         if (!fn || AGENT_TOOL_NAMES.indexOf(fn.name) === -1) continue;
-        const reason = publicSummary(parseArguments(fn.arguments).decision_summary);
+        const args = parseArguments(fn.arguments);
+        const reason = publicSummary(args && args.decision_summary);
         if (reason) {
             return reason;
         }
@@ -432,7 +474,20 @@ export async function handleAgentDecide(deps: ApiDeps, req: ApiRequest): Promise
         return { status: 502, body: { error: result.error, message: result.message } };
     }
 
-    const actions = extractAgentActions(result.payload);
+    let actions: AgentAction[];
+    try {
+        actions = extractAgentActions(result.payload);
+    } catch (e) {
+        const issue = e instanceof InvalidAgentToolResponse ? e.issue : 'MALFORMED_TOOL_CALLS';
+        return {
+            status: 502,
+            body: {
+                error: 'INVALID_TOOL_RESPONSE',
+                issue,
+                message: `The LLM provider returned an invalid tool response (${issue}). No actions were executed.`,
+            },
+        };
+    }
     const summary = extractAgentSummary(result.payload);
     const usage = result.payload && result.payload.usage ? result.payload.usage : undefined;
     return { status: 200, body: { ok: true, summary, actions, usage } };
