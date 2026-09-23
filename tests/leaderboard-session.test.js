@@ -24,6 +24,15 @@ function loadSession(document) {
                 new Function('module', 'exports', storeJs)(storeModule, storeModule.exports);
                 return storeModule.exports;
             }
+            if (name === './AvatarCatalog') {
+                const catalogSource = fs.readFileSync(path.join(root, 'src', 'leaderboard', 'AvatarCatalog.ts'), 'utf8');
+                const catalogJs = ts.transpileModule(catalogSource, {
+                    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2017 },
+                }).outputText;
+                const catalogModule = { exports: {} };
+                new Function('module', 'exports', catalogJs)(catalogModule, catalogModule.exports);
+                return catalogModule.exports;
+            }
             throw new Error('Unexpected dependency: ' + name);
         },
         document

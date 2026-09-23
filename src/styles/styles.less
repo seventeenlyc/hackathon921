@@ -883,65 +883,283 @@ body {
     }
   }
 
+  // 登录浮窗：居中卡片浮在游戏画面上（背景保持可见），仅此浮窗使用青色战术主题，
+  // 通过局部变量作用域隔离，不污染游戏本体的绿色终端主题。
   .username-overlay {
+    --gate-accent: #35e2ff;
+    --gate-accent-soft: rgba(53, 226, 255, 0.12);
+    --gate-line: rgba(53, 226, 255, 0.32);
+    --gate-line-dim: rgba(53, 226, 255, 0.16);
+    --gate-ink: #d9f6ff;
+    --gate-muted: #6fa8b8;
+    --gate-bg: #04252e;
+
     position: fixed;
     inset: 0;
     z-index: 20;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(7, 12, 12, 0.86);
+    padding: 24px;
+    background: rgba(4, 12, 16, 0.78);
 
     .username-card {
+      position: relative;
       display: flex;
-      width: min(320px, calc(100vw - 32px));
+      width: min(840px, 100%);
+      max-height: calc(100vh - 48px);
       flex-direction: column;
-      gap: 14px;
-      padding: 30px 24px;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: #1a2321;
-      box-shadow: var(--shadow);
-      color: var(--muted);
+      gap: 16px;
+      padding: 20px 26px 16px;
+      border: 1px solid var(--gate-line);
+      background: linear-gradient(rgba(7, 24, 32, 0.97), rgba(4, 14, 20, 0.98));
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 24px 70px rgba(0, 0, 0, 0.55),
+        0 0 34px rgba(53, 226, 255, 0.1);
+      color: var(--gate-ink);
+      overflow-y: auto;
+
+      // 四角括号装饰（左上 / 右下）。
+      &::before,
+      &::after {
+        content: '';
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        border: 2px solid var(--gate-accent);
+        pointer-events: none;
+      }
+
+      &::before {
+        top: -2px;
+        left: -2px;
+        border-right: 0;
+        border-bottom: 0;
+      }
+
+      &::after {
+        bottom: -2px;
+        right: -2px;
+        border-left: 0;
+        border-top: 0;
+      }
+    }
+
+    .gate-topbar {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--gate-line-dim);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+
+      .gate-brand {
+        color: var(--gate-accent);
+        font-weight: 700;
+      }
+
+      .gate-brand-sub {
+        margin-left: 10px;
+        color: var(--gate-muted);
+      }
+
+      .gate-online {
+        color: var(--gate-muted);
+        white-space: nowrap;
+      }
+    }
+
+    .gate-heading {
+      text-align: center;
 
       h2 {
-        color: var(--accent);
-        font-size: 1.6em;
+        margin: 0;
+        color: var(--gate-accent);
+        font-size: 1.45em;
         font-weight: 700;
-        text-align: center;
+        letter-spacing: 0.18em;
         text-transform: uppercase;
       }
 
-      input {
-        padding: 10px 12px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: var(--surface-deep);
-        color: #fff;
-        font-size: 15px;
+      p {
+        margin: 4px 0 0;
+        color: var(--gate-muted);
+        font-size: 11px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+      }
+    }
+
+    .gate-intro {
+      padding: 10px 14px;
+      border: 1px solid var(--gate-line-dim);
+      border-left: 3px solid var(--gate-accent);
+
+      h3 {
+        margin: 0 0 4px;
+        color: var(--gate-accent);
+        font-size: 13px;
+        letter-spacing: 0.1em;
       }
 
-      button {
-        padding: 10px 0;
-        border: 0;
-        border-radius: 999px;
-        background: var(--accent);
-        color: #102018;
-        cursor: pointer;
-        font-weight: 700;
-        transition: background-color 180ms ease;
+      p {
+        margin: 2px 0 0;
+        color: var(--gate-muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+    }
 
-        &:hover {
-          background: #52df8b;
+    .gate-section {
+      .gate-section-title {
+        margin: 0 0 2px;
+        color: var(--gate-accent);
+        font-size: 12px;
+        letter-spacing: 0.14em;
+      }
+
+      .gate-section-sub {
+        margin: 0 0 10px;
+        color: var(--gate-muted);
+        font-size: 12px;
+      }
+    }
+
+    .gate-avatar-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 10px;
+
+      @media (max-width: 900px) {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      @media (max-width: 520px) {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .gate-avatar {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 4px 6px;
+      border: 1px solid var(--gate-line-dim);
+      background: rgba(6, 18, 24, 0.9);
+      color: var(--gate-muted);
+      cursor: pointer;
+      transition: border-color 140ms ease, box-shadow 140ms ease;
+
+      img {
+        width: 100%;
+        max-width: 84px;
+        aspect-ratio: 1;
+        border: 1px solid var(--gate-line-dim);
+        image-rendering: pixelated;
+      }
+
+      .gate-avatar-name {
+        color: var(--gate-ink);
+        font-size: 12px;
+      }
+
+      .gate-avatar-romaji {
+        font-size: 10px;
+        letter-spacing: 0.12em;
+      }
+
+      &:hover {
+        border-color: var(--gate-line);
+      }
+
+      &.is-selected {
+        border-color: var(--gate-accent);
+        box-shadow: 0 0 0 1px var(--gate-accent), 0 0 18px rgba(53, 226, 255, 0.25);
+
+        .gate-avatar-name {
+          color: var(--gate-accent);
+        }
+      }
+    }
+
+    .gate-codename-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      input {
+        flex: 1;
+        padding: 10px 12px;
+        border: 1px solid var(--gate-line);
+        background: rgba(4, 14, 20, 0.9);
+        color: var(--gate-ink);
+        font-size: 14px;
+        letter-spacing: 0.04em;
+
+        &:focus {
+          border-color: var(--gate-accent);
+          box-shadow: 0 0 0 1px var(--gate-accent-soft);
         }
       }
 
-      .error {
-        min-height: 16px;
-        color: #e07a7a;
+      .gate-counter {
+        color: var(--gate-muted);
         font-size: 12px;
-        text-align: center;
+        white-space: nowrap;
       }
+    }
+
+    .error {
+      min-height: 16px;
+      margin: 0;
+      color: #ff8f8f;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .gate-actions {
+      display: flex;
+      gap: 12px;
+
+      button {
+        padding: 11px 18px;
+        border: 1px solid var(--gate-line);
+        background: transparent;
+        color: var(--gate-accent);
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        transition: background-color 140ms ease, box-shadow 140ms ease;
+      }
+
+      .gate-random:hover {
+        background: var(--gate-accent-soft);
+      }
+
+      .gate-submit {
+        margin-left: auto;
+        border-color: var(--gate-accent);
+        background: var(--gate-accent);
+        color: var(--gate-bg);
+
+        &:hover {
+          box-shadow: 0 0 18px rgba(53, 226, 255, 0.4);
+        }
+      }
+    }
+
+    .gate-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--gate-line-dim);
+      color: var(--gate-muted);
+      font-size: 10px;
+      letter-spacing: 0.14em;
     }
   }
 
