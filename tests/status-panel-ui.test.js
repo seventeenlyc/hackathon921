@@ -39,6 +39,14 @@ assert.ok(grid.includes('id="state-sub"'), 'state card must render the bilingual
 assert.ok(grid.includes('id="wave"'), 'wave card must keep the #wave value slot');
 assert.ok(grid.includes('id="delay"'), 'wave card must keep the inter-wave delay slot');
 
+// --- 波次进度条：100% = 200 波，每关 0.5% ---
+const panel = index.slice(index.indexOf('class="control-card status-panel"'), index.indexOf('</section>', index.indexOf('class="control-card status-panel"')));
+assert.ok(panel.includes('id="status-progress-fill"'), 'progress bar fill element missing');
+assert.ok(panel.includes('id="status-progress-pct"'), 'progress percentage element missing');
+assert.match(interfaceSource, /getElementById\('status-progress-fill'\)/, 'setWave must drive the progress fill');
+assert.match(interfaceSource, /getElementById\('status-progress-pct'\)/, 'setWave must refresh the progress percentage');
+assert.match(interfaceSource, /Math\.min\(wave, 200\) \/ 200 \* 1000/, 'progress must cap at wave 200');
+
 // --- i18n: state main value is EN in both locales, sub-line is zh in both ---
 function tableValue(key, locale) {
     const match = i18nSource.match(new RegExp(`'${key}':\\s*\\{zh: '((?:[^'\\\\]|\\\\.)*)',\\s*en: '((?:[^'\\\\]|\\\\.)*)'\\}`));

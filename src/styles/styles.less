@@ -469,6 +469,37 @@ body {
       margin-top: 12px;
     }
 
+    // 设计稿：波次进度条（100% = 200 波，每关 0.5%）。
+    .status-progress {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .status-progress-bar {
+      flex: 1;
+      height: 10px;
+      border-radius: 2px;
+      overflow: hidden;
+      background: repeating-linear-gradient(90deg, rgba(53, 226, 255, 0.16) 0 3px, transparent 3px 6px);
+    }
+
+    .status-progress-fill {
+      display: block;
+      height: 100%;
+      border-radius: 2px;
+      background: repeating-linear-gradient(90deg, var(--accent) 0 3px, rgba(53, 226, 255, 0.55) 3px 5px, transparent 5px 6px);
+    }
+
+    .status-progress-pct {
+      flex: none;
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
     // 设计稿：青色描边卡片、暗底、小号青色标签、大号亮青数值。
     .status-metric {
       display: flex;

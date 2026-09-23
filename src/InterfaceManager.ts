@@ -162,6 +162,18 @@ class InterfaceManager {
         this.waveElement.textContent = String(wave).padStart(3, '0');
         setText('map-wave', tag);
         this.updateHostileStats(wave);
+        this.updateWaveProgress(wave);
+    }
+
+    /** 波次进度条：100% = 200 波，每关 0.5%；200 波之后封顶。 */
+    private updateWaveProgress(wave: number): void {
+        const pct = Math.round(Math.min(wave, 200) / 200 * 1000) / 10;
+        const fill = document.getElementById('status-progress-fill');
+        if (fill) fill.style.width = `${pct}%`;
+        const pctLabel = document.getElementById('status-progress-pct');
+        if (pctLabel) pctLabel.textContent = `${pct}%`;
+        const bar = fill?.parentElement;
+        bar?.setAttribute('aria-valuenow', String(pct));
     }
 
     /** Human mode's `delayBetweenWaves` countdown, shown next to the wave number. */

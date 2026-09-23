@@ -24,6 +24,7 @@ const STRINGS: { [key: string]: Entry } = {
 
     // Shell / battlefield UI (previously hardcoded in index.html).
     'shell.eyebrow': {zh: '公安九课 // 战术网络', en: 'SECTION 9 // TACTICAL NETWORK'},
+    'aria.waveProgress': {zh: '波次进度', en: 'Wave progress'},
     'towers.heading': {zh: '我方兵力', en: 'TACHIKOMA UNITS'},
     'console.eyebrow': {zh: '塔奇克马指挥网络', en: 'TACHIKOMA COMMAND NETWORK'},
     'console.heading': {zh: '战术命令终端', en: 'TACTICAL ORDER TERMINAL'},
