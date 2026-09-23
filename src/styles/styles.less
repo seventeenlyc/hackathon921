@@ -884,7 +884,7 @@ body {
   }
 
   // 登录浮窗：居中卡片浮在游戏画面上（背景保持可见），仅此浮窗使用青色战术主题，
-  // 通过局部变量作用域隔离，不污染游戏本体的绿色终端主题。
+  // 通过局部变量作用域隔离，不污染游戏本体的绿色终端主题。整体保持紧凑。
   .username-overlay {
     --gate-accent: #35e2ff;
     --gate-accent-soft: rgba(53, 226, 255, 0.12);
@@ -906,11 +906,11 @@ body {
     .username-card {
       position: relative;
       display: flex;
-      width: min(840px, 100%);
+      width: min(620px, 100%);
       max-height: calc(100vh - 48px);
       flex-direction: column;
-      gap: 16px;
-      padding: 20px 26px 16px;
+      gap: 10px;
+      padding: 14px 20px 10px;
       border: 1px solid var(--gate-line);
       background: linear-gradient(rgba(7, 24, 32, 0.97), rgba(4, 14, 20, 0.98));
       box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 24px 70px rgba(0, 0, 0, 0.55),
@@ -923,8 +923,8 @@ body {
       &::after {
         content: '';
         position: absolute;
-        width: 18px;
-        height: 18px;
+        width: 14px;
+        height: 14px;
         border: 2px solid var(--gate-accent);
         pointer-events: none;
       }
@@ -946,12 +946,12 @@ body {
 
     .gate-topbar {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      padding-bottom: 10px;
+      gap: 10px;
+      padding-bottom: 8px;
       border-bottom: 1px solid var(--gate-line-dim);
-      font-size: 12px;
+      font-size: 11px;
       letter-spacing: 0.08em;
 
       .gate-brand {
@@ -959,9 +959,26 @@ body {
         font-weight: 700;
       }
 
-      .gate-brand-sub {
-        margin-left: 10px;
-        color: var(--gate-muted);
+      .gate-topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .gate-lang {
+        padding: 2px 10px;
+        border: 1px solid var(--gate-line);
+        background: transparent;
+        color: var(--gate-accent);
+        cursor: pointer;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        transition: background-color 140ms ease;
+
+        &:hover {
+          background: var(--gate-accent-soft);
+        }
       }
 
       .gate-online {
@@ -976,66 +993,60 @@ body {
       h2 {
         margin: 0;
         color: var(--gate-accent);
-        font-size: 1.45em;
+        font-size: 1.3em;
         font-weight: 700;
-        letter-spacing: 0.18em;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
-      }
-
-      p {
-        margin: 4px 0 0;
-        color: var(--gate-muted);
-        font-size: 11px;
-        letter-spacing: 0.3em;
-        text-transform: uppercase;
-      }
-    }
-
-    .gate-intro {
-      padding: 10px 14px;
-      border: 1px solid var(--gate-line-dim);
-      border-left: 3px solid var(--gate-accent);
-
-      h3 {
-        margin: 0 0 4px;
-        color: var(--gate-accent);
-        font-size: 13px;
-        letter-spacing: 0.1em;
       }
 
       p {
         margin: 2px 0 0;
         color: var(--gate-muted);
+        font-size: 10px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+    }
+
+    .gate-intro {
+      padding: 8px 12px;
+      border: 1px solid var(--gate-line-dim);
+      border-left: 3px solid var(--gate-accent);
+
+      h3 {
+        margin: 0 0 2px;
+        color: var(--gate-accent);
         font-size: 12px;
-        line-height: 1.5;
+        letter-spacing: 0.1em;
+      }
+
+      p {
+        margin: 0;
+        color: var(--gate-muted);
+        font-size: 11px;
+        line-height: 1.45;
       }
     }
 
     .gate-section {
       .gate-section-title {
-        margin: 0 0 2px;
+        margin: 0 0 6px;
         color: var(--gate-accent);
-        font-size: 12px;
+        font-size: 11px;
         letter-spacing: 0.14em;
-      }
-
-      .gate-section-sub {
-        margin: 0 0 10px;
-        color: var(--gate-muted);
-        font-size: 12px;
       }
     }
 
     .gate-avatar-grid {
       display: grid;
       grid-template-columns: repeat(8, 1fr);
-      gap: 10px;
+      gap: 8px;
 
-      @media (max-width: 900px) {
+      @media (max-width: 760px) {
         grid-template-columns: repeat(4, 1fr);
       }
 
-      @media (max-width: 520px) {
+      @media (max-width: 440px) {
         grid-template-columns: repeat(2, 1fr);
       }
     }
@@ -1044,8 +1055,8 @@ body {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
-      padding: 8px 4px 6px;
+      gap: 3px;
+      padding: 6px 3px 5px;
       border: 1px solid var(--gate-line-dim);
       background: rgba(6, 18, 24, 0.9);
       color: var(--gate-muted);
@@ -1054,7 +1065,7 @@ body {
 
       img {
         width: 100%;
-        max-width: 84px;
+        max-width: 64px;
         aspect-ratio: 1;
         border: 1px solid var(--gate-line-dim);
         image-rendering: pixelated;
@@ -1062,12 +1073,12 @@ body {
 
       .gate-avatar-name {
         color: var(--gate-ink);
-        font-size: 12px;
+        font-size: 11px;
       }
 
       .gate-avatar-romaji {
-        font-size: 10px;
-        letter-spacing: 0.12em;
+        font-size: 9px;
+        letter-spacing: 0.1em;
       }
 
       &:hover {
@@ -1076,7 +1087,7 @@ body {
 
       &.is-selected {
         border-color: var(--gate-accent);
-        box-shadow: 0 0 0 1px var(--gate-accent), 0 0 18px rgba(53, 226, 255, 0.25);
+        box-shadow: 0 0 0 1px var(--gate-accent), 0 0 14px rgba(53, 226, 255, 0.25);
 
         .gate-avatar-name {
           color: var(--gate-accent);
@@ -1087,15 +1098,15 @@ body {
     .gate-codename-row {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
 
       input {
         flex: 1;
-        padding: 10px 12px;
+        padding: 8px 10px;
         border: 1px solid var(--gate-line);
         background: rgba(4, 14, 20, 0.9);
         color: var(--gate-ink);
-        font-size: 14px;
+        font-size: 13px;
         letter-spacing: 0.04em;
 
         &:focus {
@@ -1106,31 +1117,31 @@ body {
 
       .gate-counter {
         color: var(--gate-muted);
-        font-size: 12px;
+        font-size: 11px;
         white-space: nowrap;
       }
     }
 
     .error {
-      min-height: 16px;
+      min-height: 14px;
       margin: 0;
       color: #ff8f8f;
-      font-size: 12px;
+      font-size: 11px;
       text-align: center;
     }
 
     .gate-actions {
       display: flex;
-      gap: 12px;
+      gap: 10px;
 
       button {
-        padding: 11px 18px;
+        padding: 9px 14px;
         border: 1px solid var(--gate-line);
         background: transparent;
         color: var(--gate-accent);
         cursor: pointer;
         font-weight: 700;
-        font-size: 13px;
+        font-size: 12px;
         letter-spacing: 0.08em;
         transition: background-color 140ms ease, box-shadow 140ms ease;
       }
@@ -1146,7 +1157,7 @@ body {
         color: var(--gate-bg);
 
         &:hover {
-          box-shadow: 0 0 18px rgba(53, 226, 255, 0.4);
+          box-shadow: 0 0 14px rgba(53, 226, 255, 0.4);
         }
       }
     }
@@ -1154,12 +1165,12 @@ body {
     .gate-footer {
       display: flex;
       justify-content: space-between;
-      gap: 12px;
-      padding-top: 10px;
+      gap: 10px;
+      padding-top: 8px;
       border-top: 1px solid var(--gate-line-dim);
       color: var(--gate-muted);
-      font-size: 10px;
-      letter-spacing: 0.14em;
+      font-size: 9px;
+      letter-spacing: 0.12em;
     }
   }
 
