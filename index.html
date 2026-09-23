@@ -2,15 +2,15 @@
 <html lang="zh">
   <head>
     <meta charset="UTF-8" />
-    <title data-i18n="app.title">保护笑脸男 — 极简塔防</title>
+    <title data-i18n="app.title">保护笑脸男 — 塔奇克马防御协议</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta itemprop="name" content="保护笑脸男" />
-    <meta property="og:title" content="保护笑脸男" />
-    <meta name="twitter:title" content="保护笑脸男" />
-    <meta name="description" content="Minimalistic tower defense in the browser" />
-    <meta itemprop="description" content="Minimalistic tower defense in the browser" />
-    <meta property="og:description" content="Minimalistic tower defense in the browser" />
-    <meta name="twitter:description" content="Minimalistic tower defense in the browser" />
+    <meta itemprop="name" content="保护笑脸男 — 塔奇克马防御协议" />
+    <meta property="og:title" content="保护笑脸男 — 塔奇克马防御协议" />
+    <meta name="twitter:title" content="保护笑脸男 — 塔奇克马防御协议" />
+    <meta name="description" content="用自然语言指挥塔奇克马，保护笑脸男，让真相活着离开公安九课。" />
+    <meta itemprop="description" content="用自然语言指挥塔奇克马，保护笑脸男，让真相活着离开公安九课。" />
+    <meta property="og:description" content="用自然语言指挥塔奇克马，保护笑脸男，让真相活着离开公安九课。" />
+    <meta name="twitter:description" content="用自然语言指挥塔奇克马，保护笑脸男，让真相活着离开公安九课。" />
     <meta itemprop="image" content="/img/banner.png" />
     <meta property="og:image" content="/img/banner.png" />
     <meta name="twitter:image" content="/img/banner.png" />
@@ -22,18 +22,18 @@
   </head>
   <body>
     <div id="inert">
-      <canvas id="canvas" tabindex="0" aria-label="Tower defense battlefield. Double-click to show controls."></canvas>
-      <div id="control-layer" class="controls is-visible" aria-label="Battlefield controls">
+      <canvas id="canvas" tabindex="0" data-i18n-aria-label="aria.battlefield" aria-label="塔奇克马战术防御区域。双击打开作战终端。"></canvas>
+      <div id="control-layer" class="controls is-visible" data-i18n-aria-label="aria.battlefieldControls" aria-label="战场控制">
         <section class="control-card status-panel" aria-labelledby="status-heading">
           <div class="brand-lockup">
-            <div class="eyebrow">Prompt Defense</div>
-            <h1 id="status-heading">保护笑脸男</h1>
-            <div class="subtitle" data-i18n="header.subtitle">Minimalistic Tower Defense</div>
+            <div class="eyebrow" data-i18n="shell.eyebrow">公安九课 // 战术网络</div>
+            <h1 id="status-heading" data-i18n="app.name">保护笑脸男</h1>
+            <div class="subtitle" data-i18n="header.subtitle">公安九课 · 塔奇克马防御协议</div>
           </div>
-          <div class="status-grid" aria-label="Battlefield status">
-            <div class="status-metric"><span data-i18n="label.wave">Wave</span><strong><span id="wave">1</span> <span id="delay"></span></strong></div>
-            <div class="status-metric"><span data-i18n="label.state">State</span><strong id="state">NOT STARTED</strong></div>
-            <div class="status-metric"><span data-i18n="label.cash">Cash</span><strong><span id="cash">12</span> ¢</strong></div>
+          <div class="status-grid" data-i18n-aria-label="aria.battlefieldStatus" aria-label="战场状态">
+            <div class="status-metric"><span data-i18n="label.wave">防御波次：</span><strong><span id="wave">1</span> <span id="delay"></span></strong></div>
+            <div class="status-metric"><span data-i18n="label.state">作战状态：</span><strong id="state">STANDBY</strong></div>
+            <div class="status-metric"><span data-i18n="label.cash">战术资源：</span><strong><span id="cash">12</span></strong></div>
           </div>
         </section>
 
@@ -41,52 +41,52 @@
           <div id="leaderboard-slot" class="leaderboard-slot"></div>
 
           <section class="tower-panel" aria-labelledby="towers-heading">
-            <h2 id="towers-heading" class="tower-panel-title">Deployable towers</h2>
-            <div id="towers-wrapper" class="tower-palette" aria-label="Deployable towers"></div>
-            <div id="towers-stats" class="tower-stats" aria-live="polite">Select a tower to see its deployment stats.</div>
+            <h2 id="towers-heading" class="tower-panel-title" data-i18n="towers.heading">塔奇克马部署</h2>
+            <div id="towers-wrapper" class="tower-palette" data-i18n-aria-label="aria.deployableUnits" aria-label="可部署塔奇克马机体"></div>
+            <div id="towers-stats" class="tower-stats" aria-live="polite">选择塔奇克马机体以查看战术参数。</div>
           </section>
         </div>
 
         <section class="control-card chatbox-panel" aria-labelledby="chatbox-heading">
           <div class="panel-heading">
             <div>
-              <div class="eyebrow">Strategy console</div>
-              <h2 id="chatbox-heading">AI Chatbox</h2>
+              <div class="eyebrow" data-i18n="console.eyebrow">塔奇克马指挥网络</div>
+              <h2 id="chatbox-heading" data-i18n="console.heading">战术命令终端</h2>
             </div>
-            <button id="controls-collapse" class="icon-button" type="button" aria-label="Hide battlefield controls" title="Hide controls">×</button>
+            <button id="controls-collapse" class="icon-button" type="button" data-i18n-aria-label="aria.hideControls" aria-label="隐藏作战终端" data-i18n-title="title.hideControls" title="隐藏终端">×</button>
           </div>
           <div class="strategy">
-            <label class="strategy-label" for="strategy-input"><span data-i18n="strategy.label">Your strategy</span><span id="strategy-count" class="strategy-count"></span></label>
-            <textarea id="strategy-input" class="strategy-input" rows="5" spellcheck="false" data-i18n-placeholder="strategy.placeholder" placeholder="Tell your AI how to play…"></textarea>
+            <label class="strategy-label" for="strategy-input"><span data-i18n="strategy.label">作战命令</span><span id="strategy-count" class="strategy-count"></span></label>
+            <textarea id="strategy-input" class="strategy-input" rows="5" spellcheck="false" data-i18n-placeholder="strategy.placeholder" placeholder="向塔奇克马下达自然语言作战命令…"></textarea>
             <div class="strategy-actions">
               <div id="strategy-status" class="strategy-status" aria-live="polite"></div>
-              <button id="strategy-apply" class="strategy-apply" type="button" disabled data-i18n="strategy.start">Start run</button>
-              <button id="strategy-random" class="strategy-random" type="button" data-i18n="strategy.random">Random strategy</button>
+              <button id="strategy-apply" class="strategy-apply" type="button" disabled>下达命令并开始行动</button>
+              <button id="strategy-random" class="strategy-random" type="button" data-i18n="strategy.random">参谋模板</button>
             </div>
           </div>
           <div class="decisions">
-            <div class="decisions-label" data-i18n="decisions.label">AI decisions</div>
+            <div class="decisions-label" data-i18n="decisions.label">塔奇克马判断</div>
             <ul id="decision-log" class="decision-log"></ul>
-            <div id="decision-empty" class="decision-empty" data-i18n="decisions.empty">No decisions yet.</div>
+            <div id="decision-empty" class="decision-empty" data-i18n="decisions.empty">等待塔奇克马自主判断。</div>
           </div>
         </section>
 
-        <aside class="control-card operations-panel" aria-label="Game controls">
+        <aside class="control-card operations-panel" data-i18n-aria-label="aria.gameControls" aria-label="作战控制">
           <div class="state-controls mode-control">
-            <button id="mode" type="button" data-i18n="mode.button">Switch play mode</button>
+            <button id="mode" type="button">切换指挥模式</button>
           </div>
           <div class="state-controls">
-            <button id="pause" type="button" data-i18n="control.pause">Pause</button>
-            <button id="resume" type="button" data-i18n="control.resume">Resume</button>
-            <button id="speed" type="button">Speed x1</button>
-            <button id="audio-toggle" type="button" data-i18n="control.audio" aria-pressed="false">Sound on</button>
-            <button id="lang" type="button" data-i18n="control.lang" data-i18n-title="control.langTitle" title="Switch language (EN / 中文)">EN</button>
+            <button id="pause" type="button" data-i18n="control.pause">暂停演算</button>
+            <button id="resume" type="button" data-i18n="control.resume">恢复演算</button>
+            <button id="speed" type="button">演算速度 x1</button>
+            <button id="audio-toggle" type="button" aria-pressed="false">音效开</button>
+            <button id="lang" type="button" data-i18n="control.lang" data-i18n-title="control.langTitle" title="切换语言（中 / EN）">EN</button>
           </div>
           <details class="settings-panel">
-            <summary>Settings</summary>
-            <p class="settings-note">Changing the spawner count starts a new run.</p>
+            <summary data-i18n="settings.title">系统设置</summary>
+            <p class="settings-note" data-i18n="settings.spawnerNote">修改攻击路线数量将重新开始当前行动。</p>
             <div class="spawner-setting">
-              <span data-i18n="label.spawners">Spawners</span>
+              <span data-i18n="label.spawners">攻击路线：</span>
               <span>
                 <button id="spawner1" class="spawner" data-count="1" type="button">1</button>
                 <button id="spawner2" class="spawner" data-count="2" type="button">2</button>
@@ -96,10 +96,10 @@
             </div>
             <div id="spawner-status" class="spawner-status" aria-live="polite"></div>
             <footer>
-              <div>保护笑脸男 <span id="version" class="accent">v0.1.21</span></div>
+              <div><span data-i18n="app.name">保护笑脸男</span> <span id="version" class="accent">v0.1.23</span></div>
               <div class="code">
-                <span data-i18n="footer.source">Source code:</span>
-                <a href="//github.com/CorentinTh/inert" target="_blank" aria-label="Github repository" rel="noopener">
+                <span data-i18n="footer.source">源代码：</span>
+                <a href="//github.com/CorentinTh/inert" target="_blank" data-i18n-aria-label="aria.githubRepository" aria-label="GitHub 源代码仓库" rel="noopener">
                   <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22 0 0 1.005-.322 3.3 1.23 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" /></svg>
                 </a>
               </div>
@@ -108,22 +108,22 @@
           </details>
         </aside>
       </div>
-      <div id="controls-hint" class="controls-hint" role="status" aria-live="polite">Double-click the battlefield to show controls.</div>
+      <div id="controls-hint" class="controls-hint" role="status" aria-live="polite" data-i18n="controls.hint">双击战场重新打开作战终端。</div>
       <div id="snackbar"></div>
       <div id="game-over">
-        <div class="description" data-i18n="result.gameOver">Game Over</div>
+        <div class="description" data-i18n="result.gameOver">防御终止</div>
         <div class="result">
-          <div class="result-primary"><span class="result-primary-label" data-i18n="result.wave">Wave reached</span><span class="result-primary-value" id="result-wave">0</span></div>
+          <div class="result-primary"><span class="result-primary-label" data-i18n="result.wave">防御波次</span><span class="result-primary-value" id="result-wave">0</span></div>
           <div class="result-grid">
-            <div class="result-cell"><span class="result-label" data-i18n="result.towers">Towers deployed</span><strong id="result-towers">0</strong></div>
-            <div class="result-cell"><span class="result-label" data-i18n="result.decisions">AI decisions</span><strong id="result-decisions">0</strong></div>
-            <div class="result-cell"><span class="result-label" data-i18n="result.cash">Cash left</span><strong id="result-cash">0</strong></div>
-            <div class="result-cell"><span class="result-label" data-i18n="result.duration">Duration</span><strong id="result-duration">0:00</strong></div>
-            <div class="result-cell"><span class="result-label" data-i18n="result.rank">Rank</span><strong id="result-rank">—</strong></div>
+            <div class="result-cell"><span class="result-label" data-i18n="result.towers">部署机体</span><strong id="result-towers">0</strong></div>
+            <div class="result-cell"><span class="result-label" data-i18n="result.decisions">自主判断次数</span><strong id="result-decisions">0</strong></div>
+            <div class="result-cell"><span class="result-label" data-i18n="result.cash">剩余战术资源</span><strong id="result-cash">0</strong></div>
+            <div class="result-cell"><span class="result-label" data-i18n="result.duration">行动时长</span><strong id="result-duration">0:00</strong></div>
+            <div class="result-cell"><span class="result-label" data-i18n="result.rank">作战排名</span><strong id="result-rank">—</strong></div>
           </div>
           <div class="result-breakdown" id="result-breakdown"></div>
         </div>
-        <button onclick="location.reload()" data-i18n="control.restart">Restart</button>
+        <button onclick="location.reload()" data-i18n="control.restart">重新部署</button>
       </div>
     </div>
     <script type="module" src="/src/main.ts"></script>

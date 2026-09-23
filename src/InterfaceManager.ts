@@ -103,6 +103,7 @@ class InterfaceManager {
         // Both modes can inspect the same tower catalogue. Only human mode turns
         // a card click into placement; AI mode keeps the cards informational.
         this.setTowers();
+        this.towersStatsElement.textContent = t('towers.selectHint');
         this.setupModeButton();
         onLangChange(() => {
             this.setState(gameLoop.state);
@@ -110,7 +111,11 @@ class InterfaceManager {
             this.updateAudioLabel();
             this.renderSpawners();
             this.setupModeButton();
-            if (this.lastTower) this.showTowerStats(this.lastTower);
+            if (this.lastTower) {
+                this.showTowerStats(this.lastTower);
+            } else {
+                this.towersStatsElement.textContent = t('towers.selectHint');
+            }
         });
         applyStaticTranslations();
     }
@@ -187,10 +192,10 @@ class InterfaceManager {
             const card = document.createElement('button');
             card.type = 'button';
             card.className = 'tower-card';
-            card.setAttribute('aria-label', `${tower.name}, costs ${tower.cost} cash`);
+            card.setAttribute('aria-label', t('tower.cardAria', {name: tower.displayName, cost: tower.cost}));
             card.title = playMode === 'human'
-                ? `${tower.name} · ${tower.cost} cash · click to place`
-                : `${tower.name} · ${tower.cost} cash · click to view details`;
+                ? t('tower.cardPlaceTitle', {name: tower.displayName, cost: tower.cost})
+                : t('tower.cardDetailsTitle', {name: tower.displayName, cost: tower.cost});
 
             const canvas = document.createElement('canvas');
             canvas.width = canvasSize;
@@ -200,10 +205,10 @@ class InterfaceManager {
 
             const label = document.createElement('span');
             label.className = 'tower-card-label';
-            label.textContent = tower.name;
+            label.textContent = tower.displayName;
             const cost = document.createElement('span');
             cost.className = 'tower-card-cost';
-            cost.textContent = `${tower.cost} ¢`;
+            cost.textContent = String(tower.cost);
             card.append(label, cost);
             this.towersWrapperElement.appendChild(card);
 
@@ -246,15 +251,15 @@ class InterfaceManager {
             : tower.damage.max > 0;
 
         this.towersStatsElement.innerHTML = `
-            <div class="title">${tower.name}</div>
-            <div class="description">${tower.description}</div>
+            <div class="title">${tower.displayName}</div>
+            <div class="description">${tower.displayDescription}</div>
             <table class="table5050">
-                <tr><td>${t('tower.cost')} </td><td class="accent">${tower.cost} ¢</td></tr>
+                <tr><td>${t('tower.cost')} </td><td class="accent">${tower.cost}</td></tr>
                 <tr><td>${t('tower.aimRadius')}</td><td class="accent">${tower.aimRadius}</td></tr>
                 ${hasDamage ? `
                     <tr><td>${t('tower.damage')}</td><td class="accent">${damage}</td></tr>
                     <tr><td>${t('tower.reload')}</td><td class="accent">${reloadDuration.toFixed(3)} s</td></tr>
-                    <tr><td title="Damage Per Second">${t('tower.dps')}</td><td class="accent">${dps}</td></tr>
+                    <tr><td title="${t('tower.dpsTitle')}">${t('tower.dps')}</td><td class="accent">${dps}</td></tr>
                 ` : ''}
             </table>
         `
@@ -276,7 +281,7 @@ class InterfaceManager {
         const breakdown = document.getElementById('result-breakdown');
         if (breakdown) {
             breakdown.textContent = stats.towers.byType
-                .map(entry => `${entry.type} × ${entry.count}`)
+                .map(entry => t('tower.summary', {name: t(`tower.${entry.type}.name`), count: entry.count}))
                 .join('   ');
         }
 

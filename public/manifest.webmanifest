@@ -1,5 +1,7 @@
 {
  "name": "保护笑脸男",
+ "short_name": "保护笑脸男",
+ "description": "用自然语言指挥塔奇克马，保护笑脸男，让真相活着离开公安九课。",
  "icons": [
   {
    "src": "/img/icons/android-icon-36x36.png",

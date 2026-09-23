@@ -6,6 +6,7 @@ import {enemyManager} from "../../EnemyManager";
 import {PI2} from "../../tools/constants";
 import {textureManager} from "../../tools/TextureManager";
 import {TowerType} from "./towerTypes";
+import {t} from "../../i18n";
 
 const frameDuration = 1000 / fps;
 
@@ -27,6 +28,20 @@ export abstract class Tower extends GridRenderable {
     public targetInRange = false;
     abstract name: string;
     abstract description: string;
+
+    /**
+     * Display-only name / description, resolved from i18n so the UI copy stays
+     * translatable. The abstract `name` / `description` stay untranslated: they
+     * are the protocol values `InertBattlefield.towerOptions()` feeds the AI
+     * snapshot, which must not change with the player's UI language.
+     */
+    get displayName(): string {
+        return t(`tower.${this.towerType}.name`);
+    }
+
+    get displayDescription(): string {
+        return t(`tower.${this.towerType}.description`);
+    }
 
     public level: number = 1;
     public maxLevel: number = 5;
