@@ -10,17 +10,15 @@ export interface AudioLike {
 export type AudioFactory = (src: string) => AudioLike;
 
 declare const __BACKGROUND_TRACKS__: readonly string[];
+declare const __SPECIAL_MUSIC_PATHS__: Readonly<Record<number, string>>;
 
 const AUDIO_PATHS = {
     wave: '/audio/wave.wav',
     gameOver: '/audio/game-over.wav',
 } as const;
-const SPECIAL_MUSIC_PATHS: { [wave: number]: string } = {
-    1: '/audio/background/1.mp3',
-    151: '/audio/background/151.mp3',
-    201: '/audio/background/201.mp3',
-    256: '/audio/background/256.mp3',
-};
+// Both playlists come from the same build-time manifest so milestones never
+// accidentally enter the regular rotation when demo tracks are replaced.
+const SPECIAL_MUSIC_PATHS = __SPECIAL_MUSIC_PATHS__;
 const SPECIAL_MUSIC_TRACKS = new Set(Object.keys(SPECIAL_MUSIC_PATHS).map(wave => SPECIAL_MUSIC_PATHS[Number(wave)]));
 
 function defaultAudioFactory(src: string): AudioLike {
