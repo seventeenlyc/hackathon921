@@ -137,6 +137,7 @@ class InterfaceManager {
         this.updateNaturalOil();
         this.setupDatabaseTabs();
         this.setupHostileImages();
+        this.setupHostileStats();
         this.startHeaderClock();
 
         // The class scopes which half of the UI is visible (see styles.less).
@@ -152,6 +153,7 @@ class InterfaceManager {
             this.updateAudioLabel();
             this.updateNaturalOil();
             this.setupModeButton();
+            this.setupHostileStats();
             if (this.lastWave > 0) {
                 const tag = t('map.waveTag', {wave: String(this.lastWave).padStart(3, '0')});
                 setText('map-wave', tag);
@@ -311,6 +313,47 @@ class InterfaceManager {
             if (typeId && isEnemyTypeId(typeId)) {
                 img.src = texturePaths.enemies[typeId];
             }
+        });
+    }
+
+    /**
+     * 敌方情报卡片的数据条（对照我方兵力卡片）：数值取自卡片上的 data-* 属性
+     * （与敌方实体字段保持一致：life / speed / cash），按五种敌人中的最大值归一化。
+     * 语言切换时重复调用，先清空再重建。
+     */
+    private setupHostileStats() {
+        const cards = Array.from(document.querySelectorAll<HTMLElement>('.hostile-card[data-life]'));
+        if (!cards.length) return;
+        const life = cards.map(card => Number(card.dataset.life));
+        const speed = cards.map(card => Number(card.dataset.speed));
+        const cash = cards.map(card => Number(card.dataset.cash));
+        const rows: Array<[string, number[], number]> = [
+            [t('enemy.stat.hp'), life, Math.max(...life)],
+            [t('enemy.stat.speed'), speed, Math.max(...speed)],
+            [t('enemy.stat.cash'), cash, Math.max(...cash)],
+        ];
+        cards.forEach((card, index) => {
+            const stats = card.querySelector('.hostile-stats');
+            if (!stats) return;
+            stats.textContent = '';
+            rows.forEach(([label, values, max]) => {
+                const row = document.createElement('span');
+                row.className = 'tower-stat';
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'stat-label';
+                labelSpan.textContent = label;
+                const valueSpan = document.createElement('span');
+                valueSpan.className = 'stat-value';
+                valueSpan.textContent = String(values[index]);
+                const bar = document.createElement('span');
+                bar.className = 'stat-bar';
+                const fill = document.createElement('span');
+                fill.className = 'stat-fill';
+                fill.style.width = `${Math.max(0, Math.min(1, values[index] / max)) * 100}%`;
+                bar.appendChild(fill);
+                row.append(labelSpan, valueSpan, bar);
+                stats.appendChild(row);
+            });
         });
     }
 

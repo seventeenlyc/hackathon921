@@ -959,6 +959,49 @@ body {
       }
     }
 
+    // 属性行：我方兵力与敌方情报卡片共用的「标签 + 数值 + 分段条」。
+    .tower-stat {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      line-height: 1;
+
+      .stat-label {
+        width: 30px;
+        flex: none;
+        color: rgba(53, 226, 255, 0.72);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .stat-value {
+        width: 36px;
+        flex: none;
+        overflow: hidden;
+        color: #dff7ff;
+        font-weight: 700;
+        text-align: right;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .stat-bar {
+        flex: 1;
+        height: 6px;
+        border-radius: 2px;
+        background: repeating-linear-gradient(90deg, rgba(53, 226, 255, 0.16) 0 3px, transparent 3px 6px);
+
+        .stat-fill {
+          display: block;
+          height: 100%;
+          border-radius: 2px;
+          background: repeating-linear-gradient(90deg, var(--accent) 0 3px, rgba(53, 226, 255, 0.55) 3px 5px, transparent 5px 6px);
+        }
+      }
+    }
+
     .tower-panel {
       /* The control layer is click-through (`.controls { pointer-events: none }`),
          so every interactive panel must opt back in; `.control-card` does, but the
@@ -1012,48 +1055,6 @@ body {
             display: flex;
             flex-direction: column;
             gap: 4px;
-          }
-
-          .tower-stat {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-family: var(--font-mono);
-            font-size: 9px;
-            line-height: 1;
-
-            .stat-label {
-              width: 30px;
-              flex: none;
-              color: rgba(53, 226, 255, 0.72);
-              letter-spacing: 0.06em;
-              text-transform: uppercase;
-            }
-
-            .stat-value {
-              width: 36px;
-              flex: none;
-              overflow: hidden;
-              color: #dff7ff;
-              font-weight: 700;
-              text-align: right;
-              text-overflow: ellipsis;
-              white-space: nowrap;
-            }
-
-            .stat-bar {
-              flex: 1;
-              height: 6px;
-              border-radius: 2px;
-              background: repeating-linear-gradient(90deg, rgba(53, 226, 255, 0.16) 0 3px, transparent 3px 6px);
-
-              .stat-fill {
-                display: block;
-                height: 100%;
-                border-radius: 2px;
-                background: repeating-linear-gradient(90deg, var(--accent) 0 3px, rgba(53, 226, 255, 0.55) 3px 5px, transparent 5px 6px);
-              }
-            }
           }
 
           .tower-card-flavor {
@@ -1191,39 +1192,64 @@ body {
       .hostile-card {
         display: flex;
         flex-direction: column;
-        align-items: center;
-        gap: 3px;
-        padding: 8px 6px;
+        gap: 7px;
+        padding: 8px 9px;
         border: 1px solid rgba(53, 226, 255, 0.28);
         border-radius: 6px;
         background: rgba(8, 16, 22, 0.72);
-        text-align: center;
+        text-align: left;
+
+        .hostile-card-head {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
 
         // 非正方形敌人插画需要 contain 与平滑采样。
         img {
-          width: 34px;
-          height: 34px;
+          width: 36px;
+          height: 36px;
+          flex: none;
           object-fit: contain;
           image-rendering: auto;
         }
 
+        .hostile-name-block {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          min-width: 0;
+        }
+
         .hostile-name {
-          color: var(--ink);
-          font-size: 11px;
+          overflow: hidden;
+          color: var(--accent);
+          font-size: 10px;
           font-weight: 700;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .hostile-code {
-          color: var(--accent);
+          color: var(--dim);
           font-family: var(--font-mono);
           font-size: 9px;
           letter-spacing: 0.14em;
         }
 
+        .hostile-stats {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
         .hostile-desc {
+          padding-top: 6px;
+          border-top: 1px solid rgba(53, 226, 255, 0.16);
           color: var(--dim);
-          font-size: 10px;
-          line-height: 1.35;
+          font-size: 9px;
+          line-height: 1.4;
+          text-align: center;
         }
       }
     }
