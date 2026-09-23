@@ -133,7 +133,7 @@ npm run test:server  # 后端 API 测试：tsc 编译后由 Node 内置 test run
 直接失败**，而不是变成运行时 404。`public/` 只放原样拷贝的静态文件（图标、
 `manifest.webmanifest`、`humans.txt` 等）。
 
-音频资源位于 `public/audio/`，构建后原样出现在 `dist/audio/`。背景曲目放在 `background/` 目录，开发服务器启动和生产构建时自动收集该目录中的 MP3、OGG、WAV、M4A 文件；新增曲目后需重新启动开发服务器或重新构建。`1.mp3`、`151.mp3`、`201.mp3`、`256.mp3` 是各自波次的一次性专用曲，其余曲目随机循环。`wave.wav` 与 `game-over.wav` 是活动音效；替换资源时使用浏览器可播放的格式，并在替换前确认许可归属。旧的 `background.wav` 仅作为历史占位文件保留，不是活动背景音乐。资源请求或解码失败必须仍不阻塞游戏。
+音频资源位于 `public/audio/`，构建后原样出现在 `dist/audio/`。普通背景曲目来自 `background/` 的 MP3、OGG、WAV、M4A 与 `audio/` 根目录的 MP4，按仓库根目录的 `audio-playlist.json` 分配到三个阶段；四首专用曲在同一配置中按波次标记。替换或新增资源需同步更新配置并重启开发服务器或重新构建；构建会检查曲目是否存在、是否重复或未分配。`wave.wav` 与 `game-over.wav` 是活动音效；替换资源时使用浏览器可播放的格式，并在替换前确认许可归属。旧的 `background.wav` 仅作为历史占位文件保留，不是活动背景音乐。资源请求或解码失败必须仍不阻塞游戏。
 
 迁移（issue #1）没有改变部署契约：入口仍是 `npm run build` → `dist/`，
 `deploy.yml` 一个字都没改。
