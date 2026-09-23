@@ -180,7 +180,7 @@ class InterfaceManager {
     updateNaturalOil() {
         const state = naturalOilController.state;
         this.naturalOilButton.disabled = state.kind !== 'ready' || gameLoop.state !== 'running';
-        this.naturalOilButton.setAttribute('aria-label', t('oil.button', {cost: 2000}));
+        this.naturalOilButton.setAttribute('aria-label', t('oil.button', {cost: 1000}));
         if (state.kind === 'active' || state.kind === 'cooldown') {
             const seconds = Math.ceil(state.remainingMs / 1000);
             this.naturalOilStatus.textContent = t(`oil.${state.kind}`, {seconds});
