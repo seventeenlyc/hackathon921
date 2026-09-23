@@ -19,7 +19,28 @@ interface Entry {
 
 const STRINGS: { [key: string]: Entry } = {
     'app.title': {zh: '保护笑脸男 — 塔奇克马防御协议', en: 'PROTECT AOI — Tachikoma Defense Protocol'},
+    'app.name': {zh: '保护笑脸男', en: 'PROTECT AOI'},
     'header.subtitle': {zh: '公安九课 · 塔奇克马防御协议', en: 'SECTION 9 · TACHIKOMA DEFENSE PROTOCOL'},
+
+    // Shell / battlefield UI (previously hardcoded in index.html).
+    'shell.eyebrow': {zh: '公安九课 // 战术网络', en: 'SECTION 9 // TACTICAL NETWORK'},
+    'towers.heading': {zh: '塔奇克马部署', en: 'TACHIKOMA UNITS'},
+    'towers.selectHint': {zh: '选择塔奇克马机体以查看战术参数。', en: 'Select a Tachikoma unit to view tactical specifications.'},
+    'console.eyebrow': {zh: '塔奇克马指挥网络', en: 'TACHIKOMA COMMAND NETWORK'},
+    'console.heading': {zh: '战术命令终端', en: 'TACTICAL ORDER TERMINAL'},
+    'settings.title': {zh: '系统设置', en: 'SYSTEM CONFIG'},
+    'settings.spawnerNote': {zh: '修改攻击路线数量将重新开始当前行动。', en: 'Changing the number of attack routes will restart the current operation.'},
+    'controls.hint': {zh: '双击战场重新打开作战终端。', en: 'Double-click the battlefield to reopen the command terminal.'},
+
+    // Accessible names / tooltips (previously hardcoded in index.html).
+    'aria.battlefield': {zh: '塔奇克马战术防御区域。双击打开作战终端。', en: 'Tachikoma tactical defense area. Double-click to open the command terminal.'},
+    'aria.battlefieldControls': {zh: '战场控制', en: 'Battlefield controls'},
+    'aria.battlefieldStatus': {zh: '战场状态', en: 'Battlefield status'},
+    'aria.deployableUnits': {zh: '可部署塔奇克马机体', en: 'Deployable Tachikoma units'},
+    'aria.hideControls': {zh: '隐藏作战终端', en: 'Hide command terminal'},
+    'title.hideControls': {zh: '隐藏终端', en: 'Hide terminal'},
+    'aria.gameControls': {zh: '作战控制', en: 'Operation controls'},
+    'aria.githubRepository': {zh: 'GitHub 源代码仓库', en: 'GitHub source repository'},
 
     'label.wave': {zh: '防御波次：', en: 'Defense Wave:'},
     'label.state': {zh: '作战状态：', en: 'Operation:'},
@@ -82,13 +103,33 @@ const STRINGS: { [key: string]: Entry } = {
     'tower.reload': {zh: '射击间隔：', en: 'Fire Interval:'},
     'tower.dps': {zh: '持续火力：', en: 'DPS:'},
 
+    // Unit display names / descriptions. Display-only: the engine keeps the
+    // protocol `name` / `description` fields untranslated for the AI snapshot.
+    'tower.canon.name': {zh: 'Canon 塔奇克马', en: 'Canon Tachikoma'},
+    'tower.canon.description': {zh: '标准火力机体。部署成本低，适合前期快速建立防线。', en: 'Standard fire-support unit. Low deployment cost, ideal for establishing an early defense.'},
+    'tower.gatling.name': {zh: 'Gatling 塔奇克马', en: 'Gatling Tachikoma'},
+    'tower.gatling.description': {zh: '高速压制火力机体，以持续射击压制密集目标。', en: 'High-rate suppression unit designed for sustained fire against concentrated hostiles.'},
+    'tower.slow.name': {zh: 'Slower 塔奇克马', en: 'Slower Tachikoma'},
+    'tower.slow.description': {zh: '电子战支援机体，可迟滞敌方单位推进。', en: 'Electronic-warfare support unit capable of slowing hostile advances.'},
+    'tower.sniper.name': {zh: 'Sniper 塔奇克马', en: 'Sniper Tachikoma'},
+    'tower.sniper.description': {zh: '远程精确火力机体。射程和单次火力极高，但射击间隔较长。', en: 'Long-range precision-fire unit. Exceptional range and damage, with a long firing interval.'},
+    'tower.laser.name': {zh: 'Laser 塔奇克马', en: 'Laser Tachikoma'},
+    'tower.laser.description': {zh: '定向能火力机体。持续锁定同一目标时，输出会逐步提升。', en: 'Directed-energy unit whose output increases while maintaining lock on the same target.'},
+
+    // Runtime-composed unit strings (previously hardcoded in InterfaceManager).
+    'tower.cardAria': {zh: '{name}，部署需要 {cost} 战术资源', en: '{name}, deployment cost {cost} resources'},
+    'tower.cardPlaceTitle': {zh: '{name} · {cost} 战术资源 · 点击部署', en: '{name} · {cost} resources · click to deploy'},
+    'tower.cardDetailsTitle': {zh: '{name} · {cost} 战术资源 · 点击查看战术参数', en: '{name} · {cost} resources · click to view tactical specifications'},
+    'tower.dpsTitle': {zh: '每秒持续火力', en: 'Damage Per Second'},
+    'tower.summary': {zh: '{name} × {count}', en: '{name} × {count}'},
+
     'snackbar.noMoney': {zh: '战术资源不足，无法部署该机体。', en: 'Insufficient tactical resources to deploy this unit.'},
 
     'lb.title': {zh: '作战记录', en: 'OPERATION RECORDS'},
-    'lb.empty': {zh: '暂无作战记录。', en: 'No operation records available.'},
+    'lb.empty': {zh: '暂无作战记录。', en: 'No operation records.'},
     'lb.wave': {zh: 'WAVE {wave}', en: 'WAVE {wave}'},
     'lb.shared': {zh: '九课网络', en: 'SEC-9 NETWORK'},
-    'lb.offline': {zh: '离线 · 本地记录', en: 'OFFLINE · LOCAL ARCHIVE'},
+    'lb.offline': {zh: '离线 · 本地档案', en: 'OFFLINE · LOCAL ARCHIVE'},
     'lb.you': {zh: '参谋：{name}', en: 'OPERATOR: {name}'},
     'lb.rank': {zh: ' · RANK {rank}', en: ' · RANK {rank}'},
     'lb.noRun': {zh: ' · 暂无记录', en: ' · NO RECORD'},
@@ -105,11 +146,11 @@ const STRINGS: { [key: string]: Entry } = {
     'history.version': {zh: '命令版本 {version}', en: 'Order Version {version}'},
     'history.fromWave': {zh: 'WAVE {wave} 起执行', en: 'Effective from WAVE {wave}'},
 
-    'gate.welcome': {zh: '公安九课 // RESTRICTED ACCESS', en: 'SECTION 9 // RESTRICTED ACCESS'},
-    'gate.prompt': {zh: 'IDENTIFICATION REQUIRED — 输入你的作战代号。', en: 'IDENTIFICATION REQUIRED — Enter your operator codename.'},
+    'gate.welcome': {zh: '公安九课 // 身份验证', en: 'SECTION 9 // IDENTIFICATION'},
+    'gate.prompt': {zh: '输入作战代号以接入塔奇克马战术网络。', en: 'Enter your operator codename to access the Tachikoma tactical network.'},
     'gate.placeholder': {zh: '作战代号', en: 'CODENAME'},
     'gate.continue': {zh: '接入系统', en: 'ACCESS SYSTEM'},
-    'gate.invalid': {zh: 'INVALID CODENAME — 请输入 1–16 个有效字符。', en: 'INVALID CODENAME — Use 1–16 valid characters.'},
+    'gate.invalid': {zh: '代号无效 — 请输入 1–16 个有效字符。', en: 'INVALID CODENAME — Use 1–16 valid characters.'},
 
     'agent.stateReadFailed': {zh: '战场状态读取失败，本轮无法进行战术判断。', en: 'Battlefield state unavailable; tactical decision skipped.'},
     'agent.noStrategy': {zh: '未收到作战命令，塔奇克马本波保持当前部署。', en: 'No tactical order received; Tachikomas will maintain current deployment.'},
@@ -230,6 +271,9 @@ export function applyStaticTranslations(root: ParentNode = document): void {
     });
     root.querySelectorAll<HTMLElement>('[data-i18n-title]').forEach(element => {
         element.title = t(element.dataset.i18nTitle!);
+    });
+    root.querySelectorAll<HTMLElement>('[data-i18n-aria-label]').forEach(element => {
+        element.setAttribute('aria-label', t(element.dataset.i18nAriaLabel!));
     });
     document.title = t('app.title');
 }
