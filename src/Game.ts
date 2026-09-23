@@ -86,6 +86,7 @@ class Game {
         if (wave > this.lastSoundWave) {
             this.lastSoundWave = wave;
             audioManager.playWaveReached();
+            audioManager.setWave(wave + 1);
         }
         const username = getSessionUsername();
         if (username) submitRunScore(username, wave, playMode);
@@ -233,6 +234,7 @@ export const game = new Game();
 
 export function startHumanRun(username: string): void {
     if (!gameLoop.isIdle()) return;
+    audioManager.setWave(waveManager.waveCounter);
     audioManager.startMusic();
     runSync.prepareRun(username, 'human');
     gameLoop.start();
