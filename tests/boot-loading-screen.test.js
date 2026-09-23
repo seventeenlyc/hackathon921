@@ -29,7 +29,7 @@ const source = fs.readFileSync('src/main.ts', 'utf8');
 const compiled = ts.transpileModule(source, {
     compilerOptions: {module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020},
 }).outputText;
-for (const readyState of ['complete', 'loading']) {
+for (const readyState of ['complete', 'loading']) for (const mode of ['ai', 'human']) {
     const events = [];
     let onDOMContentLoaded;
     const document = {
@@ -40,15 +40,20 @@ for (const readyState of ['complete', 'loading']) {
             onDOMContentLoaded = callback;
         },
     };
+    let gate;
     class UsernameGate {
+        constructor(onDone) { this.onDone = onDone; gate = this; }
         show() { events.push('gate-shown'); }
+        confirm(name) { this.onDone(name); }
     }
     const ports = {
-        './styles/styles.less': {}, './Game': {startHumanRun() {}}, './StrategyPanel': {strategyPanel: {}},
-        './leaderboard/LeaderboardUI': {UsernameGate, leaderboardPanel: {refresh() {}}},
+        './styles/styles.less': {}, './Game': {startHumanRun(name) { events.push(['human-run', name]); }},
+        './StrategyPanel': {strategyPanel: {}},
+        './leaderboard/LeaderboardUI': {UsernameGate, leaderboardPanel: {refresh() { events.push('refresh'); }}},
         './leaderboard/SessionIdentity': {clearLegacyUsernameCookie() {}, getSessionAvatar() {}},
-        './leaderboard/LeaderboardClient': {ensureSessionToken() {}},
-        './PlayMode': {playMode: 'ai'}, './AudioManager': {audioManager: {startMusic() {}}},
+        './leaderboard/LeaderboardClient': {ensureSessionToken() { events.push('session'); }},
+        './PlayMode': {playMode: mode},
+        './AudioManager': {audioManager: {startMusic() { events.push('music-start'); }}},
     };
     vm.runInNewContext(compiled, {
         exports: {}, document,
@@ -64,6 +69,10 @@ for (const readyState of ['complete', 'loading']) {
     }
     assert.deepEqual(events, ['gate-shown', 'app-ready'],
         'the loading screen must clear only after the username gate is visible');
+    gate.confirm('Alice');
+    assert.deepEqual(events, ['gate-shown', 'app-ready', 'session', 'refresh',
+        ...(mode === 'human' ? [['human-run', 'Alice']] : [])],
+    'confirming a nickname must not start music; human mode starts its actual run');
 }
-console.log('  ok  application readiness follows gate initialization in both DOM states');
+console.log('  ok  nickname confirmation remains silent in both modes and DOM states');
 console.log('All boot loading screen tests passed.');

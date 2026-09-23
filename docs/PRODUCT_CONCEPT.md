@@ -238,7 +238,7 @@ Prompt 历史与排行榜共用同一服务端 SQLite：每局的生效 Prompt �
 
 ### 音频资源（2026-09-23）
 
-页面使用独立的 `AudioManager` 管理背景音乐、进入新波次和结算音效。2026-09-23 Demo 曲目决定：开局第 1 波播放 `inner universe（启动战斗专用不循环）.mp4`，第 151 波播放 `Freak Out (151波次专用曲).mp4`，第 201 波播放 `M01 謡I-Making of Cyborg （201波次启动此曲专用）.mp4`，第 256 波播放 `MVlithium flower(256彩蛋专用）.mp4`；四首各播一次，不参与普通循环，结束后返回普通曲目。其余 12 首 Demo MP4 与原有已授权的 `public/audio/background/background.mp3` 随机轮播，每首结束后再选下一首，多首时不连续重复同一首。Vite 在开发启动和构建时收集 `public/audio/` 下的 MP4 和 `background/` 下的 MP3、OGG、WAV、M4A，音量为 0.24；四个数字 MP3 占位副本已移除。`wave.wav` 与 `game-over.wav` 仍是短小、低音量、可播放的本地 PCM WAV 占位资源，旧的 `background.wav` 仅保留为历史占位文件，不再加载。音频不参与确定性模拟，自动播放被浏览器拒绝、资源缺失或解码失败都不会阻塞游戏；页面提供统一的静音开关。
+页面使用独立的 `AudioManager` 管理背景音乐、进入新波次和结算音效。确认昵称后及战斗启动前保持静音；只有真正开始对局时才启动背景音乐并优先播放第 1 波专用曲，待机时操作静音开关也不能提前播放。2026-09-23 Demo 曲目决定：开局第 1 波播放 `inner universe（启动战斗专用不循环）.mp4`，第 151 波播放 `Freak Out (151波次专用曲).mp4`，第 201 波播放 `M01 謡I-Making of Cyborg （201波次启动此曲专用）.mp4`，第 256 波播放 `MVlithium flower(256彩蛋专用）.mp4`；四首各播一次，不参与普通循环，结束后返回普通曲目。其余 12 首 Demo MP4 与原有已授权的 `public/audio/background/background.mp3` 随机轮播，每首结束后再选下一首，多首时不连续重复同一首。Vite 在开发启动和构建时收集 `public/audio/` 下的 MP4 和 `background/` 下的 MP3、OGG、WAV、M4A，音量为 0.24；四个数字 MP3 占位副本已移除。`wave.wav` 与 `game-over.wav` 仍是短小、低音量、可播放的本地 PCM WAV 占位资源，旧的 `background.wav` 仅保留为历史占位文件，不再加载。音频不参与确定性模拟，自动播放被浏览器拒绝、资源缺失或解码失败都不会阻塞游戏；页面提供统一的静音开关。
 
 上述 16 首 MP4 的再分发授权**尚未确认**；按本次明确决定只为临时 Demo 接入播放，不意味着已获授权，也不改变「新增音频时确认资源许可归属」的正式发布要求。资源目前仍由 `public/audio/` 进入构建产物；非 Demo 发布前必须取得许可或替换/移除，不提供自动下架保证。
 
