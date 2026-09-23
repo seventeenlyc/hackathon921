@@ -210,7 +210,7 @@ async function test(name, fn) {
         const musicWaves = [];
         let missionDucks = 0;
         let username = 'Alice';
-        const waveManager = { waveCounter: 1, looping: true, setPlanner() {}, setInterWaveDelay() {}, start() { this.onWaveReached(this.waveCounter); } };
+        const waveManager = { waveCounter: 1, looping: true, setPlanner() {}, setNarrative() {}, setInterWaveDelay() {}, start() { this.onWaveReached(this.waveCounter); } };
         const game = loadSource('Game.ts', {
             './Canvas': { canvas: {}, ctx: {} },
             './config.json': { fps: 60 },
@@ -243,6 +243,9 @@ async function test(name, fn) {
             './i18n': { t: key => key, onLangChange() {} },
             './leaderboard/RunSync': { runSync: { enqueuePrompt() {}, retryPending() {} } },
             './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, setPaused() {}, duckForMissionComplete() { missionDucks++; }, beginRun: wave => musicWaves.push(wave), setWave: wave => musicWaves.push(wave) } },
+            './narrative/NarrativeDirector': { NarrativeDirector: class { constructor() {} beforeWave() {} } },
+            './narrative/NarrativeScript': { NARRATIVE_SCENES: [] },
+            './narrative/NarrativeOverlay': { narrativeOverlay: { play: async () => {} } },
         }, {
             window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {} },
             setInterval: () => 1,
@@ -274,7 +277,7 @@ async function test(name, fn) {
         const ranksRequested = [];
         const musicWaves = [];
         let username = 'Dave';
-        const waveManager = { waveCounter: 1, looping: true, setPlanner() {}, setInterWaveDelay() {}, start() {} };
+        const waveManager = { waveCounter: 1, looping: true, setPlanner() {}, setNarrative() {}, setInterWaveDelay() {}, start() {} };
         const gameModule = loadSource('Game.ts', {
             './Canvas': { canvas: {}, ctx: {} },
             './config.json': { fps: 60 },
@@ -307,6 +310,9 @@ async function test(name, fn) {
             './i18n': { t: key => key, onLangChange() {} },
             './leaderboard/RunSync': { runSync: { prepareRun() {}, enqueuePrompt() {}, retryPending() {} } },
             './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, setPaused() {}, beginRun: wave => musicWaves.push(wave), setWave: wave => musicWaves.push(wave) } },
+            './narrative/NarrativeDirector': { NarrativeDirector: class { constructor() {} beforeWave() {} } },
+            './narrative/NarrativeScript': { NARRATIVE_SCENES: [] },
+            './narrative/NarrativeOverlay': { narrativeOverlay: { play: async () => {} } },
         }, {
             window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {} },
             setInterval: () => 1,

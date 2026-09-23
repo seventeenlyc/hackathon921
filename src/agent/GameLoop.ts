@@ -6,14 +6,17 @@
  * until the player has written a prompt and explicitly starts. `PAUSED` is
  * player-initiated and only leaves via an explicit `resume()`; `PLANNING` is
  * engine-initiated before each wave (including wave 1) and leaves when the
- * planner resolves — the player never intervenes there.
+ * planner resolves — the player never intervenes there. `NARRATIVE` is a
+ * story-scene freeze (issue #100): like `PLANNING` it stops the simulation,
+ * but it deliberately does *not* touch the Prompt/planning path, so reading a
+ * scene cannot lock or re-issue an order.
  *
  * See `docs/PRODUCT_CONCEPT.md` §7 for the confirmed rules. This module is
  * deliberately dependency-free so it can be unit-tested without a DOM and so the
  * LLM runtime can later be attached as the planner without touching the engine.
  */
 
-export type GameState = 'idle' | 'running' | 'paused' | 'planning';
+export type GameState = 'idle' | 'running' | 'paused' | 'planning' | 'narrative';
 export type GameSpeed = 1 | 2 | 4 | 8;
 
 /** Speed steps the UI button cycles through, in order. */
@@ -100,6 +103,20 @@ export class GameLoop {
             await planner.plan();
         } finally {
             if (this._state === 'planning') this.setState('running');
+        }
+    }
+
+    /**
+     * Story-scene freeze (issue #100). Sets NARRATIVE while `hold` runs, then
+     * hands control back to RUNNING. Kept separate from `holdForPlanning` so a
+     * scene never locks the strategy or triggers a Prompt sync.
+     */
+    async holdForNarrative(hold: () => Promise<void>): Promise<void> {
+        this.setState('narrative');
+        try {
+            await hold();
+        } finally {
+            if (this._state === 'narrative') this.setState('running');
         }
     }
 
