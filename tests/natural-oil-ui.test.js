@@ -31,6 +31,7 @@ class FakeElement {
         this.textContent = '';
         this.disabled = false;
         this.hidden = false;
+        this.style = {};
         this.classList = {add() {}, remove() {}, toggle() {}};
     }
     appendChild(child) { this.children.push(child); return child; }

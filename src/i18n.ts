@@ -24,7 +24,7 @@ const STRINGS: { [key: string]: Entry } = {
 
     // Shell / battlefield UI (previously hardcoded in index.html).
     'shell.eyebrow': {zh: '公安九课 // 战术网络', en: 'SECTION 9 // TACTICAL NETWORK'},
-    'towers.heading': {zh: '塔奇克马部署', en: 'TACHIKOMA UNITS'},
+    'towers.heading': {zh: '我方兵力', en: 'TACHIKOMA UNITS'},
     'towers.selectHint': {zh: '选择塔奇克马机体以查看战术参数。', en: 'Select a Tachikoma unit to view tactical specifications.'},
     'console.eyebrow': {zh: '塔奇克马指挥网络', en: 'TACHIKOMA COMMAND NETWORK'},
     'console.heading': {zh: '战术命令终端', en: 'TACTICAL ORDER TERMINAL'},
@@ -91,17 +91,18 @@ const STRINGS: { [key: string]: Entry } = {
     'control.audio': {zh: '音效开', en: 'Sound On'},
     'control.audioMuted': {zh: '音效关', en: 'Sound Off'},
 
-    // 设计稿的状态框是「英文大字 + 汉字小字」双语排布（对照 DEFENSE / 防衛），
-    // 因此主值两种语言都固定英文，副行两种语言都固定中文。
-    // 主值单词必须短（最长 8 字符），才能在 1/3 卡宽内不截断地放下。
-    'state.idle': {zh: 'STANDBY', en: 'STANDBY'},
-    'state.running': {zh: 'ACTION', en: 'ACTION'},
-    'state.paused': {zh: 'PAUSED', en: 'PAUSED'},
-    'state.planning': {zh: 'PLANNING', en: 'PLANNING'},
-    'stateSub.idle': {zh: '待机', en: '待机'},
-    'stateSub.running': {zh: '行动中', en: '行动中'},
-    'stateSub.paused': {zh: '已暂停', en: '已暂停'},
-    'stateSub.planning': {zh: '战术分析中', en: '战术分析中'},
+    // 状态框保持设计稿的「主值大字 + 副行小字」双语排布，但主值随界面语言：
+    // 中文界面主值为中文、副行给英文对照；英文界面主值为英文、副行给中文对照。
+    // 主值必须短——EN 最长 PLANNING（8 字符），zh 最长战术分析中（5 个全角字符），
+    // 才能在 1/3 卡宽内不截断地放下。
+    'state.idle': {zh: '待机', en: 'STANDBY'},
+    'state.running': {zh: '行动中', en: 'ACTION'},
+    'state.paused': {zh: '已暂停', en: 'PAUSED'},
+    'state.planning': {zh: '战术分析中', en: 'PLANNING'},
+    'stateSub.idle': {zh: 'STANDBY', en: '待机'},
+    'stateSub.running': {zh: 'ACTION', en: '行动中'},
+    'stateSub.paused': {zh: 'PAUSED', en: '已暂停'},
+    'stateSub.planning': {zh: 'PLANNING', en: '战术分析中'},
 
     'speed.label': {zh: '演算速度 x{speed}', en: 'Simulation x{speed}'},
 
@@ -215,7 +216,16 @@ const STRINGS: { [key: string]: Entry } = {
     'map.waveTag': {zh: '波次 {wave}', en: 'WAVE {wave}'},
     'neural.title': {zh: '神经链接', en: 'NEURAL LINK'},
     'items.title': {zh: '支援道具', en: 'BATTLE ITEMS'},
-    'database.tabHostile': {zh: '敌人情报', en: 'ENEMY INTELLIGENCE'},
+    'database.title': {zh: '战术数据库', en: 'TACTICAL DATABASE'},
+    'database.tabHostile': {zh: '敌方情报', en: 'ENEMY INTELLIGENCE'},
+    'enemy.stat.hp': {zh: '生命', en: 'HP'},
+    'enemy.stat.speed': {zh: '速度', en: 'SPD'},
+    'enemy.stat.cash': {zh: '赏金', en: 'BOUNTY'},
+    'tower.stat.cost': {zh: '费用', en: 'COST'},
+    'tower.stat.dmg': {zh: '伤害', en: 'DMG'},
+    'tower.stat.rate': {zh: '射速', en: 'RATE'},
+    'tower.stat.range': {zh: '射程', en: 'RANGE'},
+    'tower.rateContinuous': {zh: '持续', en: 'CONT.'},
     'enemy.simple.name': {zh: '傀儡型', en: 'PUPPET'},
     'enemy.simple.desc': {zh: '数量最多的基础敌性体，成群涌向核心。', en: 'The most common hostile; swarms the core in numbers.'},
     'enemy.fast.name': {zh: '猎袭型', en: 'HUNTER'},

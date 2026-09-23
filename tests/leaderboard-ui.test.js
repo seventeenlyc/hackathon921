@@ -53,9 +53,9 @@ assert.match(index, /id="towers-wrapper"/, 'the page must expose the human deplo
 assert.match(index, /class="tactical-header"/, 'the page must expose the workstation header strip');
 assert.doesNotMatch(index, /class="control-card threat-panel"|id="threat-list"|id="threat-wave"/,
     'the right rail must not expose the duplicate live enemy panel');
-assert.match(index, /id="db-tab-hostile"[^>]*data-i18n="database\.tabHostile">敌人情报<\/button>/,
+assert.match(index, /id="db-tab-hostile"[^>]*data-i18n="database\.tabHostile">敌方情报<\/button>/,
     'the bottom enemy tab must retain its i18n binding and new label');
-assert.match(index, /id="db-view-hostile"[\s\S]*?id="hostile-heading"[^>]*data-i18n="database\.tabHostile">敌人情报<\/h2>/,
+assert.match(index, /id="db-view-hostile"[\s\S]*?id="hostile-heading"[^>]*data-i18n="database\.tabHostile">敌方情报<\/h2>/,
     'the enemy catalogue must remain available and accessible under the renamed tab');
 assert.match(styles, /#inert > \.leaderboard-panel[\s\S]*position:\s*fixed[\s\S]*right:\s*12px;/,
     'the leaderboard fallback must pin to the top-right like the right rail');
