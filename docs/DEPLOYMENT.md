@@ -133,7 +133,7 @@ npm run test:server  # 后端 API 测试：tsc 编译后由 Node 内置 test run
 直接失败**，而不是变成运行时 404。`public/` 只放原样拷贝的静态文件（图标、
 `manifest.webmanifest`、`humans.txt` 等）。
 
-音频占位资源位于 `public/audio/`，构建后原样出现在 `dist/audio/`。替换资源时保持 `background.wav`、`wave.wav`、`game-over.wav` 三个稳定路径，使用浏览器可播放的格式，并在替换前确认许可归属；资源请求或解码失败必须仍不阻塞游戏。
+音频资源位于 `public/audio/`，构建后原样出现在 `dist/audio/`。当前活动音频路径为 `background.mp3`、`wave.wav`、`game-over.wav`；替换资源时保持这些稳定路径，使用浏览器可播放的格式，并在替换前确认许可归属。旧的 `background.wav` 仅作为历史占位文件保留，不是活动背景音乐。资源请求或解码失败必须仍不阻塞游戏。
 
 迁移（issue #1）没有改变部署契约：入口仍是 `npm run build` → `dist/`，
 `deploy.yml` 一个字都没改。
