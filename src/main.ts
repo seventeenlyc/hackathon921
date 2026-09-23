@@ -28,8 +28,15 @@ const gate = new UsernameGate((name) => {
     }
 });
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => gate.show());
-} else {
+const revealGame = () => {
     gate.show();
+    // The game shell must never flash unstyled before its JS-imported Less and
+    // username gate have initialized. The inline boot screen owns that interval.
+    document.documentElement.classList.add('app-ready');
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', revealGame);
+} else {
+    revealGame();
 }
