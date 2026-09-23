@@ -17,7 +17,7 @@ import {getSessionToken, fetchSharedLeaderboard} from "./leaderboard/Leaderboard
 import {cashManager} from "./CashManager";
 import {Tower} from "./entities/towers/Tower";
 import type {RunStats} from "./InterfaceManager";
-import {t} from "./i18n";
+import {onLangChange, t} from "./i18n";
 import {gameLoop, GameSpeed} from "./agent/GameLoop";
 import {GameActions} from "./agent/GameActions";
 import {InertBattlefield} from "./agent/InertBattlefield";
@@ -43,6 +43,7 @@ function createDecisionSummary(): DecisionSummary | null {
     return panel && status && content ? new DecisionSummary(panel, status, content) : null;
 }
 const decisionSummary = createDecisionSummary();
+onLangChange(() => decisionSummary?.setUnavailable(t('reasoning.status.unavailable')));
 
 class Game {
     private updateInterval: number = -1;
