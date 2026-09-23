@@ -161,6 +161,11 @@ test('extractAgentSummary exposes only concise player-facing content, never a re
     assert.equal(extractAgentSummary({choices: [{message: {content: 'x'.repeat(241)}}]}), null);
     assert.equal(extractAgentSummary({choices: [{message: {content: '', reasoning_content: 'private'}}]}), null);
     assert.equal(extractAgentSummary({choices: [{message: {content: 'Deploy at (4, 5).'}}]}), null);
+    assert.equal(extractAgentSummary({choices: [{message: {content: 'Deploy at 4, 5.'}}]}), null);
+    assert.equal(
+        extractAgentSummary({choices: [{message: {content: 'A 1,000 cash reserve can reinforce the frontline.'}}]}),
+        'A 1,000 cash reserve can reinforce the frontline.'
+    );
 });
 
 test('工具调用的公开摘要在 content 为空时可用，且不进入引擎动作参数', () => {

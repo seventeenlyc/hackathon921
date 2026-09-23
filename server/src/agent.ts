@@ -337,7 +337,7 @@ export function extractAgentActions(payload: any): AgentAction[] {
 function publicSummary(value: unknown): string | null {
     if (typeof value !== 'string') return null;
     const summary = value.trim().replace(/\s+/g, ' ');
-    const hasCoordinatePair = /(?:\(\s*-?\d+\s*[,，]\s*-?\d+\s*\)|（\s*-?\d+\s*[,，]\s*-?\d+\s*）|\b-?\d+\s*:\s*-?\d+\b|\b-?\d+\s*[,，]\s*-?\d+\b)/.test(summary);
+    const hasCoordinatePair = /(?:\(\s*-?\d+\s*[,，]\s*-?\d+\s*\)|（\s*-?\d+\s*[,，]\s*-?\d+\s*）|\b-?\d+\s*:\s*-?\d+\b|\b-?\d+\s*[,，]\s*-?(?!\d{3}\b)\d+\b)/.test(summary);
     return summary.length > 0 && summary.length <= MAX_DECISION_SUMMARY_LENGTH && !hasCoordinatePair
         ? summary
         : null;
