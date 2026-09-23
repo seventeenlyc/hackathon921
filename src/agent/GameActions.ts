@@ -49,6 +49,9 @@ export interface Battlefield {
      * the live engine (see snapshot.ts); GameActions only forwards it.
      */
     snapshot(): GameSnapshot;
+
+    /** Use a tactical item. Authoritative logic lives in the battlefield/engine. */
+    useItem?(item: string): { ok: true } | { ok: false; error: ActionError };
 }
 
 function towerId(i: number, j: number): string {
@@ -165,6 +168,29 @@ export class GameActions {
             { level: currentLevel + 1, upgradeCost },
             t('action.upgraded', {id, level: currentLevel + 1, cost: upgradeCost})
         );
+    }
+
+    useItem(rawItem: string): ActionResult<{ item: string }> {
+        if (rawItem !== 'natural_oil') {
+            return failure('UNKNOWN_ITEM', t('action.unknownItem', {item: rawItem}));
+        }
+
+        if (this.battlefield.useItem) {
+            const result = this.battlefield.useItem(rawItem);
+            if (!result.ok) {
+                const message =
+                    result.error === 'INSUFFICIENT_FUNDS'
+                        ? t('action.insufficientItem', {item: rawItem, cost: 2000, cash: this.battlefield.cash()})
+                        : result.error === 'COOLDOWN'
+                        ? t('action.itemCooldown', {item: rawItem})
+                        : result.error === 'ALREADY_ACTIVE'
+                        ? t('action.itemAlreadyActive', {item: rawItem})
+                        : t('action.itemFailed', {item: rawItem, error: result.error});
+                return failure(result.error, message);
+            }
+        }
+
+        return success({ item: rawItem }, t('action.usedItem', {item: rawItem}));
     }
 
     getState(): GameSnapshot {

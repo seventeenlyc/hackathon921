@@ -208,6 +208,12 @@ const STRINGS: { [key: string]: Entry } = {
     'action.insufficientUpgrade': {zh: '强化机体 {id} 需要 {cost} 战术资源，当前仅剩 {cash}。', en: 'Enhancing unit {id} requires {cost} resources; {cash} available.'},
     'action.upgradeFailed': {zh: '机体 {id} 强化请求被系统拒绝。', en: 'Enhancement request for unit {id} was rejected.'},
     'action.upgraded': {zh: '机体 {id} 已强化至 LEVEL {level}，消耗 {cost} 战术资源。', en: 'Unit {id} enhanced to LEVEL {level}; {cost} resources consumed.'},
+    'action.unknownItem': {zh: '未知战术道具「{item}」。', en: 'Unknown tactical item "{item}".'},
+    'action.usedItem': {zh: '已使用战术道具「{item}」。', en: 'Used tactical item "{item}".'},
+    'action.itemCooldown': {zh: '战术道具「{item}」正在冷却中。', en: 'Tactical item "{item}" is on cooldown.'},
+    'action.itemAlreadyActive': {zh: '战术道具「{item}」正在生效中。', en: 'Tactical item "{item}" is already active.'},
+    'action.insufficientItem': {zh: '使用「{item}」需要 {cost} 战术资源，当前仅剩 {cash}。', en: 'Using "{item}" requires {cost} resources; {cash} available.'},
+    'action.itemFailed': {zh: '使用「{item}」失败（{error}）。', en: 'Failed to use "{item}" ({error}).'},
 
     'strategy.example1': {zh: '优先保护核心区域，在保护目标周围部署 Canon 机体，优先强化最接近核心的单位。', en: 'Protect the core area. Deploy Canon units around the protected target and enhance the closest units first.'},
     'strategy.example2': {zh: '沿全部攻击路线建立连续火力覆盖，优先部署 Gatling，让敌方单位持续暴露在压制火力下。', en: 'Establish continuous fire coverage along all attack routes. Prefer Gatling units for sustained suppression.'},
