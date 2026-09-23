@@ -205,7 +205,7 @@ async function test(name, fn) {
             './StrategyQueue': { queueStrategy: () => ({}), startRun: () => {} },
             './DecisionLog': { decisionLog: { add() {}, error() {} } },
             './DecisionSummary': { DecisionSummary: class {} },
-            './i18n': { t: key => key },
+            './i18n': { t: key => key, onLangChange() {} },
             './leaderboard/RunSync': { runSync: { enqueuePrompt() {}, retryPending() {} } },
             './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, startMusic() {}, setWave: wave => musicWaves.push(wave) } },
         }, {
@@ -263,7 +263,7 @@ async function test(name, fn) {
             './StrategyQueue': { queueStrategy: () => ({}), startRun: () => {} },
             './DecisionLog': { decisionLog: { add() {}, error() {} } },
             './DecisionSummary': { DecisionSummary: class {} },
-            './i18n': { t: key => key },
+            './i18n': { t: key => key, onLangChange() {} },
             './leaderboard/RunSync': { runSync: { prepareRun() {}, enqueuePrompt() {}, retryPending() {} } },
             './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, startMusic() {}, setWave: wave => musicWaves.push(wave) } },
         }, {

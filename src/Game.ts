@@ -17,7 +17,7 @@ import {getSessionToken, fetchSharedLeaderboard} from "./leaderboard/Leaderboard
 import {cashManager} from "./CashManager";
 import {Tower} from "./entities/towers/Tower";
 import type {RunStats} from "./InterfaceManager";
-import {t} from "./i18n";
+import {onLangChange, t} from "./i18n";
 import {gameLoop, GameSpeed} from "./agent/GameLoop";
 import {GameActions} from "./agent/GameActions";
 import {InertBattlefield} from "./agent/InertBattlefield";
@@ -43,6 +43,7 @@ function createDecisionSummary(): DecisionSummary | null {
     return panel && status && content ? new DecisionSummary(panel, status, content) : null;
 }
 const decisionSummary = createDecisionSummary();
+onLangChange(() => decisionSummary?.setUnavailable(t('reasoning.summaryUnavailable')));
 
 class Game {
     private updateInterval: number = -1;
@@ -61,6 +62,18 @@ class Game {
         // Human-mode runs are not leaderboard entries: the board compares AI
         // strategies, so a hand-played wave would not be comparable (see §9).
         waveManager.onWaveReached = wave => this.recordReachedWave(wave);
+        waveManager.onWaveStarted = wave => {
+            for (const item of battlefield.takePendingModelItems()) {
+                const result = actions.useItem(item);
+                decisionLog.add({
+                    wave,
+                    action: 'use_item',
+                    detail: item,
+                    ok: result.ok,
+                    message: result.message,
+                });
+            }
+        };
 
         // The run keeps going when the window loses focus — the player may want to
         // look elsewhere while the AI plays; the run ends only when the base falls.
@@ -195,7 +208,8 @@ class Game {
     }
 }
 
-const actions = new GameActions(new InertBattlefield());
+const battlefield = new InertBattlefield();
+const actions = new GameActions(battlefield);
 // Keep the module boundary tolerant of lightweight test doubles from the
 // leaderboard suite while the real TowerPlacer receives the same validated
 // action port as the AI runtime.
@@ -213,7 +227,7 @@ const agentRuntime = new AgentRuntime({
     },
     onSummary: summary => {
         if (summary) decisionSummary?.setSummary(summary, t('reasoning.status.ready'));
-        else decisionSummary?.setUnavailable(t('reasoning.status.unavailable'));
+        else decisionSummary?.setUnavailable(t('reasoning.summaryUnavailable'));
     },
     onError: message => {
         decisionSummary?.setUnavailable(t('reasoning.status.unavailable'));

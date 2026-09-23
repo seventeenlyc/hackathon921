@@ -14,9 +14,9 @@ export class LaserMunition extends Munition {
     }
 
     draw(ctx: CanvasRenderingContext2D): void {
-        ctx.strokeStyle = 'red'
+        ctx.strokeStyle = 'purple'
         ctx.lineWidth = 2 + 2 * this.charge
-        ctx.shadowColor = 'red'
+        ctx.shadowColor = 'purple'
         ctx.shadowBlur = 3 + 5 * this.charge
         ctx.globalAlpha = this.charge + 0.1
         ctx.beginPath();

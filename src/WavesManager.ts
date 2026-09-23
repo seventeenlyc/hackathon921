@@ -44,6 +44,7 @@ class WavesManager {
     public waveCounter = 1
     public looping = true;
     public onWaveReached: ((wave: number) => void) | null = null;
+    public onWaveStarted: ((wave: number) => void) | null = null;
     private planner: Planner = idlePlanner;
     private started = false;
     /** Breathing room between waves in human mode; 0 in AI mode. */
@@ -105,6 +106,7 @@ class WavesManager {
             if (!this.looping) break;
 
             const wave = this.generateWave()
+            let notifiedWaveStarted = false;
             for (let i = 0; i < wave.length; ++i) {
                 if (!this.looping) break;
                 let {enemyClass, enemySpecsMultiplier, quantity, delay} = wave[i];
@@ -115,6 +117,10 @@ class WavesManager {
                         if (!this.looping) break;
                         let base = map.enemyBases[k];
                         enemyManager.add(this.enemyFactory(enemyClass, enemySpecsMultiplier, base));
+                    }
+                    if (!notifiedWaveStarted && map.enemyBases.length > 0) {
+                        notifiedWaveStarted = true;
+                        this.onWaveStarted?.(this.waveCounter);
                     }
                     await gameLoop.sleep(delay)
                 }

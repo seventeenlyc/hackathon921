@@ -65,7 +65,6 @@ class InterfaceManager {
     private seeedButton = document.getElementById('item-seeed') as HTMLButtonElement | null;
     private evomapButton = document.getElementById('item-evomap') as HTMLButtonElement | null;
     private hypershellButton = document.getElementById('item-hypershell') as HTMLButtonElement | null;
-    private evomapCostElement = document.getElementById('evomap-cost');
     private controlLayer = getControlLayer();
     private lastTower: Tower | null = null;
     private lastWave = 0;
@@ -110,26 +109,18 @@ class InterfaceManager {
         this.bindItemHover(this.evomapButton, 'EvoMap', 'item.evomap.desc');
         this.bindItemHover(this.hypershellButton, 'HyperShell', 'item.hypershell.desc');
 
-        this.tripoButton?.addEventListener('click', () => {
-            const result = tacticalItemsController.activate('tripo', gameLoop.state === 'running', cashManager);
-            if (!result.ok) this.snackbar.toast(t(`oil.failure.${result.reason}`) || result.reason);
-            this.updateNaturalOil();
-        });
-        this.seeedButton?.addEventListener('click', () => {
-            const result = tacticalItemsController.activate('seeed_studio', gameLoop.state === 'running', cashManager);
-            if (!result.ok) this.snackbar.toast(t(`oil.failure.${result.reason}`) || result.reason);
-            this.updateNaturalOil();
-        });
-        this.evomapButton?.addEventListener('click', () => {
-            const result = tacticalItemsController.activate('evomap', gameLoop.state === 'running', cashManager);
-            if (!result.ok) this.snackbar.toast(t(`oil.failure.${result.reason}`) || result.reason);
-            this.updateNaturalOil();
-        });
-        this.hypershellButton?.addEventListener('click', () => {
-            const result = tacticalItemsController.activate('hypershell', gameLoop.state === 'running', cashManager);
-            if (!result.ok) this.snackbar.toast(t(`oil.failure.${result.reason}`) || result.reason);
-            this.updateNaturalOil();
-        });
+        for (const [key, button, brand] of [
+            ['evomap', this.evomapButton, 'EvoMap'],
+            ['tripo', this.tripoButton, 'Tripo'],
+            ['seeed_studio', this.seeedButton, 'Seeed Studio'],
+            ['hypershell', this.hypershellButton, 'HyperShell'],
+        ] as const) {
+            button?.addEventListener('click', () => {
+                const result = tacticalItemsController.activate(key, gameLoop.state === 'running', cashManager);
+                this.snackbar.toast(t(result.ok ? 'item.used' : `item.failure.${result.reason}`, {name: brand}));
+                this.updateNaturalOil();
+            });
+        }
 
         this.setState(gameLoop.state);
         this.updateSpeedLabel();
@@ -221,24 +212,25 @@ class InterfaceManager {
         }
 
         const running = gameLoop.state === 'running';
-        if (this.tripoButton) {
-            const s = tacticalItemsController.getState('tripo');
-            this.tripoButton.disabled = s.kind !== 'ready' || !running;
-        }
-        if (this.seeedButton) {
-            const s = tacticalItemsController.getState('seeed_studio');
-            this.seeedButton.disabled = s.kind !== 'ready' || !running;
-        }
-        if (this.evomapButton) {
-            const s = tacticalItemsController.getState('evomap');
-            this.evomapButton.disabled = s.kind !== 'ready' || !running;
-            if (this.evomapCostElement) {
-                this.evomapCostElement.textContent = tacticalItemsController.cost('evomap') === 0 ? 'FREE' : '1000 ¢';
-            }
-        }
-        if (this.hypershellButton) {
-            const s = tacticalItemsController.getState('hypershell');
-            this.hypershellButton.disabled = s.kind !== 'ready' || !running;
+        for (const [key, id, button, brand] of [
+            ['evomap', 'evomap', this.evomapButton, 'EvoMap'],
+            ['tripo', 'tripo', this.tripoButton, 'Tripo'],
+            ['seeed_studio', 'seeed', this.seeedButton, 'Seeed Studio'],
+            ['hypershell', 'hypershell', this.hypershellButton, 'HyperShell'],
+        ] as const) {
+            if (!button) continue;
+            const state = tacticalItemsController.getState(key);
+            const cost = tacticalItemsController.cost(key);
+            const affordable = cashManager.canWithdraw(cost);
+            button.disabled = state.kind !== 'ready' || !running || !affordable;
+            button.setAttribute('data-state', state.kind);
+            const costLabel = cost === 0 ? t('item.free') : t('item.cost', {cost});
+            const stateLabel = state.kind === 'ready'
+                ? t(!running ? 'item.waiting' : affordable ? 'item.ready' : 'item.insufficient')
+                : t(`item.${state.kind}`, {seconds: Math.ceil(state.remainingMs / 1000)});
+            setText(`item-${id}-cost`, costLabel);
+            setText(`item-${id}-state`, stateLabel);
+            button.setAttribute('aria-label', `${brand} · ${t(`item.${id}.name`)} · ${costLabel} · ${stateLabel}`);
         }
     }
 

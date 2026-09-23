@@ -18,7 +18,7 @@ import {Battlefield} from './GameActions';
 import {buildSnapshot, EnemySample, LaneRoute} from './snapshot';
 import {naturalOilController, NATURAL_OIL_COST} from '../items/NaturalOil';
 import {tacticalItemsController} from '../items/TacticalItems';
-import {useModelItem} from './modelItemActivation';
+import {PendingModelItemActivations, requestModelItem} from './modelItemActivation';
 
 function numericDamage(tower: Tower): number {
     const damage = tower.damage;
@@ -49,6 +49,8 @@ function pathLengthPixels(points: Point[]): number {
  * manager or an entity directly — everything goes through this port.
  */
 export class InertBattlefield implements Battlefield {
+    private readonly pendingModelItemActivations = new PendingModelItemActivations();
+
     readonly gridWidth = Map.GRID_W;
     readonly gridHeight = Map.GRID_H;
     readonly maxTowerLevel = 5;
@@ -120,11 +122,16 @@ export class InertBattlefield implements Battlefield {
         return tower.applyUpgrade();
     }
 
-    useItem(item: string): { ok: true } | { ok: false; error: ActionError } {
-        return useModelItem(item, tacticalItemsController, cashManager, {
+    useItem(item: string): { ok: true; queued?: true } | { ok: false; error: ActionError } {
+        return requestModelItem(item, tacticalItemsController, cashManager, {
             enemyManager,
             homeBase: map.homeBase,
-        });
+        }, this.pendingModelItemActivations);
+    }
+
+    /** Called by WavesManager after the first enemies for a planned wave spawn. */
+    takePendingModelItems(): ReturnType<PendingModelItemActivations['takeAll']> {
+        return this.pendingModelItemActivations.takeAll();
     }
 
     /**

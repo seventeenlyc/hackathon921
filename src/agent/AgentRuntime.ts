@@ -1,7 +1,7 @@
 import {ActionResult, GameSnapshot} from './types';
 import {Planner} from './GameLoop';
 import {StrategyStore} from './StrategyStore';
-import {t} from '../i18n';
+import {getLang, t} from '../i18n';
 
 /**
  * The AI player's decision loop (issue #25).
@@ -61,46 +61,6 @@ const DEFAULT_ENDPOINT = '/api/agent/decide';
 const DEFAULT_MAX_ACTIONS = 8;
 const MAX_DECISION_SUMMARY_LENGTH = 240;
 const DEFAULT_TIMEOUT_MS = 12000;
-const TOWER_TYPES = ['canon', 'gatling', 'slow', 'sniper', 'laser'];
-const ITEM_NAMES: { [key: string]: string } = {
-    tripo: 'Tripo',
-    seeed_studio: 'Seeed Studio',
-    evomap: 'EvoMap',
-    hypershell: 'HyperShell',
-};
-
-/** Tool calls remain useful as a localized action plan when the provider omits public text. */
-function actionPlanSummary(actions: AgentAction[]): string | null {
-    if (!actions.length) return null;
-    const first = actions[0];
-    const args = first.arguments || {};
-    let plan: string | null = null;
-
-    if (first.name === 'build_tower' && typeof args.type === 'string' &&
-        TOWER_TYPES.indexOf(args.type) !== -1 &&
-        Number.isSafeInteger(args.i) && Number.isSafeInteger(args.j)) {
-        plan = t('reasoning.plan.build', {
-            type: t(`tower.${args.type}.name`), i: args.i as number, j: args.j as number,
-        });
-    } else if (first.name === 'upgrade_tower' && typeof args.id === 'string' &&
-        /^\d+:\d+$/.test(args.id) && args.id.length <= 20) {
-        plan = t('reasoning.plan.upgrade', {id: args.id});
-    } else if (first.name === 'use_item' && typeof args.item === 'string') {
-        const item = args.item === 'natural_oil'
-            ? t('reasoning.item.naturalOil')
-            : ITEM_NAMES[args.item];
-        if (item) plan = t('reasoning.plan.item', {item});
-    }
-
-    if (!plan) return t('reasoning.plan.generic', {count: actions.length});
-    const full = actions.length > 1
-        ? `${plan} ${t('reasoning.plan.more', {count: actions.length - 1})}`
-        : plan;
-    return full.length <= MAX_DECISION_SUMMARY_LENGTH
-        ? full
-        : t('reasoning.plan.generic', {count: actions.length});
-}
-
 export class AgentRuntime implements Planner {
     private readonly actions: ActionPort;
     private readonly store: StrategyStore;
@@ -112,6 +72,7 @@ export class AgentRuntime implements Planner {
     private readonly maxActions: number;
     private readonly getToken: () => string | null;
     private readonly timeoutMs: number;
+    private readonly confirmedInvalidCells = new Map<string, string>();
 
     constructor(options: AgentRuntimeOptions) {
         this.actions = options.actions;
@@ -124,6 +85,11 @@ export class AgentRuntime implements Planner {
         this.maxActions = options.maxActions || DEFAULT_MAX_ACTIONS;
         this.getToken = options.getToken || (() => null);
         this.timeoutMs = options.timeoutMs || DEFAULT_TIMEOUT_MS;
+    }
+
+    /** Clear invalid placement memory on new match/reset. */
+    resetInvalidCells(): void {
+        this.confirmedInvalidCells.clear();
     }
 
     async plan(): Promise<void> {
@@ -157,13 +123,26 @@ export class AgentRuntime implements Planner {
         // loop frozen in PLANNING (holdForPlanning awaits the planner).
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+        const requestLang = getLang();
 
         let response: Response;
         try {
+            const invalidCells = Array.from(this.confirmedInvalidCells.keys());
+            const invalidCellSet = new Set(invalidCells);
+            const payloadState = {
+                ...state,
+                buildCandidates: Array.isArray(state.buildCandidates)
+                    ? state.buildCandidates.filter(candidate => !invalidCellSet.has(`${candidate.i}:${candidate.j}`))
+                    : state.buildCandidates,
+                pathShapingCandidates: Array.isArray(state.pathShapingCandidates)
+                    ? state.pathShapingCandidates.filter(candidate => !invalidCellSet.has(`${candidate.i}:${candidate.j}`))
+                    : state.pathShapingCandidates,
+                invalidCells,
+            };
             response = await this.fetchImpl(this.endpoint, {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({strategy, state}),
+                body: JSON.stringify({strategy, state: payloadState, lang: requestLang}),
                 signal: controller.signal,
             });
         } catch (error) {
@@ -202,9 +181,9 @@ export class AgentRuntime implements Planner {
 
         const plannedActions = payload.actions.slice(0, this.maxActions);
         const summary = typeof payload.summary === 'string' ? payload.summary.trim() : '';
-        this.onSummary(summary.length > 0 && summary.length <= MAX_DECISION_SUMMARY_LENGTH
+        this.onSummary(requestLang === getLang() && summary.length > 0 && summary.length <= MAX_DECISION_SUMMARY_LENGTH
             ? summary
-            : actionPlanSummary(plannedActions));
+            : null);
         plannedActions.forEach(action => this.execute(action, wave));
     }
 
@@ -221,7 +200,28 @@ export class AgentRuntime implements Planner {
         const args = action.arguments || {};
 
         if (action.name === 'build_tower') {
+            const key = `${String(args.i)}:${String(args.j)}`;
+            if (this.confirmedInvalidCells.has(key)) {
+                const prev = this.confirmedInvalidCells.get(key) || 'BLOCKS_PATH';
+                this.onDecision({
+                    wave,
+                    action: 'build_tower',
+                    detail: `${String(args.type)} at (${String(args.i)}, ${String(args.j)})`,
+                    ok: false,
+                    message: t('action.cellUnbuildable', {error: prev}),
+                });
+                return;
+            }
+
             const result = this.actions.buildTower(String(args.type), Number(args.i), Number(args.j));
+            if (!result.ok && (
+                result.error === 'BLOCKS_PATH' ||
+                result.error === 'CELL_OCCUPIED' ||
+                result.error === 'GRID_OUT_OF_BOUNDS'
+            )) {
+                this.confirmedInvalidCells.set(key, result.error);
+            }
+
             this.onDecision({
                 wave,
                 action: 'build_tower',

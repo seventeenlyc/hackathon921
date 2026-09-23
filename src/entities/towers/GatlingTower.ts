@@ -12,7 +12,7 @@ export class GatlingTower extends CanonTower {
     public cost: number = 100;
 
     public colors = {
-        primary: '#44b0e5',
+        primary: 'red',
         secondary: '#71d0ff'
     };
 

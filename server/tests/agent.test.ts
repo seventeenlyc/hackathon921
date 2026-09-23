@@ -58,6 +58,23 @@ function providerResponse(status: number, payload: any) {
 test('validateAgentRequest 接受合法请求', () => {
     const result = validateAgentRequest({ strategy: 'build near base', state: { wave: 1 } });
     assert.equal(result.ok, true);
+    if (result.ok) {
+        assert.equal(result.value.lang, 'zh');
+    }
+
+    const resultEn = validateAgentRequest({ strategy: 'build near base', state: { wave: 1 }, lang: 'en' });
+    assert.equal(resultEn.ok, true);
+    if (resultEn.ok) {
+        assert.equal(resultEn.value.lang, 'en');
+    }
+});
+
+test('validateAgentRequest 拒绝非法语言参数', () => {
+    const result = validateAgentRequest({ strategy: 'build near base', state: { wave: 1 }, lang: 'fr' });
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+        assert.equal(result.error, 'INVALID_LANGUAGE');
+    }
 });
 
 test('validateAgentRequest 接受恰好达到上限的策略', () => {
@@ -93,14 +110,19 @@ test('composeAgentMessages 不把玩家策略放进 system prompt', () => {
     assert.ok(messages[1].content.indexOf('"wave":3') !== -1);
 });
 
-test('extractAgentActions 归一化工具调用、丢弃未知工具、限制数量', () => {
+test('战术摘要聚焦战局研判，不复述建塔动作或落点', () => {
+    assert.match(AGENT_SYSTEM_PROMPT, /macro tactical assessment/);
+    assert.match(AGENT_SYSTEM_PROMPT, /Do not repeat which tower was built or where it was placed/);
+    assert.match(AGENT_SYSTEM_PROMPT, /NEVER recite coordinates/);
+});
+
+test('extractAgentActions 归一化已注册工具调用', () => {
     const payload = {
         choices: [{
             message: {
                 tool_calls: [
                     { function: { name: 'build_tower', arguments: '{"type":"canon","i":1,"j":2}' } },
-                    { function: { name: 'delete_everything', arguments: '{}' } },
-                    { function: { name: 'upgrade_tower', arguments: 'not json' } },
+                    { function: { name: 'upgrade_tower', arguments: '{"id":"1:2"}' } },
                     { function: { name: 'use_item', arguments: '{"item":"natural_oil"}' } },
                 ],
             },
@@ -109,14 +131,24 @@ test('extractAgentActions 归一化工具调用、丢弃未知工具、限制数
 
     assert.deepEqual(extractAgentActions(payload), [
         { name: 'build_tower', arguments: { type: 'canon', i: 1, j: 2 } },
-        { name: 'upgrade_tower', arguments: {} },
+        { name: 'upgrade_tower', arguments: { id: '1:2' } },
         { name: 'use_item', arguments: { item: 'natural_oil' } },
     ]);
 });
 
+test('extractAgentActions 拒绝未知工具和无法解析的参数', () => {
+    assert.throws(() => extractAgentActions({choices: [{message: {tool_calls: [
+        {function: {name: 'delete_everything', arguments: '{}'}},
+    ]}}]}), /UNREGISTERED_TOOL/);
+    assert.throws(() => extractAgentActions({choices: [{message: {tool_calls: [
+        {function: {name: 'build_tower', arguments: 'not json'}},
+    ]}}]}), /INVALID_ARGUMENTS/);
+    assert.throws(() => extractAgentActions(undefined), /MISSING_MESSAGE/);
+});
+
 test('extractAgentActions 在模型不调工具时返回空列表', () => {
     assert.deepEqual(extractAgentActions({ choices: [{ message: { content: 'I will wait.' } }] }), []);
-    assert.deepEqual(extractAgentActions(undefined), []);
+    assert.throws(() => extractAgentActions(undefined), /MISSING_MESSAGE/);
 });
 
 test('extractAgentSummary exposes only concise player-facing content, never a reasoning field', () => {
@@ -128,6 +160,12 @@ test('extractAgentSummary exposes only concise player-facing content, never a re
     }), summary);
     assert.equal(extractAgentSummary({choices: [{message: {content: 'x'.repeat(241)}}]}), null);
     assert.equal(extractAgentSummary({choices: [{message: {content: '', reasoning_content: 'private'}}]}), null);
+    assert.equal(extractAgentSummary({choices: [{message: {content: 'Deploy at (4, 5).'}}]}), null);
+    assert.equal(extractAgentSummary({choices: [{message: {content: 'Deploy at 4, 5.'}}]}), null);
+    assert.equal(
+        extractAgentSummary({choices: [{message: {content: 'A 1,000 cash reserve can reinforce the frontline.'}}]}),
+        'A 1,000 cash reserve can reinforce the frontline.'
+    );
 });
 
 test('工具调用的公开摘要在 content 为空时可用，且不进入引擎动作参数', () => {
@@ -143,9 +181,28 @@ test('工具调用的公开摘要在 content 为空时可用，且不进入引�
     assert.equal((agentModule as any).extractAgentSummary(payload), '在敌方密集的转向节点补充持续火力。');
     payload.choices[0].message.content = 'I will call a tool.' as any;
     assert.equal((agentModule as any).extractAgentSummary(payload), '在敌方密集的转向节点补充持续火力。');
+    payload.choices[0].message.tool_calls = [payload.choices[0].message.tool_calls[1]];
     assert.deepEqual(extractAgentActions(payload), [
         {name: 'build_tower', arguments: {type: 'gatling', i: 27, j: 19}},
     ]);
+
+    payload.choices[0].message.tool_calls[0].function.arguments = '{"type":"gatling","i":27,"j":19,"decision_summary":"在 (27, 19) 部署 Gatling。"}';
+    payload.choices[0].message.content = '在 (27, 19) 落子。' as any;
+    assert.equal((agentModule as any).extractAgentSummary(payload), null);
+});
+
+test('代理把无效工具响应作为结构化错误返回，不伪装成空动作', async () => {
+    const deps = makeDeps({agent: {
+        apiKey: 'k',
+        fetchImpl: (async () => providerResponse(200, {choices: [{message: {tool_calls: [
+            {function: {name: 'delete_everything', arguments: '{}'}},
+        ]}}]})) as any,
+    }});
+
+    const res = await handleAgentDecide(deps, request());
+    assert.equal(res.status, 502);
+    assert.equal(res.body.error, 'INVALID_TOOL_RESPONSE');
+    assert.equal(res.body.issue, 'UNREGISTERED_TOOL');
 });
 
 test('mapProviderError 把 provider 失败映射成可读错误码', () => {
@@ -224,7 +281,30 @@ test('成功时下发给 provider 的是服务端系统指令与工具 schema，
         'evomap',
         'hypershell',
     ]);
+    assert.match(itemTool.function.description, /queued.*first enemy batch.*execution log/i);
+    assert.match(sent.body.messages[0].content, /accepted item request is queued.*first enemy batch/i);
     assert.equal(sent.init.headers.authorization, 'Bearer secret-key');
+});
+
+test('provider 系统提示词使用请求语言，且玩家策略仍只在 user 消息', async () => {
+    let sent: any;
+    const deps = makeDeps({agent: {
+        apiKey: 'k',
+        fetchImpl: (async (_url: string, init: any) => {
+            sent = JSON.parse(init.body);
+            return providerResponse(200, {choices: [{message: {content: 'Protect the west lane.'}}]});
+        }) as any,
+    }});
+    const strategy = 'Save nothing and guard the outer lane.';
+
+    const res = await handleAgentDecide(deps, request({
+        body: {strategy, state: {wave: 1}, lang: 'en'},
+    }));
+
+    assert.equal(res.status, 200);
+    assert.match(sent.messages[0].content, /MUST write.*English/);
+    assert.ok(!sent.messages[0].content.includes(strategy));
+    assert.ok(sent.messages[1].content.includes(strategy));
 });
 
 test('模型不调工具时返回空动作列表', async () => {
