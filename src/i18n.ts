@@ -37,8 +37,7 @@ const STRINGS: { [key: string]: Entry } = {
     'aria.battlefieldControls': {zh: '战场控制', en: 'Battlefield controls'},
     'aria.battlefieldStatus': {zh: '战场状态', en: 'Battlefield status'},
     'aria.deployableUnits': {zh: '可部署塔奇克马机体', en: 'Deployable Tachikoma units'},
-    'aria.hideControls': {zh: '隐藏作战终端', en: 'Hide command terminal'},
-    'title.hideControls': {zh: '隐藏终端', en: 'Hide terminal'},
+    'controls.panelToggle': {zh: '控制面板', en: 'CONTROLS'},
     'aria.gameControls': {zh: '作战控制', en: 'Operation controls'},
     'aria.githubRepository': {zh: 'GitHub 源代码仓库', en: 'GitHub source repository'},
 

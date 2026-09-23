@@ -47,7 +47,7 @@ const statusClose = index.indexOf('</section>', statusStart);
 const towerPanel = index.indexOf('class="tower-panel');
 assert.ok(statusStart >= 0 && statusClose >= 0 && towerPanel > statusClose,
     'the tactical database must come after the left-rail sections in source order');
-assert.match(index, /id="controls-collapse"/, 'the page must expose an accessible collapse control');
+assert.match(index, /id="controls-panel-toggle"/, 'the page must expose the header panel toggle');
 assert.match(index, /tabindex="0"/, 'the battlefield must be keyboard focusable');
 assert.match(index, /id="towers-wrapper"/, 'the page must expose the human deployable tower mount');
 assert.match(index, /class="tactical-header"/, 'the page must expose the workstation header strip');

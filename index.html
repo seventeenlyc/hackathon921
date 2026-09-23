@@ -88,6 +88,7 @@
         <div class="header-side header-right">
           <span class="live-indicator"><span class="live-dot" aria-hidden="true"></span><span data-i18n="map.live">LIVE</span></span>
           <span id="header-clock" class="header-clock">--:--:--</span>
+          <button id="controls-panel-toggle" class="controls-panel-toggle" type="button" aria-pressed="true" data-i18n="controls.panelToggle">控制面板</button>
           <svg class="header-logo" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="16" /><circle cx="18" cy="18" r="9" /><path d="M2 18h10M24 18h10" /></svg>
         </div>
       </header>
@@ -118,7 +119,6 @@
                 <div class="eyebrow" data-i18n="console.eyebrow">塔奇克马指挥网络</div>
                 <h2 id="chatbox-heading" data-i18n="console.heading">战术命令终端</h2>
               </div>
-              <button id="controls-collapse" class="icon-button" type="button" data-i18n-aria-label="aria.hideControls" aria-label="隐藏作战终端" data-i18n-title="title.hideControls" title="隐藏终端">×</button>
             </div>
             <div class="strategy">
               <label class="strategy-label" for="strategy-input"><span data-i18n="strategy.label">作战命令</span></label>
@@ -211,7 +211,7 @@
           </section>
         </aside>
 
-        <section class="database-panel">
+        <section id="database-panel" class="database-panel">
           <div class="database-header">
             <div class="database-title" data-i18n="database.title">战术数据库</div>
             <div class="database-tabs">
