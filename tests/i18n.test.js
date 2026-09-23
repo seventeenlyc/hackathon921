@@ -112,4 +112,16 @@ for (const key of [
     assert.ok(entries.has(key), `missing required i18n key: ${key}`);
 }
 
+// 666601c established the command-terminal copy; the layout mockup must not replace it.
+const commandPanelStart = index.indexOf('class="control-card chatbox-panel"');
+assert.ok(commandPanelStart >= 0, 'command panel must be present');
+const commandPanel = index.slice(commandPanelStart, index.indexOf('</section>', commandPanelStart));
+for (const [key, zh, en, markup] of [
+    ['console.eyebrow', '塔奇克马指挥网络', 'TACHIKOMA COMMAND NETWORK', /<div class="eyebrow" data-i18n="console\.eyebrow">塔奇克马指挥网络<\/div>/],
+    ['console.heading', '战术命令终端', 'TACTICAL ORDER TERMINAL', /<h2 id="chatbox-heading" data-i18n="console\.heading">战术命令终端<\/h2>/],
+]) {
+    assert.deepStrictEqual(entries.get(key), {zh, en}, `${key} must retain the established copy in both languages`);
+    assert.match(commandPanel, markup, `${key} must retain its markup binding and pre-translation copy`);
+}
+
 console.log(`i18n table assertions passed (${entries.size} keys, ${referenced} markup references).`);
