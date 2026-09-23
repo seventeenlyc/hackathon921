@@ -68,10 +68,13 @@ assert.match(styles, /\.rail-left,[\s\S]*?flex-direction:\s*column;/,
 assert.match(styles, /\.database-panel \{[\s\S]*?position:\s*absolute;/,
     'the tactical database must be its own bottom-center surface');
 assert.match(styles, /#inert\.mode-human \.chatbox-panel/, 'the directive panel must stay hidden in human mode');
-assert.match(strategySource, /getControlLayer\(\)\.hide\(\)/,
-    'valid strategy submission must hide the control layer after queueing');
-assert.match(strategySource, /showHint\(\)/,
-    'valid strategy submission must reveal the first-view gesture hint');
+// 提交命令（开局或运行中更新）不再自动隐藏控制面板，由头部开关手动控制。
+const submitStart = strategySource.indexOf('private submit()');
+const submitEnd = strategySource.indexOf('private warnOverLimit', submitStart);
+assert.ok(submitStart >= 0 && submitEnd > submitStart, 'submit() method must exist');
+const submitBody = strategySource.slice(submitStart, submitEnd);
+assert.ok(!submitBody.includes('getControlLayer'), 'strategy submission must keep the control layer visible');
+assert.ok(!submitBody.includes('showHint'), 'strategy submission must not trigger the reopen hint');
 
 const ts = require('typescript');
 
