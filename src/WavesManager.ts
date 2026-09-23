@@ -145,7 +145,8 @@ class WavesManager {
             }
         }
 
-        if (this.waveCounter <= 200) {
+        // Keep elite-wave bosses at their effective wave-152 life and speed.
+        if (this.waveCounter <= 200 || enemy instanceof BossEnemy) {
             enemy.life *= 0.4;
             enemy.speed *= 0.4;
         }
@@ -156,12 +157,13 @@ class WavesManager {
     private generateWave(): Wave {
         const wave = [];
         const ratio = 1 + this.waveCounter / 10;
+        const bossRatio = this.waveCounter >= 201 ? 1 + 152 / 10 : ratio;
 
         if (this.waveCounter >= 201) {
             wave.push({
                 enemyClass: BossEnemy,
                 enemySpecsMultiplier: {
-                    life: ratio,
+                    life: bossRatio,
                 },
                 quantity: 10 + this.waveCounter,
                 delay: Math.max(500 - this.waveCounter, 100)
