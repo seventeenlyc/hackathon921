@@ -5,7 +5,7 @@
 
 import { LeaderboardStore } from './store';
 import { signToken, verifyToken } from './token';
-import { sanitizeLimit, sanitizeUsername, sanitizeWave } from './validate';
+import { sanitizeLeaderboardMode, sanitizeLimit, sanitizeRunMode, sanitizeUsername, sanitizeWave } from './validate';
 import type { AgentConfig } from './agent';
 import { MAX_PROMPT_LENGTH } from './prompts';
 
@@ -65,8 +65,11 @@ export function handleApi(deps: ApiDeps, req: ApiRequest): ApiResponse {
     if (req.pathname === '/api/runs' && method === 'POST') {
         const username = verifyToken(deps.secret, req.token, deps.now());
         if (!username) return json(401, { error: 'INVALID_SESSION' });
+        const rawMode = field(req.body, 'mode');
+        const mode = sanitizeRunMode(rawMode);
+        if (!mode) return json(400, { error: 'INVALID_MODE' });
         const runId = deps.newRunId();
-        deps.store.createRun(runId, username, deps.now());
+        deps.store.createRun(runId, username, deps.now(), mode);
         return json(201, { runId });
     }
 
@@ -145,22 +148,37 @@ export function handleApi(deps: ApiDeps, req: ApiRequest): ApiResponse {
 
     // 读取共享排行榜；带 token 时额外返回本人的名次。
     if (req.pathname === '/api/leaderboard' && method === 'GET') {
+        const mode = sanitizeLeaderboardMode(req.searchParams.mode);
+        if (!mode) return json(400, { error: 'INVALID_MODE' });
         const limit = sanitizeLimit(req.searchParams.limit);
-        const entries = deps.store.top(limit).map((entry, index) => ({
+        const entries = deps.store.top(limit, mode).map((entry, index) => ({
             rank: index + 1,
             username: entry.username,
             wave: entry.wave,
             achievedAt: entry.achievedAt,
+            mode: entry.mode,
         }));
 
         let me: any = null;
         const viewer = verifyToken(deps.secret, req.token, deps.now());
         if (viewer) {
-            me = {
-                username: viewer,
-                rank: deps.store.rankOf(viewer),
-                wave: deps.store.bestWaveOf(viewer),
-            };
+            if (mode === 'total') {
+                const totalRank = deps.store.rankOf(viewer, 'total');
+                const best = deps.store.bestRecordOf(viewer);
+                me = {
+                    username: viewer,
+                    rank: totalRank,
+                    wave: best ? best.wave : null,
+                    mode: best ? best.mode : 'ai',
+                };
+            } else {
+                me = {
+                    username: viewer,
+                    rank: deps.store.rankOf(viewer, mode),
+                    wave: deps.store.bestWaveOf(viewer, mode),
+                    mode,
+                };
+            }
         }
         return json(200, { entries, me });
     }

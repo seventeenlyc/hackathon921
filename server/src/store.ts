@@ -275,6 +275,28 @@ export class LeaderboardStore {
         return row && row.best != null ? Number(row.best) : null;
     }
 
+    /** 某个昵称在全模式中的最优记录（波次最高，平局取最早达成），用于总榜 me 展示。 */
+    bestRecordOf(username: string): { wave: number; mode: PlayMode } | null {
+        const row = this.db
+            .prepare(
+                `WITH best AS (
+                     SELECT r.mode AS mode, MAX(w.wave) AS best_wave, MIN(w.at_ms) AS achieved_at
+                     FROM runs r JOIN wave_events w ON w.run_id = r.id
+                     WHERE lower(r.username) = lower(?)
+                     GROUP BY r.mode
+                 )
+                 SELECT mode, best_wave AS wave FROM best
+                 ORDER BY best_wave DESC, achieved_at ASC, mode ASC
+                 LIMIT 1`
+            )
+            .get(username);
+        if (!row) return null;
+        return {
+            mode: (row.mode === 'human' ? 'human' : 'ai') as PlayMode,
+            wave: Number(row.wave),
+        };
+    }
+
     /**
      * 排行榜前 N 名。规则见 docs/PRODUCT_CONCEPT.md §9：
      *   每个昵称取最佳波次，按波次降序；平局时更早达成者靠前。
