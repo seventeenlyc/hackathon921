@@ -44,10 +44,10 @@ const Enemy = load('Enemy');
 modules['./Enemy'] = {Enemy};
 const SimpleEnemy = load('SimpleEnemy');
 const others = [
-    ['fast', load('FastEnemy'), 16],
-    ['armored', load('ArmoredEnemy'), 16],
-    ['healer', load('HealerEnemy'), 16],
-    ['boss', load('BossEnemy'), 32],
+    ['fast', load('FastEnemy'), 18.4],
+    ['armored', load('ArmoredEnemy'), 18.4],
+    ['healer', load('HealerEnemy'), 18.4],
+    ['boss', load('BossEnemy'), 36.8],
 ];
 const base = {center: {x: TILE_SIZE / 2, y: TILE_SIZE / 2}};
 const ctx = {fill() {}, beginPath() {}, closePath() {}, moveTo() {}, lineTo() {}, stroke() {}};
@@ -58,8 +58,8 @@ simple.draw(ctx);
 assert.equal(simple.radius, 8, 'collision radius stays at 8');
 assert.equal(simple.speed, 2.5, 'movement speed is unchanged');
 assert.equal(draws[0].src, 'simple.png');
-assert.equal(draws[0].width, 30, 'the small normal enemy needs a 30px display box');
-assert.equal(draws[0].height, 30, 'the display box preserves the source aspect ratio');
+assert.equal(draws[0].width, 34.5, 'the small normal enemy display box is enlarged by 15%');
+assert.equal(draws[0].height, 34.5, 'the display box preserves the source aspect ratio');
 assert.equal(draws[0].rotation, 0, 'the enemy remains upright');
 assert.ok(draws[0].width <= TILE_SIZE && draws[0].height <= TILE_SIZE, 'art fits one tile');
 assert.equal(bars.length, 2, 'damaged enemy still displays its health bar');
@@ -74,5 +74,5 @@ for (const [role, EnemyClass, size] of others) {
     assert.equal(draws[0].width, size, `${role} retains its current display size`);
     assert.equal(draws[0].height, size);
 }
-console.log('  ok  other four enemies keep their original display sizes');
+console.log('  ok  other four enemy textures are enlarged by 15%');
 console.log('All enemy sprite size tests passed.');
