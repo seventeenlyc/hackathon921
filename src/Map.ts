@@ -7,7 +7,7 @@ import {randIndex} from "./tools/helphers";
 import {enemyManager} from "./EnemyManager";
 import {EventEmitter} from "./tools/EventEmitter";
 import {drawRoundedSquare} from "./tools/shapes";
-import {queryParamsManager} from "./QueryParamsManager";
+import {allSpawnPointsReachable, canPlaceTowerAt} from "./agent/SpawnRoutes";
 
 class Map extends EventEmitter {
     public static GRID_W = 61;
@@ -31,12 +31,7 @@ class Map extends EventEmitter {
         super();
         this.homeBase = this.addBase(Math.floor(Map.GRID_W / 2), Math.floor(Map.GRID_H / 2), true);
 
-        const difficulty = queryParamsManager.getDifficulty();
-
         this.enemyBases.push(this.addBase(Map.SPAWN_POINTS[0].i, Map.SPAWN_POINTS[0].j))
-        for (let index = 1; index < difficulty; ++index) {
-            this.enemyBases.push(this.addBase(Map.SPAWN_POINTS[index].i, Map.SPAWN_POINTS[index].j))
-        }
 
         for (let i = 0; i < 150; i++) {
             this.addElement(randIndex(this.grid), randIndex(this.grid[0]), Rock)
@@ -46,12 +41,20 @@ class Map extends EventEmitter {
     /**
      * Add or remove spawn lanes on a live map (issue #40).
      *
-     * Rocks on a spawn point are cleared, but a tower is never bulldozed to make
-     * room for a lane — the count simply stops short. Paths are invalidated and
-     * recomputed, otherwise the new lane would keep using stale A* results.
+     * Rocks on a spawn point are cleared, but any other occupied cell is an
+     * invariant failure. Paths are invalidated and recomputed, otherwise the
+     * new lane would keep using stale A* results.
      */
     setSpawnCount(count: number): number {
         const target = Math.max(1, Math.min(Map.SPAWN_POINTS.length, Math.floor(count)));
+
+        for (let index = this.enemyBases.length; index < target; ++index) {
+            const point = Map.SPAWN_POINTS[index];
+            const cell = this.grid[point.i][point.j];
+            if (cell !== 0 && !(cell instanceof Rock)) {
+                throw new Error('SPAWN_ROUTE_UNREACHABLE');
+            }
+        }
 
         while (this.enemyBases.length > target) {
             const base = this.enemyBases.pop()!;
@@ -64,8 +67,6 @@ class Map extends EventEmitter {
 
             if (cell instanceof Rock) {
                 this.grid[point.i][point.j] = 0;
-            } else if (cell !== 0) {
-                break;
             }
 
             this.enemyBases.push(this.addBase(point.i, point.j));
@@ -178,11 +179,17 @@ class Map extends EventEmitter {
     }
 
     canBePlaced(i: number, j: number) {
+        if (!canPlaceTowerAt(i, j, Map.SPAWN_POINTS)) return false;
         if (this.grid[i] && this.grid[i][j] === 0) {
             this.grid[i][j] = 1;
-            const canBePlaced = this.enemyBases.every(base => this.pathFind(base.i, base.j)) && enemyManager.canAllReachBase();
-            this.grid[i][j] = 0;
-            return canBePlaced;
+            try {
+                return allSpawnPointsReachable(
+                    Map.SPAWN_POINTS,
+                    (spawnI, spawnJ) => Boolean(this.pathFind(spawnI, spawnJ)),
+                ) && enemyManager.canAllReachBase();
+            } finally {
+                this.grid[i][j] = 0;
+            }
         } else {
             return false
         }
