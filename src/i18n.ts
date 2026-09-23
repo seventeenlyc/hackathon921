@@ -25,7 +25,6 @@ const STRINGS: { [key: string]: Entry } = {
     // Shell / battlefield UI (previously hardcoded in index.html).
     'shell.eyebrow': {zh: '公安九课 // 战术网络', en: 'SECTION 9 // TACTICAL NETWORK'},
     'towers.heading': {zh: '我方兵力', en: 'TACHIKOMA UNITS'},
-    'towers.selectHint': {zh: '选择塔奇克马机体以查看战术参数。', en: 'Select a Tachikoma unit to view tactical specifications.'},
     'console.eyebrow': {zh: '塔奇克马指挥网络', en: 'TACHIKOMA COMMAND NETWORK'},
     'console.heading': {zh: '战术命令终端', en: 'TACTICAL ORDER TERMINAL'},
     'settings.title': {zh: '系统设置', en: 'SYSTEM CONFIG'},
@@ -119,6 +118,17 @@ const STRINGS: { [key: string]: Entry } = {
     'narrative.archiveTitle': {zh: 'THE ENDLESS', en: 'THE ENDLESS'},
     'narrative.archiveNote': {zh: '找到秘密档案。影像资料尚未确认出镜与素材授权，此处暂不展示。', en: 'Secret archive found. The archive media is withheld here until portrait and asset authorization is confirmed.'},
     'narrative.continueEndless': {zh: '继续无尽挑战', en: 'Continue Endless Challenge'},
+
+    // 背景故事阅读入口（issue #99）：正文来自 docs/保护笑脸男-游戏世界观与剧情设定-v2.md 的
+    // PLAYER-STORY 区间（构建时提取），这里只放界面外壳文案。
+    'story.open': {zh: '背景故事', en: 'BACKGROUND'},
+    'story.openTitle': {zh: '阅读《保护笑脸男》背景故事', en: 'Read the PROTECT AOI background story'},
+    'story.eyebrow': {zh: '公安九课 // 档案', en: 'SECTION 9 // ARCHIVE'},
+    'story.title': {zh: '背景故事', en: 'BACKGROUND STORY'},
+    'story.close': {zh: '返回', en: 'BACK'},
+    'story.closeAria': {zh: '关闭背景故事', en: 'Close background story'},
+    'story.langNote': {zh: '本页为中文原文；英文版译文尚未定稿，暂不提供。', en: 'The story is presented in its original Chinese. An English edition is not yet finalized.'},
+    'story.spoilerNote': {zh: '以上为可公开阅读的背景设定与游戏改编前提。后续波次事件与结局涉及剧透，未在此展示。', en: 'The above is the public background setting and adaptation premise. Later wave events and endings contain spoilers and are not shown here.'},
 
     'speed.label': {zh: '演算速度 x{speed}', en: 'Simulation x{speed}'},
 

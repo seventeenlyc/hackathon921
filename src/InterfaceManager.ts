@@ -20,6 +20,7 @@ import {enemyLifeAtWave, enemySpeedAtWave} from './tools/enemyScaling';
 import {isEnemyTypeId} from './tools/enemyCatalog';
 import {texturePaths} from './tools/texturePaths';
 import {DevPanel} from './DevPanel';
+import {storyReader} from './narrative/StoryReader';
 
 /** Summary shown on the settlement screen after the base falls. */
 export interface RunStats {
@@ -49,7 +50,6 @@ class InterfaceManager {
     private waveDelayElement = document.getElementById('delay')!;
     private cashElement = document.getElementById('cash')!;
     private towersWrapperElement = document.getElementById('towers-wrapper')!;
-    private towersStatsElement = document.getElementById('towers-stats')!;
     private stateElement = document.getElementById('state')!;
     private stateSubElement = document.getElementById('state-sub')!;
     private speedElement = document.getElementById('speed')!;
@@ -90,6 +90,9 @@ class InterfaceManager {
             toggleLang();
             applyStaticTranslations();
         });
+        // 背景故事（issue #99）：纯阅读视图，不冻结演算，也不改动任何对局状态。
+        const storyButton = document.getElementById('story-open') as HTMLButtonElement | null;
+        storyButton?.addEventListener('click', () => storyReader.open(storyButton));
 
         gameLoop.onChange(state => {
             this.setState(state);
@@ -127,7 +130,6 @@ class InterfaceManager {
         // Both modes can inspect the same tower catalogue. Only human mode turns
         // a card click into placement; AI mode keeps the cards informational.
         this.setTowers();
-        this.towersStatsElement.textContent = t('towers.selectHint');
         this.setupModeButton();
         onLangChange(() => {
             this.setState(gameLoop.state);
@@ -139,11 +141,6 @@ class InterfaceManager {
             if (this.lastWave > 0) {
                 const tag = t('map.waveTag', {wave: String(this.lastWave).padStart(3, '0')});
                 setText('map-wave', tag);
-            }
-            if (this.lastTower) {
-                this.showTowerStats(this.lastTower);
-            } else {
-                this.towersStatsElement.textContent = t('towers.selectHint');
             }
         });
         applyStaticTranslations();
@@ -217,25 +214,10 @@ class InterfaceManager {
     private bindItemHover(button: HTMLElement | null, title: string, descKey: string) {
         if (!button) return;
         const show = () => {
-            const desc = t(descKey);
-            button.setAttribute('title', `${title}: ${desc}`);
-            this.towersStatsElement.innerHTML = `
-                <div class="title">${title}</div>
-                <div class="description">${desc}</div>
-            `;
-        };
-        const hide = () => {
-            if (this.lastTower) {
-                this.showTowerStats(this.lastTower);
-            } else {
-                this.towersStatsElement.textContent = t('towers.selectHint');
-            }
+            button.setAttribute('title', `${title}: ${t(descKey)}`);
         };
         button.addEventListener('mouseenter', show);
-        button.addEventListener('mouseleave', hide);
         button.addEventListener('focus', show);
-        button.addEventListener('blur', hide);
-        button.setAttribute('title', `${title}: ${t(descKey)}`);
     }
 
     updateSpeedLabel() {
@@ -444,16 +426,13 @@ class InterfaceManager {
                 if (selectedCard === card) {
                     selectedCard.classList.remove('selected');
                     selectedCard = null;
-                    this.lastTower = null;
                     if (playMode === 'human') towerPlacer.cancel();
-                    this.towersStatsElement.textContent = t('towers.selectHint');
                     return;
                 }
                 selectedCard?.classList.remove('selected');
                 selectedCard = card;
                 card.classList.add('selected');
                 if (playMode === 'human') towerPlacer.place(TowerClass);
-                this.showTowerStats(tower);
             };
             card.onclick = selectTower;
             card.onkeydown = event => {
@@ -463,41 +442,6 @@ class InterfaceManager {
                 }
             };
         })
-    }
-
-    private showTowerStats(tower: Tower) {
-        this.lastTower = tower;
-
-        const damage = typeof tower.damage === 'object' ?
-            `${tower.damage.min} - ${tower.damage.max}` :
-            tower.damage;
-
-        const reloadDuration = tower.reloadDurationMs / 1000;
-        const dps = typeof tower.damage === 'object' ?
-            `${(tower.damage.min / reloadDuration).toFixed(0)} - ${(tower.damage.max / reloadDuration).toFixed(0)}` :
-            tower.damage / reloadDuration;
-
-        const hasDamage = typeof tower.damage === 'number'
-            ? tower.damage > 0
-            : tower.damage.max > 0;
-
-        this.towersStatsElement.innerHTML = `
-            <div class="title">${tower.displayName}</div>
-            <div class="description">${tower.displayDescription}</div>
-            <table class="table5050">
-                <tr><td>${t('tower.cost')} </td><td class="accent">${tower.cost}</td></tr>
-                <tr><td>${t('tower.aimRadius')}</td><td class="accent">${tower.aimRadius}</td></tr>
-                ${hasDamage ? `
-                    <tr><td>${t('tower.damage')}</td><td class="accent">${damage}</td></tr>
-                    <tr><td>${t('tower.reload')}</td><td class="accent">${reloadDuration.toFixed(3)} s</td></tr>
-                    <tr><td title="${t('tower.dpsTitle')}">${t('tower.dps')}</td><td class="accent">${dps}</td></tr>
-                ` : ''}
-            </table>
-        `
-        // AI mode keeps the catalogue compact on small screens; bring the
-        // selected tower's description into view instead of hiding it below
-        // the scroll boundary.
-        this.towersStatsElement.scrollIntoView({block: 'nearest'});
     }
 
     /** Settlement screen: the run's numbers plus the rank, once known. */
