@@ -1,6 +1,8 @@
 # Audio assets
 
-The game loads these files through `AudioManager`:
+The game loads these files through `AudioManager`. Music stays silent during
+nickname confirmation and idle setup; it begins with the wave-1 track when the
+battle starts, even if the sound toggle was used before then:
 
 - `background/` - the authorized `background.mp3` joins the regular playlist;
 - the four milestone `.mp4` tracks listed below play once at the start of waves

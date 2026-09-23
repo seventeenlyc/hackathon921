@@ -16,6 +16,7 @@ declare module 'node:sqlite' {
 
 declare module 'node:crypto' {
     export function createHmac(algorithm: string, key: any): any;
+    export function createHash(algorithm: string): { update(data: string): { digest(encoding: string): string; digest(): Buffer; }; };
     export function timingSafeEqual(a: any, b: any): boolean;
     export function randomBytes(size: number): any;
 }

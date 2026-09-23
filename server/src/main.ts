@@ -22,6 +22,13 @@ function readSecret(): string {
     return String(process.env.PD_SESSION_SECRET || '').trim();
 }
 
+/** 可选的 Demo 开发模式密码，未配置时入口在服务端不可用。 */
+function readDevPassword(): string {
+    const file = process.env.PD_DEV_PASSWORD_FILE;
+    if (file && existsSync(file)) return readFileSync(file, 'utf8').trim();
+    return String(process.env.PD_DEV_PASSWORD || '').trim();
+}
+
 /** LLM 代理的 provider 密钥。与会话密钥同样优先从文件读，避免写进 unit 文件。 */
 function readDeepseekKey(): string {
     const file = process.env.DEEPSEEK_API_KEY_FILE;
@@ -78,6 +85,7 @@ function main(): void {
         secret,
         now: () => Date.now(),
         newRunId: () => randomBytes(16).toString('hex'),
+        devPassword: readDevPassword(),
         agent: { apiKey: deepseekApiKey, baseUrl: providerBaseUrl, model: providerModel },
     });
 

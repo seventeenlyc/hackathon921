@@ -95,6 +95,84 @@ test('相同昵称和头像每次确认都会创建独立 UID，排行榜按 UID
     assert.notEqual(board.body.entries[0].uid, board.body.entries[1].uid);
 });
 
+test('开发密码只在服务端验证；解锁后同一 UID 无法创建计榜对局', () => {
+    const deps: ApiDeps = { ...makeDeps(), devPassword: 'demo-test-only' };
+    const session = handleApi(deps, request({
+        method: 'POST', pathname: '/api/session', body: { username: 'Tester', avatarId: 'aramaki' },
+    }));
+    const token = session.body.token as string;
+    const unlock = (password: unknown, auth: string | null = token) => handleApi(deps, request({
+        method: 'POST', pathname: '/api/dev/unlock', token: auth, body: { password },
+    }));
+    assert.equal(unlock('demo-test-only', null).status, 401);
+    assert.equal(unlock('wrong').status, 401);
+    assert.equal(unlock({ nested: true }).status, 400);
+    assert.deepEqual(unlock('demo-test-only'), { status: 200, body: { enabled: true } });
+    assert.equal(unlock('demo-test-only').status, 200);
+    const run = handleApi(deps, request({ method: 'POST', pathname: '/api/runs', token }));
+    assert.deepEqual(run, { status: 403, body: { error: 'DEV_SESSION_UNRANKED' } });
+    assert.deepEqual(handleApi(deps, request({ pathname: '/api/leaderboard' })).body.entries, []);
+});
+
+test('开发模式未配置密码时关闭，已开局的会话不能再切为开发模式', () => {
+    const deps = makeDeps();
+    const session = handleApi(deps, request({
+        method: 'POST', pathname: '/api/session', body: { username: 'Tester', avatarId: 'aramaki' },
+    }));
+    const token = session.body.token as string;
+    const unlock = () => handleApi(deps, request({
+        method: 'POST', pathname: '/api/dev/unlock', token, body: { password: 'demo-test-only' },
+    }));
+    assert.equal(unlock().status, 503);
+    deps.devPassword = 'demo-test-only';
+    const run = handleApi(deps, request({ method: 'POST', pathname: '/api/runs', token }));
+    assert.equal(run.status, 201);
+    assert.equal(unlock().status, 409);
+    assert.equal(handleApi(deps, request({
+        method: 'POST', pathname: `/api/runs/${run.body.runId}/waves`, token, body: { wave: 5 },
+    })).status, 200);
+    assert.equal(handleApi(deps, request({ pathname: '/api/leaderboard' })).body.entries[0].wave, 5);
+});
+
+test('store.enableDevSession 持久化并使 createRun 抛出 DEV_SESSION_UNRANKED', () => {
+    const deps = makeDeps();
+    const session = handleApi(deps, request({
+        method: 'POST', pathname: '/api/session', body: { username: 'Tester', avatarId: 'aramaki' },
+    }));
+    const token = session.body.token as string;
+    // 从 token 反推 uid 不便，这里直接用 store 的 createUser 取一个 uid 来验证持久层。
+    const uid = deps.store.createUser('DevOnly', 'aramaki', T0);
+    assert.equal(deps.store.isDevSession(uid), false);
+    assert.equal(deps.store.enableDevSession(uid), true);
+    assert.equal(deps.store.enableDevSession(uid), true, '重复解锁保持幂等');
+    assert.equal(deps.store.isDevSession(uid), true);
+    assert.throws(() => deps.store.createRun('run-x', uid, T0, 'ai'), /DEV_SESSION_UNRANKED/);
+    assert.throws(() => deps.store.createRun('run-y', uid, T0, 'human'), /DEV_SESSION_UNRANKED/);
+    // 排行榜查询里不会出现该 UID：它没有任何 run / wave 事件。
+    assert.equal(deps.store.top(10, 'ai').find((e: any) => e.uid === uid), undefined);
+    assert.equal(deps.store.top(10, 'total').find((e: any) => e.uid === uid), undefined);
+    // 已有 run 的 UID 不能再切开发模式。
+    const rankedUid = deps.store.createUser('Ranked', 'aramaki', T0);
+    deps.store.createRun('run-ranked', rankedUid, T0, 'ai');
+    assert.equal(deps.store.enableDevSession(rankedUid), false, '已开局不能再切开发模式');
+    assert.equal(deps.store.isDevSession(rankedUid), false);
+});
+
+test('开发密码长度边界：128 合法，129 与空串被拒', () => {
+    const deps: ApiDeps = { ...makeDeps(), devPassword: 'demo-test-only' };
+    const session = handleApi(deps, request({
+        method: 'POST', pathname: '/api/session', body: { username: 'Tester', avatarId: 'aramaki' },
+    }));
+    const token = session.body.token as string;
+    const unlock = (password: unknown) => handleApi(deps, request({
+        method: 'POST', pathname: '/api/dev/unlock', token, body: { password },
+    }));
+    assert.equal(unlock('a'.repeat(128)).status, 401, '128 字符密码格式合法，只是不对');
+    assert.equal(unlock('a'.repeat(129)).status, 400);
+    assert.equal(unlock('').status, 400);
+    assert.equal(unlock(42).status, 400);
+});
+
 test('POST /api/session 拒绝未知头像', () => {
     const res = handleApi(makeDeps(), request({
         method: 'POST', pathname: '/api/session', body: { username: 'Alice', avatarId: 'unknown' },

@@ -30,6 +30,9 @@ const dependencies = {
         },
     },
     './AudioManager': { audioManager: { setWave: wave => events.push(['music-wave', wave]), startMusic: () => events.push('music-start') } },
+    './CashManager': { cashManager: { setBalance() {} } },
+    './InterfaceManager': { interfaceManager: { setWave() {} } },
+    './dev': { devController: { isUnlocked: false, getConfig: () => ({ startWave: 1, startCash: 200 }), onChange() {} }, DEV_MAX_START_WAVE: 9999, DEV_MAX_START_CASH: 1000000000 },
 };
 const moduleObj = { exports: {} };
 new Function('module', 'exports', 'require', js)(

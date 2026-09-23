@@ -3,6 +3,7 @@
 //
 // 会话 token 只解决「谁在提交」；成绩真值来自 store 记录的对局证据（见 store.ts）。
 
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { LeaderboardStore } from './store';
 import { signToken, verifyToken } from './token';
 import { sanitizeAvatarId, sanitizeLeaderboardMode, sanitizeLimit, sanitizeRunMode, sanitizeUsername, sanitizeWave } from './validate';
@@ -29,6 +30,8 @@ export interface ApiDeps {
     newRunId: () => string;
     /** LLM 代理配置（issue #22）。缺失时 /api/agent/decide 返回 503，不崩。 */
     agent?: AgentConfig;
+    /** Optional demo-only passphrase; absent means fail closed. Never put it in browser code. */
+    devPassword?: string;
 }
 
 const WAVE_PATH = /^\/api\/runs\/([^/]+)\/waves$/;
@@ -42,6 +45,11 @@ function json(status: number, body: any): ApiResponse {
 function field(body: unknown, name: string): unknown {
     if (!body || typeof body !== 'object') return undefined;
     return (body as Record<string, unknown>)[name];
+}
+
+function matchesDevPassword(expected: string, candidate: string): boolean {
+    const digest = (text: string) => createHash('sha256').update(text).digest();
+    return timingSafeEqual(digest(expected), digest(candidate));
 }
 
 export function handleApi(deps: ApiDeps, req: ApiRequest): ApiResponse {
@@ -65,10 +73,25 @@ export function handleApi(deps: ApiDeps, req: ApiRequest): ApiResponse {
         return json(200, { token: signToken(deps.secret, uid, now), username });
     }
 
+    // Demo 权限只对这个页面会话 UID 生效；数据库保证即使客户端伪造请求也不能开计榜对局。
+    if (req.pathname === '/api/dev/unlock' && method === 'POST') {
+        if (!deps.devPassword) return json(503, { error: 'DEV_MODE_UNAVAILABLE' });
+        const uid = verifyToken(deps.secret, req.token, deps.now());
+        if (!uid || !deps.store.getUser(uid)) return json(401, { error: 'INVALID_SESSION' });
+        const password = field(req.body, 'password');
+        if (typeof password !== 'string' || password.length < 1 || password.length > 128) {
+            return json(400, { error: 'INVALID_PASSWORD' });
+        }
+        if (!matchesDevPassword(deps.devPassword, password)) return json(401, { error: 'INVALID_PASSWORD' });
+        if (!deps.store.enableDevSession(uid)) return json(409, { error: 'RUN_ALREADY_STARTED' });
+        return json(200, { enabled: true });
+    }
+
     // 开一局：服务端签发对局会话，后续波次必须挂在它下面。
     if (req.pathname === '/api/runs' && method === 'POST') {
         const uid = verifyToken(deps.secret, req.token, deps.now());
         if (!uid || !deps.store.getUser(uid)) return json(401, { error: 'INVALID_SESSION' });
+        if (deps.store.isDevSession(uid)) return json(403, { error: 'DEV_SESSION_UNRANKED' });
         const rawMode = field(req.body, 'mode');
         const mode = sanitizeRunMode(rawMode);
         if (!mode) return json(400, { error: 'INVALID_MODE' });
