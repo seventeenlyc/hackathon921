@@ -16,6 +16,18 @@ class CashManager {
         return this.balance;
     }
 
+    /**
+     * Directly set the balance. Used only by dev/QA mode to set the starting
+     * tactical resources before a run; normal play never resets the balance.
+     * Negative or non-integer values are rejected to protect the engine.
+     */
+    setBalance(amount: number): boolean {
+        if (!Number.isInteger(amount) || amount < 0) return false;
+        this.balance = amount;
+        this.showBalance();
+        return true;
+    }
+
     canWithdraw(amount: number) {
         return this.balance - amount >= 0;
     }

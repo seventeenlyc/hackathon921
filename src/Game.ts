@@ -31,6 +31,7 @@ import {humanPlanner} from "./WavesManager";
 import {playMode, switchPlayMode} from "./PlayMode";
 import {naturalOilController} from "./items/NaturalOil";
 import {tacticalItemsController} from "./items/TacticalItems";
+import {devController} from "./dev";
 
 // Settlement stats gathered across the run (see the result screen).
 let runStartedAt: number | null = null;
@@ -85,7 +86,8 @@ class Game {
                 const before = strategyStore.active().version;
                 const active = strategyStore.lock();
                 const username = getSessionUsername();
-                if (username && active.version !== before && active.text.trim()) {
+                // 开发对局不进入 Prompt 成绩链：本地跳过；服务端 dev_sessions 兜底拒绝。
+                if (username && !devController.isUnlocked && active.version !== before && active.text.trim()) {
                     runSync.enqueuePrompt(username, active);
                 }
             }
@@ -102,7 +104,8 @@ class Game {
             audioManager.setWave(wave + 1);
         }
         const username = getSessionUsername();
-        if (username) submitRunScore(username, wave, playMode);
+        // 开发对局既不写共享榜也不写本地榜（服务端 dev_sessions 是最终保险）。
+        if (username && !devController.isUnlocked) submitRunScore(username, wave, playMode);
     }
 
     start() {

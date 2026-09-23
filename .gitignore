@@ -11,7 +11,8 @@ build/Release/
 *.tsbuildinfo
 .cache/
 .parcel-cache/
-dev/
+# Anchored to repo root: only the build-output dir at top level, not src/dev/ source.
+/dev/
 .persistence/
 .test-build/
 server-dist/

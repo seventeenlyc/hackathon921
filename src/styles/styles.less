@@ -201,6 +201,35 @@ body {
       stroke: var(--accent);
       stroke-width: 2;
     }
+
+    // 扳手入口：默认低调，解锁后高亮，键盘可达。
+    .dev-wrench {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+
+      svg { width: 17px; height: 17px; }
+
+      &:hover, &:focus-visible {
+        color: var(--accent);
+        border-color: var(--accent);
+        outline: none;
+      }
+      &:focus-visible { box-shadow: 0 0 0 2px rgba(53, 226, 255, 0.35); }
+
+      &.unlocked {
+        color: #ffb454;
+        border-color: rgba(255, 180, 84, 0.6);
+      }
+    }
   }
 
   // 战场中央的地图装饰框（纯装饰，不拦截任何点击）。
@@ -1720,6 +1749,124 @@ body {
       color: var(--gate-muted);
       font-size: 9px;
       letter-spacing: 0.12em;
+    }
+  }
+
+  // 开发模式面板：复用登录浮窗的青色战术主题与四角括号装饰，便于 QA 识别。
+  .dev-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(4, 12, 16, 0.78);
+
+    .dev-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: min(460px, 100%);
+      padding: 18px 22px 14px;
+      border: 1px solid rgba(53, 226, 255, 0.32);
+      background: linear-gradient(rgba(7, 24, 32, 0.97), rgba(4, 14, 20, 0.98));
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 24px 70px rgba(0, 0, 0, 0.55),
+        0 0 34px rgba(53, 226, 255, 0.1);
+      color: #d9f6ff;
+
+      &::before, &::after {
+        content: '';
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        border: 2px solid #35e2ff;
+        pointer-events: none;
+      }
+      &::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+      &::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+      .dev-heading {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+
+        h2 {
+          margin: 0;
+          font-size: 16px;
+          letter-spacing: 0.18em;
+          color: #d9f6ff;
+        }
+
+        .dev-unranked-tag {
+          color: #ffb454;
+          font: 10px/1.5 ui-monospace, monospace;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+        }
+      }
+
+      .dev-body { display: flex; flex-direction: column; gap: 10px; }
+
+      .dev-note {
+        margin: 0;
+        color: #8fb4c0;
+        font-size: 12px;
+        line-height: 1.55;
+      }
+      .dev-locked-note { color: #ffb454; }
+
+      .dev-field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        span { color: #8fb4c0; font-size: 11px; letter-spacing: 0.1em; }
+        input {
+          box-sizing: border-box;
+          width: 100%;
+          padding: 8px 10px;
+          border: 1px solid rgba(53, 226, 255, 0.22);
+          background: rgba(4, 18, 24, 0.9);
+          color: #d9f6ff;
+          font: 13px/1.4 ui-monospace, monospace;
+          &:focus { outline: 2px solid rgba(53, 226, 255, 0.5); outline-offset: 0; }
+          &:disabled { opacity: 0.5; cursor: not-allowed; }
+        }
+      }
+
+      form { display: flex; flex-direction: column; gap: 8px; }
+
+      .dev-config-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .dev-error, .dev-config-error {
+        margin: 0;
+        min-height: 16px;
+        color: #ff7b7b;
+        font-size: 12px;
+      }
+
+      .dev-actions { display: flex; justify-content: flex-end; }
+
+      .dev-close, .dev-unlock-btn {
+        padding: 7px 18px;
+        border: 1px solid rgba(53, 226, 255, 0.4);
+        background: transparent;
+        color: #d9f6ff;
+        font: 12px/1 ui-monospace, monospace;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        cursor: pointer;
+        &:hover { border-color: #35e2ff; color: #35e2ff; }
+        &:disabled { opacity: 0.5; cursor: not-allowed; }
+      }
+      .dev-unlock-btn { border-color: rgba(255, 180, 84, 0.55); color: #ffb454; }
     }
   }
 

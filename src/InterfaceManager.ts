@@ -19,6 +19,7 @@ import {naturalOilController, OilActivationResult} from './items/NaturalOil';
 import {tacticalItemsController} from './items/TacticalItems';
 import {isEnemyTypeId} from './tools/enemyCatalog';
 import {texturePaths} from './tools/texturePaths';
+import {DevPanel} from './DevPanel';
 
 type OilFailureReason = Extract<OilActivationResult, {ok: false}>['reason'];
 
@@ -129,6 +130,7 @@ class InterfaceManager {
         this.setupDatabaseTabs();
         this.setupHostileImages();
         this.startHeaderClock();
+        this.setupDevPanel();
 
         // The class scopes which half of the UI is visible (see styles.less).
         document.getElementById('inert')!.classList.add('mode-' + playMode);
@@ -264,6 +266,12 @@ class InterfaceManager {
         if (!this.audioButton) return;
         this.audioButton.textContent = audioManager.isMuted() ? t('control.audioMuted') : t('control.audio');
         this.audioButton.setAttribute('aria-pressed', String(audioManager.isMuted()));
+    }
+
+    /** Wrench in the top-right opens the developer (QA) panel. */
+    private setupDevPanel() {
+        const wrench = document.getElementById('dev-wrench') as HTMLButtonElement | null;
+        if (wrench) new DevPanel(wrench);
     }
 
     /** Decorative workstation clock in the header (issue #66 art direction). */
