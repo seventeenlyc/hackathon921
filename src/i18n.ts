@@ -91,19 +91,14 @@ const STRINGS: { [key: string]: Entry } = {
     'control.audioMuted': {zh: '音效关', en: 'Sound Off'},
 
     // 状态框保持设计稿的「主值大字 + 副行小字」双语排布，但主值随界面语言：
-    // 中文界面主值为中文、副行给英文对照；英文界面主值为英文、副行给中文对照。
-    // 主值必须短——EN 最长 PLANNING（8 字符），zh 最长战术分析中（5 个全角字符），
+    // 作战状态只显示当前界面语言的文案（中文界面中文、英文界面英文）。
+    // 文案必须短——EN 最长 PLANNING（8 字符）、zh 最长战术分析中（5 个全角字符），
     // 才能在 1/3 卡宽内不截断地放下。
     'state.idle': {zh: '待机', en: 'STANDBY'},
     'state.running': {zh: '行动中', en: 'ACTION'},
     'state.paused': {zh: '已暂停', en: 'PAUSED'},
     'state.planning': {zh: '战术分析中', en: 'PLANNING'},
     'state.narrative': {zh: '剧情演出', en: 'STORY'},
-    'stateSub.idle': {zh: 'STANDBY', en: '待机'},
-    'stateSub.running': {zh: 'ACTION', en: '行动中'},
-    'stateSub.paused': {zh: 'PAUSED', en: '已暂停'},
-    'stateSub.planning': {zh: 'PLANNING', en: '战术分析中'},
-    'stateSub.narrative': {zh: 'STORY SCENE', en: '剧情演出'},
 
     // 剧情演出（issue #100）：对白文本在 src/narrative/NarrativeScript.ts，这里只放
     // 界面外壳文案，保证中英切换与无障碍标签走同一张表。

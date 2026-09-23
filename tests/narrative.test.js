@@ -362,7 +362,8 @@ function fakePorts(overrides = {}) {
     await test('the status panel knows the narrative state in both languages', () => {
         const i18n = read('src/i18n.ts');
         assert.match(i18n, /'state\.narrative': \{zh: '[^']*[\u4e00-\u9fff][^']*', en: '[A-Z][^']*'\}/);
-        assert.match(i18n, /'stateSub\.narrative': \{zh: '[A-Z][^']*', en: '[^']*[\u4e00-\u9fff][^']*'\}/);
+        // 对照副行已按需求退役：两种界面都只显示自己语言的文案。
+        assert.ok(!i18n.includes(`'stateSub.narrative'`), 'the bilingual state sub-line is retired');
         const manager = read('src/InterfaceManager.ts');
         assert.match(manager, /state === 'narrative'/, 'the pause control must be disabled during a scene');
     });

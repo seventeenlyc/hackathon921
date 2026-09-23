@@ -51,7 +51,6 @@ class InterfaceManager {
     private cashElement = document.getElementById('cash')!;
     private towersWrapperElement = document.getElementById('towers-wrapper')!;
     private stateElement = document.getElementById('state')!;
-    private stateSubElement = document.getElementById('state-sub')!;
     private speedElement = document.getElementById('speed')!;
     private gameOverElement = document.getElementById('game-over')!;
     private pauseButton = document.getElementById('pause') as HTMLButtonElement;
@@ -187,7 +186,6 @@ class InterfaceManager {
     setState(state: GameState) {
         // `idle` is the not-started state shown before the player presses Start.
         this.stateElement.textContent = t(`state.${state}`);
-        this.stateSubElement.textContent = t(`stateSub.${state}`);
         this.pauseButton.hidden = state === 'paused';
         this.pauseButton.disabled = state === 'idle' || state === 'planning' || state === 'narrative';
         this.resumeButton.hidden = state !== 'paused';

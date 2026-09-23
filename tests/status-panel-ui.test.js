@@ -35,7 +35,7 @@ for (const key of ['label.cash', 'label.wave', 'label.state']) {
 }
 
 assert.ok(grid.includes('<strong id="state">'), 'state value must be the strong element');
-assert.ok(grid.includes('id="state-sub"'), 'state card must render the bilingual sub-line');
+assert.ok(!grid.includes('state-sub'), 'the bilingual state sub-line must be removed');
 assert.ok(grid.includes('id="wave"'), 'wave card must keep the #wave value slot');
 assert.ok(grid.includes('id="delay"'), 'wave card must keep the inter-wave delay slot');
 
@@ -55,7 +55,7 @@ function tableValue(key, locale) {
 }
 
 for (const state of ['idle', 'running', 'paused', 'planning', 'narrative']) {
-    // 主值随界面语言：zh 界面显示中文、en 界面显示英文；副行固定给另一语言作对照。
+    // 主值随界面语言：中文界面中文、英文界面英文；不再渲染任何对照副行。
     assert.ok(
         /[\u4e00-\u9fff]/.test(tableValue(`state.${state}`, 'zh')),
         `state.${state} 中文界面的主值必须是中文`,
@@ -64,14 +64,8 @@ for (const state of ['idle', 'running', 'paused', 'planning', 'narrative']) {
         /^[A-Z]/.test(tableValue(`state.${state}`, 'en')),
         `state.${state} 英文界面的主值必须是大写英文`,
     );
-    assert.ok(
-        /^[A-Z]/.test(tableValue(`stateSub.${state}`, 'zh')),
-        `stateSub.${state} 中文界面的副行必须是英文对照`,
-    );
-    assert.ok(
-        /[\u4e00-\u9fff]/.test(tableValue(`stateSub.${state}`, 'en')),
-        `stateSub.${state} 英文界面的副行必须是中文对照`,
-    );
+    assert.ok(!i18nSource.includes(`stateSub.${state}`),
+        `stateSub.${state} 对照副行已退役，不得回潜`);
 }
 
 // --- InterfaceManager: zero-padded wave + sub-line updates ---
@@ -80,12 +74,8 @@ assert.ok(
     'setWave must render the wave zero-padded to three digits',
 );
 assert.ok(
-    /stateSubElement\.textContent = t\(`stateSub\.\$\{state\}`\)/.test(interfaceSource),
-    'setState must refresh the state sub-line',
-);
-assert.ok(
-    interfaceSource.includes("document.getElementById('state-sub')"),
-    'state sub element must be bound at construction',
+    !/stateSub/.test(interfaceSource),
+    'InterfaceManager must not reference the retired stateSub table',
 );
 
 // --- styles: the design's cyan card treatment exists ---
@@ -93,7 +83,7 @@ const metricBlock = stylesSource.match(/\.status-metric \{[\s\S]*?\n    \}/);
 assert.ok(metricBlock, '.status-metric block missing from styles.less');
 assert.ok(metricBlock[0].includes('rgba(53, 226, 255'), 'status cards must use the cyan accent border');
 assert.ok(/\.status-label/.test(metricBlock[0]), 'status label must be styled');
-assert.ok(/\.status-sub/.test(metricBlock[0]), 'status sub-line must be styled');
+assert.ok(!metricBlock[0].includes('.status-sub'), 'status sub-line styles must be removed');
 assert.ok(/#delay/.test(metricBlock[0]), 'wave delay suffix must be styled dimmer than the value');
 
 console.log('Status panel UI assertions passed.');
