@@ -87,8 +87,16 @@ export const MAX_TOWERS_IN_SNAPSHOT = 30;
 export const MAX_BUILD_CANDIDATES = 8;
 /** Route cells offered as detour walls; enough to start a maze, capped for size. */
 export const MAX_PATH_SHAPING_CANDIDATES = 4;
-/** Cap on A* calls spent probing which route cells lengthen the path. */
-const MAX_PATH_SHAPING_PROBES = 10;
+/**
+ * Cap on A* calls spent probing which route cells lengthen the path. Covers up
+ * to 4 lanes x 3 zones x a bounded retry (issue #6): the start-biased scan used
+ * to exhaust the budget on spawn-near cells and hide legitimate mid/base detour
+ * walls. The stratified sampler below stays inside this budget by probing one
+ * representative cell per (lane, zone) first and only retrying on a miss.
+ */
+export const MAX_PATH_SHAPING_PROBES = 24;
+/** Probe attempts within one (lane, zone) before giving up on that region. */
+const ZONE_SAMPLE_BUDGET = 2;
 /** Reference tower reach used only to rank candidates; the engine stays authoritative. */
 export const REFERENCE_AIM_RADIUS_TILES = 2;
 /** Cap on A* calls per snapshot: probing legality is the expensive part. */
@@ -314,14 +322,52 @@ function buildCandidates(routes: LaneRoute[], input: SnapshotInput): BuildCandid
     return accepted;
 }
 
+const ZONE_FRONTLINE_THRESHOLD = 0.35;
+const ZONE_BASE_THRESHOLD = 0.70;
+
+function zoneOfProgress(progress: number): 'frontline' | 'midfield' | 'base' {
+    if (progress <= ZONE_FRONTLINE_THRESHOLD) return 'frontline';
+    if (progress >= ZONE_BASE_THRESHOLD) return 'base';
+    return 'midfield';
+}
+
+/** Index of the centre cell of a route segment, biased to the true middle. */
+function zoneCentreIndex(segmentLength: number): number {
+    return Math.floor((segmentLength - 1) / 2);
+}
+
+/**
+ * Ordered probe offsets within one zone: centre first, then expanding outward.
+ * Stopping on the first accept keeps the typical (legal) cost at one probe per
+ * (lane, zone); the tail only runs when the centre cell is occupied or illegal.
+ */
+function zoneProbeOffsets(segmentLength: number): number[] {
+    const centre = zoneCentreIndex(segmentLength);
+    const offsets = [centre];
+    for (let radius = 1; radius < segmentLength; ++radius) {
+        if (centre + radius < segmentLength) offsets.push(centre + radius);
+        if (centre - radius >= 0) offsets.push(centre - radius);
+        if (offsets.length >= ZONE_SAMPLE_BUDGET) break;
+    }
+    return offsets.slice(0, ZONE_SAMPLE_BUDGET);
+}
+
 /**
  * Route cells whose placement would make enemies walk farther.
  *
  * `buildCandidates` deliberately excludes these: it ranks damage coverage, so
  * every cell it offers sits *beside* the route. A maze / spiral / snake strategy
  * needs the opposite information — where to wall the route so enemies detour —
- * and without it the model has nothing to act on but the coverage list. Probed
- * round-robin across lanes inside a shared budget, then ranked by tiles added.
+ * and without it the model has nothing to act on but the coverage list.
+ *
+ * Probing is stratified by lane and region (frontline / midfield / base), not a
+ * linear scan from the spawn end. The old scan exhausted the A* budget on the
+ * first few spawn-near cells, so a legitimate — and often better — mid-route or
+ * base-near detour wall was never offered (issue #6). Each (lane, zone) is
+ * sampled at its centre and retried outward only on a miss, so every region a
+ * strategy might target ("盘绕出生点" vs "基地附近布防") has a chance to be
+ * seen inside a bounded probe budget. The engine still answers legality and the
+ * actual detour increment; this layer only chooses what to ask.
  */
 function pathShapingCandidates(routes: LaneRoute[], input: SnapshotInput): PathShapingCandidate[] {
     const measure = input.routeLengthAfterBuilding;
@@ -334,51 +380,140 @@ function pathShapingCandidates(routes: LaneRoute[], input: SnapshotInput): PathS
         }
     }
 
-    const accepted: Array<PathShapingCandidate & { index: number }> = [];
-    const seen = new Set<string>();
-    let probes = 0;
-    let rank = 0;
-    let advanced = true;
-
-    while (advanced && accepted.length < MAX_PATH_SHAPING_CANDIDATES && probes < MAX_PATH_SHAPING_PROBES) {
-        advanced = false;
-
-        for (let lane = 0; lane < routes.length; ++lane) {
-            if (accepted.length >= MAX_PATH_SHAPING_CANDIDATES || probes >= MAX_PATH_SHAPING_PROBES) break;
-
-            const cells = routes[lane].cells;
-            if (rank >= cells.length) continue;
-            advanced = true;
-
-            const cell = cells[rank];
-            const key = `${cell.i}:${cell.j}`;
-            if (seen.has(key) || invalidSet.has(key)) continue;
-            seen.add(key);
-
-            if (!input.isFree(cell.i, cell.j)) continue;
-
-            probes += 1;
-            const length = measure(lane, cell.i, cell.j);
-            if (length === null) continue;
-
-            const addedTiles = length - (cells.length - 1);
-            if (addedTiles > 0) {
-                accepted.push({i: cell.i, j: cell.j, lane, addedTiles, index: rank});
-            }
-        }
-
-        rank += 1;
+    interface Probed {
+        i: number;
+        j: number;
+        lane: number;
+        addedTiles: number;
+        /** Route index, for deterministic tie-breaks. */
+        index: number;
+        zone: 'frontline' | 'midfield' | 'base';
     }
 
-    accepted.sort((a, b) => b.addedTiles - a.addedTiles || a.index - b.index || a.lane - b.lane);
-    return accepted
-        .slice(0, MAX_PATH_SHAPING_CANDIDATES)
-        .map(candidate => ({
-            i: candidate.i,
-            j: candidate.j,
-            lane: candidate.lane,
-            addedTiles: candidate.addedTiles,
-        }));
+    const accepted: Probed[] = [];
+    const seen = new Set<string>();
+    let probes = 0;
+
+    // Build, per lane, the route cells grouped into the three tactical zones.
+    // The zone is the spatial meaning the model reasons about ("near the base"
+    // vs "near the spawn"); progress is measured along the lane's own route.
+    const laneZones = routes.map(route => {
+        const cells = route.cells;
+        const total = Math.max(cells.length - 1, 1);
+        const groups: Record<'frontline' | 'midfield' | 'base', Array<{ cell: { i: number; j: number }; index: number }>> = {
+            frontline: [],
+            midfield: [],
+            base: [],
+        };
+        for (let index = 0; index < cells.length; ++index) {
+            const progress = index / total;
+            groups[zoneOfProgress(progress)].push({cell: cells[index], index});
+        }
+        return groups;
+    });
+
+    const zones: Array<'frontline' | 'midfield' | 'base'> = ['frontline', 'midfield', 'base'];
+
+    // Probe lane-major (lane 0: frontline, midfield, base; then lane 1; ...) so a
+    // single lane's whole route shape is sampled before the next lane starts.
+    // For a one-lane map this yields one sample per region, giving the model a
+    // genuine spawn-vs-base choice in the very first wave — exactly what the #6
+    // strategy comparison needs.
+    probeLoop:
+    for (let lane = 0; lane < routes.length; ++lane) {
+        for (const zone of zones) {
+            const segment = laneZones[lane][zone];
+            if (segment.length === 0) continue;
+            let acceptedInZone = false;
+            for (const offset of zoneProbeOffsets(segment.length)) {
+                if (probes >= MAX_PATH_SHAPING_PROBES || accepted.length >= MAX_PATH_SHAPING_CANDIDATES) break probeLoop;
+                if (acceptedInZone) break;
+                const entry = segment[offset];
+                const key = `${entry.cell.i}:${entry.cell.j}`;
+                if (seen.has(key) || invalidSet.has(key)) continue;
+                seen.add(key);
+                if (!input.isFree(entry.cell.i, entry.cell.j)) continue;
+                probes += 1;
+                const length = measure(lane, entry.cell.i, entry.cell.j);
+                if (length === null) continue;
+                const addedTiles = length - (routes[lane].cells.length - 1);
+                if (addedTiles > 0) {
+                    accepted.push({
+                        i: entry.cell.i,
+                        j: entry.cell.j,
+                        lane,
+                        addedTiles,
+                        index: entry.index,
+                        zone,
+                    });
+                    acceptedInZone = true;
+                }
+            }
+        }
+    }
+
+    return selectStratified(accepted).map(candidate => ({
+        i: candidate.i,
+        j: candidate.j,
+        lane: candidate.lane,
+        addedTiles: candidate.addedTiles,
+        zone: candidate.zone,
+    }));
+}
+
+/**
+ * Pick up to MAX_PATH_SHAPING_CANDIDATES from the probed set so the result is
+ * both region-aware and lane-fair instead of a pure addedTiles ranking that can
+ * hide every region behind a single hot lane:
+ *  1. one best candidate per lane, so no lane is shut out;
+ *  2. one best per remaining (lane, zone), so spawn / mid / base each show up;
+ *  3. fill remaining slots by detour increment.
+ * The final list is then sorted by addedTiles so the "best detour first"
+ * contract still holds; the selection above guarantees coverage survives it.
+ */
+function selectStratified(probed: Array<{ i: number; j: number; lane: number; addedTiles: number; index: number; zone: 'frontline' | 'midfield' | 'base' }>): Array<{ i: number; j: number; lane: number; addedTiles: number; index: number; zone: 'frontline' | 'midfield' | 'base' }> {
+    if (probed.length === 0) return [];
+
+    const byAddedTilesDesc = (a: typeof probed[number], b: typeof probed[number]) =>
+        b.addedTiles - a.addedTiles || a.index - b.index || a.lane - b.lane;
+
+    // Best entry per (lane, zone) and per lane.
+    const bestByLaneZone = new Map<string, typeof probed[number]>();
+    const bestByLane = new Map<number, typeof probed[number]>();
+    for (const candidate of probed) {
+        const lzKey = `${candidate.lane}:${candidate.zone}`;
+        const prevZone = bestByLaneZone.get(lzKey);
+        if (!prevZone || byAddedTilesDesc(candidate, prevZone) < 0) bestByLaneZone.set(lzKey, candidate);
+
+        const prevLane = bestByLane.get(candidate.lane);
+        if (!prevLane || byAddedTilesDesc(candidate, prevLane) < 0) bestByLane.set(candidate.lane, candidate);
+    }
+
+    const selected = new Set<typeof probed[number]>();
+    const take = (candidate?: typeof probed[number]) => {
+        if (candidate && selected.size < MAX_PATH_SHAPING_CANDIDATES) selected.add(candidate);
+    };
+
+    const lanes = [...bestByLane.keys()].sort((a, b) => a - b);
+    const zones: Array<'frontline' | 'midfield' | 'base'> = ['frontline', 'midfield', 'base'];
+
+    // (1) lane coverage: every lane gets its single best detour.
+    for (const lane of lanes) take(bestByLane.get(lane));
+
+    // (2) zone coverage: fill in the missing regions, lane by lane, so a
+    // one-lane map shows all three zones before any lane repeats.
+    for (const lane of lanes) {
+        for (const zone of zones) take(bestByLaneZone.get(`${lane}:${zone}`));
+    }
+
+    // (3) fill remaining slots by detour increment.
+    const fillers = probed.slice().sort(byAddedTilesDesc);
+    for (const candidate of fillers) {
+        if (selected.size >= MAX_PATH_SHAPING_CANDIDATES) break;
+        take(candidate);
+    }
+
+    return [...selected].sort(byAddedTilesDesc);
 }
 
 export function buildSnapshot(input: SnapshotInput): GameSnapshot {
@@ -439,7 +574,7 @@ export function formatSnapshot(snapshot: GameSnapshot): string {
         .join('; ');
 
     const walls = snapshot.pathShapingCandidates
-        .map(candidate => `L${candidate.lane}(${candidate.i},${candidate.j}) +${candidate.addedTiles}t`)
+        .map(candidate => `L${candidate.lane}(${candidate.i},${candidate.j}) ${candidate.zone} +${candidate.addedTiles}t`)
         .join('; ');
 
     const items = snapshot.items && snapshot.items.length > 0

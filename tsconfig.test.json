@@ -29,6 +29,8 @@
     "src/agent/snapshot.ts",
     "src/agent/types.ts",
     "src/entities/towers/towerTypes.ts",
+    "src/interfaces/Point.ts",
+    "src/tools/astar.ts",
     "src/narrative/NarrativeScript.ts",
     "src/narrative/NarrativeDirector.ts"
   ]
