@@ -7,6 +7,13 @@ const textures = [];
 const texturePaths = Object.fromEntries(
     ['canon', 'gatling', 'slow', 'sniper', 'laser'].map(name => [name, `${name}.png`])
 );
+// The forward muzzle direction in each source PNG, measured from the sprite center.
+const muzzleAngles = {
+    canon: Math.atan2(36.5, 38.5),
+    gatling: Math.atan2(35, 76.5),
+    sniper: Math.atan2(10.5, 103),
+    laser: Math.atan2(39.5, 57.5),
+};
 const shots = [];
 
 const enemyManager = {
@@ -139,12 +146,18 @@ for (const [type, TowerClass] of towers) {
     const maxStep = Math.PI * 2 / 30;
     let sprite = drawSprite(tower);
     assert.equal(sprite.path, `${type}.png`, `${type} keeps its texture`);
-    assertNear(sprite.rotation, maxStep, `${type} turns by one frame of rotation`);
+    assertNear(sprite.rotation, maxStep - muzzleAngles[type], `${type} aligns its muzzle while turning`);
 
     for (let frame = 1; frame < 8; frame++) tower.update();
     sprite = drawSprite(tower);
     assert.equal(sprite.path, `${type}.png`, `${type} keeps its texture while tracking`);
-    assertNear(sprite.rotation, Math.PI / 2, `${type} smoothly reaches the target`);
+    assertNear(sprite.rotation, Math.PI / 2 - muzzleAngles[type], `${type} smoothly points its muzzle at the target`);
+    const muzzle = tower.getMuzzlePosition();
+    assertNear(
+        Math.atan2(muzzle.y - tower.center.y, muzzle.x - tower.center.x),
+        Math.PI / 2,
+        `${type} projectile origin remains aligned with its barrel`
+    );
 
     const beforeShot = shots.length;
     if (type === 'laser') tower.onNewTargetInRange();

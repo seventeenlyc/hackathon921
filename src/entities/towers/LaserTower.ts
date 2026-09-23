@@ -24,6 +24,11 @@ export class LaserTower extends Tower {
         secondary: '#95a5a6'
     };
 
+    protected get muzzleOffset(): {x: number; y: number} {
+        const scale = this.width / 163;
+        return {x: 57.5 * scale, y: 39.5 * scale};
+    }
+
     constructor(x: number, y: number, width: number) {
         super(x, y, width);
 

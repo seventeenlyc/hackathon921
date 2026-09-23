@@ -17,6 +17,11 @@ export class SniperTower extends Tower {
     description: string = "Huge range, huge damages, but slow reload.";
     target: Enemy | undefined;
 
+    protected get muzzleOffset(): {x: number; y: number} {
+        const scale = this.width / 228;
+        return {x: 103 * scale, y: 10.5 * scale};
+    }
+
     shoot(): void {
         if (this.target) {
             const munition = new SniperBulletMunition(this.target, this);

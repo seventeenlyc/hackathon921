@@ -133,6 +133,26 @@ export abstract class Tower extends GridRenderable {
         this.turretRotation += step;
     }
 
+    /** Offset from the sprite center to the visible muzzle in its source image. */
+    protected get muzzleOffset(): {x: number; y: number} {
+        return {x: 0, y: 0};
+    }
+
+    private get muzzleArtworkAngle(): number {
+        const {x, y} = this.muzzleOffset;
+        return Math.atan2(y, x);
+    }
+
+    /** World-space firing origin, rotated with the sprite's current facing. */
+    getMuzzlePosition(): {x: number; y: number} {
+        const {x, y} = this.muzzleOffset;
+        const rotation = this.turretRotation - this.muzzleArtworkAngle;
+        return {
+            x: this.center.x + x * Math.cos(rotation) - y * Math.sin(rotation),
+            y: this.center.y + x * Math.sin(rotation) + y * Math.cos(rotation),
+        };
+    }
+
     drawAimingRadius(ctx: CanvasRenderingContext2D) {
         ctx.beginPath();
         const tmpColor = ctx.fillStyle;
@@ -143,7 +163,15 @@ export abstract class Tower extends GridRenderable {
     }
 
     protected drawTexture(ctx: CanvasRenderingContext2D, rotation = 0) {
-        textureManager.draw(ctx, this.texturePath, this.center.x, this.center.y, this.width, this.width, rotation);
+        textureManager.draw(
+            ctx,
+            this.texturePath,
+            this.center.x,
+            this.center.y,
+            this.width,
+            this.width,
+            rotation - this.muzzleArtworkAngle
+        );
     }
 
     draw(ctx: CanvasRenderingContext2D): void {

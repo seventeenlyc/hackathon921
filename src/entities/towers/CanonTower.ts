@@ -22,6 +22,11 @@ export class CanonTower extends Tower {
         secondary: '#778BEB'
     };
 
+    protected get muzzleOffset(): {x: number; y: number} {
+        const scale = this.width / 171;
+        return {x: 38.5 * scale, y: 36.5 * scale};
+    }
+
     constructor(x: number, y: number, width: number) {
         super(x, y, width);
 
