@@ -10,6 +10,7 @@ import {textureManager} from "../../tools/TextureManager";
 
 
 export abstract class Enemy extends Renderable implements Point {
+    protected static readonly TEXTURE_SIZE_SCALE = 1.15;
     abstract texturePath: string;
     abstract speed: number;
     abstract life: number;
@@ -30,10 +31,9 @@ export abstract class Enemy extends Renderable implements Point {
         borderRadius: 2
     }
 
-    // Display size is independent of the collision radius. Only Simple needs
-    // more screen space; the remaining enemies retain their original size.
+    // Display size is independent of collision radius; this scale only affects art.
     protected get textureSize(): number {
-        return this.radius * 2;
+        return this.radius * 2 * Enemy.TEXTURE_SIZE_SCALE;
     }
 
     constructor(base: Base) {

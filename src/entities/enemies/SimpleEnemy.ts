@@ -11,10 +11,10 @@ export class SimpleEnemy extends Enemy {
     cash: number = 5;
     radius = 8
 
-    // 30px at the current 40px tile size: readable after contain-fit of the
-    // portrait artwork, without changing collision or covering neighboring cells.
+    // 34.5px at the current 40px tile size after the shared 15% display increase.
+    // The contain-fit portrait remains inside one tile without changing collision.
     protected get textureSize(): number {
-        return Map.TILE_SIZE * 0.75;
+        return Map.TILE_SIZE * 0.75 * SimpleEnemy.TEXTURE_SIZE_SCALE;
     }
 
     constructor(base: Base) {
