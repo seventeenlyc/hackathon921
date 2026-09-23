@@ -2,6 +2,7 @@ export interface TextureImage {
     src: string;
     complete: boolean;
     naturalWidth: number;
+    naturalHeight: number;
     onload: (() => void) | null;
 }
 
@@ -47,6 +48,13 @@ export class TextureManager {
         this.listeners[src].push(listener);
     }
 
+    /**
+     * Draw the texture centered on (x, y), rotated by `rotation`, fitted
+     * inside the requested width x height box while preserving the image's
+     * aspect ratio. The replacement artwork is not square (e.g. the sniper
+     * turret and the fast drone are wide), so a plain stretch would visibly
+     * distort every sprite; contain-fitting keeps them clean at any zoom.
+     */
     draw(
         ctx: CanvasRenderingContext2D,
         src: string,
@@ -58,16 +66,20 @@ export class TextureManager {
     ): boolean {
         const image = this.get(src);
 
-        if (!image.complete || image.naturalWidth <= 0) {
+        if (!image.complete || image.naturalWidth <= 0 || image.naturalHeight <= 0) {
             return false;
         }
+
+        const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight);
+        const drawWidth = image.naturalWidth * scale;
+        const drawHeight = image.naturalHeight * scale;
 
         ctx.save();
         ctx.translate(x, y);
         if (rotation !== 0) {
             ctx.rotate(rotation);
         }
-        ctx.drawImage(image as CanvasImageSource, -width / 2, -height / 2, width, height);
+        ctx.drawImage(image as CanvasImageSource, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
         ctx.restore();
         return true;
     }

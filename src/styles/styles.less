@@ -718,10 +718,12 @@ body {
         color: var(--muted);
         font-size: 11px;
 
+        // 新机体/敌性体贴图为非正方形的平滑插画：等比缩放、平滑采样，避免拉伸与锯齿。
         img {
           width: 26px;
           height: 26px;
-          image-rendering: pixelated;
+          object-fit: contain;
+          image-rendering: auto;
         }
 
         .threat-name {
@@ -1059,10 +1061,12 @@ body {
         background: rgba(8, 16, 22, 0.72);
         text-align: center;
 
+        // 同 threat-list：非正方形插画需要 contain 与平滑采样。
         img {
           width: 34px;
           height: 34px;
-          image-rendering: pixelated;
+          object-fit: contain;
+          image-rendering: auto;
         }
 
         .hostile-name {
