@@ -1,4 +1,6 @@
 const assert = require('assert');
+const fs = require('node:fs');
+const path = require('node:path');
 const {
     TacticalItemsController,
     ITEM_KEYS,
@@ -7,6 +9,8 @@ const {
     ITEM_COOLDOWN_MS,
 } = require('../../.test-build/items/TacticalItems.js');
 const {GameActions} = require('../../.test-build/agent/GameActions.js');
+const {gameLoop} = require('../../.test-build/agent/GameLoop.js');
+const {activateModelItem, useModelItem} = require('../../.test-build/agent/modelItemActivation.js');
 
 /**
  * Independent, DOM-free audit of the tactical item core (issue #69).
@@ -22,9 +26,8 @@ const {GameActions} = require('../../.test-build/agent/GameActions.js');
  *  - a real `Base.heal` caps at `maxLife` and rounds the amount
  *    (src/entities/terrain/Base.ts).
  *
- * Deliberately NOT covered as "passing", because the capability does not exist:
- * inventory quantity / consumption / ownership, and a programmatic new-run
- * reset. Those are recorded as observations, not faked into green assertions.
+ * No inventory, ownership or consumption model is required by the current #69.
+ * Fresh runs use a page reload, not a programmatic controller.reset() API.
  */
 
 // ---------------------------------------------------------------------------
@@ -395,7 +398,7 @@ console.log('TacticalItems core audit (issue #69)');
 }
 
 // ---------------------------------------------------------------------------
-// 8. New run / restart reset — and the capabilities that do NOT exist
+// 8. Fresh-run state and explicitly excluded inventory APIs
 // ---------------------------------------------------------------------------
 {
     // A fresh controller (what a page load / new module graph gives) is clean.
@@ -421,9 +424,8 @@ console.log('TacticalItems core audit (issue #69)');
 }
 
 {
-    // OBSERVATION: issue #69 asks for inventory quantity / consumption /
-    // ownership. The current core has none of that; only evomap has a free-use
-    // counter. These assertions document the ABSENCE rather than faking a pass.
+    // The updated #69 explicitly excludes inventory / ownership / quantity /
+    // consumption; only EvoMap's free-use discount is tracked.
     const controller = freshController();
     assert.strictEqual(typeof controller.getInventory, 'undefined', 'no inventory API');
     assert.strictEqual(typeof controller.quantityOf, 'undefined', 'no quantity API');
@@ -432,34 +434,80 @@ console.log('TacticalItems core audit (issue #69)');
 }
 
 // ---------------------------------------------------------------------------
-// 9. GameActions -> engine item entry: model parameters cannot bypass the rules
+// 9. GameActions -> real model forwarding seam -> item controller
 // ---------------------------------------------------------------------------
-{
-    // The battlefield double mirrors InertBattlefield.useItem: it forwards to
-    // the REAL TacticalItemsController with the REAL wallet. Funds, cooldown and
-    // legality are therefore enforced by the real core, not by the double.
-    function makeBattlefield(controller, wallet) {
-        return {
-            gridWidth: 10,
-            gridHeight: 10,
-            maxTowerLevel: 5,
-            cash: () => wallet.balance,
-            towerOptions: () => [],
-            towers: () => [],
-            towerAt: () => undefined,
-            canPlaceAt: () => ({ok: true}),
-            canAfford: amount => wallet.canWithdraw(amount),
-            build: () => undefined,
-            upgrade: () => false,
-            snapshot: () => ({}),
-            useItem(item) {
-                const result = controller.activate(item, true, wallet, {});
-                if (result.ok) return {ok: true};
-                return {ok: false, error: result.reason};
-            },
-        };
-    }
+const battlefieldSource = fs.readFileSync(path.join(__dirname, '../../src/agent/InertBattlefield.ts'), 'utf8');
+const uiSource = fs.readFileSync(path.join(__dirname, '../../src/InterfaceManager.ts'), 'utf8');
+assert.match(battlefieldSource, /return useModelItem\(item, tacticalItemsController, cashManager, \{/,
+    'the concrete battlefield must delegate to the tested production seam');
+assert.doesNotMatch(battlefieldSource, /tacticalItemsController\.activate\(item,\s*true,/, 'no hard-coded model RUNNING');
+assert.match(uiSource, /tacticalItemsController\.activate\('tripo', gameLoop\.state === 'running'/,
+    'the UI and model must read the same game-loop running state');
+assert.match(fs.readFileSync(path.join(__dirname, '../../index.html'), 'utf8'), /onclick="location\.reload\(\)"/,
+    'a fresh run reloads the page and therefore constructs fresh item singletons');
 
+// The only Battlefield stub delegates useItem to the *production* forwarding
+// implementation. No activation logic or running-state predicate is copied here.
+function makeBattlefield(controller, wallet, context = {}) {
+    return {
+        gridWidth: 10, gridHeight: 10, maxTowerLevel: 5,
+        cash: () => wallet.balance,
+        towerOptions: () => [], towers: () => [], towerAt: () => undefined,
+        canPlaceAt: () => ({ok: true}), canAfford: amount => wallet.canWithdraw(amount),
+        build: () => undefined, upgrade: () => false, snapshot: () => ({}),
+        useItem: item => useModelItem(item, controller, wallet, context),
+    };
+}
+
+function assertFrozen(label) {
+    for (const key of ITEM_KEYS) {
+        const controller = freshController();
+        const wallet = makeWallet(5000);
+        const enemy = new FakeEnemy(100);
+        const base = new FakeBase(20, 10);
+        const context = {enemyManager: {all: () => [enemy]}, homeBase: base};
+        const before = controller.getAllItemSnapshots();
+        assert.deepStrictEqual(activateModelItem(key, controller, wallet, context),
+            {ok: false, reason: 'NOT_RUNNING'}, `${label}: ${key} rejects before effects`);
+        assert.deepStrictEqual(useModelItem(key, controller, wallet, context),
+            {ok: false, error: 'ITEM_NOT_READY'}, `${label}: existing action error schema is unchanged`);
+        assert.deepStrictEqual(controller.getAllItemSnapshots(), before, `${label}: no item state or free-use mutation`);
+        assert.strictEqual(wallet.balance, 5000, `${label}: no withdrawal`);
+        assert.strictEqual(enemy.damageTaken, 0, `${label}: no enemy effect`);
+        assert.strictEqual(base.getLife(), 10, `${label}: no base effect`);
+
+        const uiController = freshController();
+        assert.deepStrictEqual(uiController.activate(key, gameLoop.state === 'running', makeWallet(5000), context),
+            {ok: false, reason: 'NOT_RUNNING'}, `${label}: UI legality matches the model`);
+    }
+    const alreadyActive = freshController();
+    const activeWallet = makeWallet(2000);
+    alreadyActive.activate('tripo', true, activeWallet);
+    const activeBefore = alreadyActive.getAllItemSnapshots();
+    assert.deepStrictEqual(activateModelItem('tripo', alreadyActive, activeWallet, {}),
+        {ok: false, reason: 'NOT_RUNNING'}, `${label}: frozen state wins over active`);
+    assert.deepStrictEqual(alreadyActive.getAllItemSnapshots(), activeBefore);
+    assert.strictEqual(activeWallet.balance, 1000);
+
+    const cooling = freshController();
+    const freeWallet = makeWallet(0);
+    cooling.activate('evomap', true, freeWallet);
+    const cooldownBefore = cooling.getAllItemSnapshots();
+    assert.deepStrictEqual(activateModelItem('evomap', cooling, freeWallet, {}),
+        {ok: false, reason: 'NOT_RUNNING'}, `${label}: frozen state wins over cooldown`);
+    assert.deepStrictEqual(cooling.getAllItemSnapshots(), cooldownBefore);
+    assert.strictEqual(cooling.cost('evomap'), 0, `${label}: free-use count stays untouched`);
+    assert.deepStrictEqual(activateModelItem('hypershell', freshController(), freeWallet, {}),
+        {ok: false, reason: 'NOT_RUNNING'}, `${label}: frozen state wins over insufficient funds`);
+
+    const actions = new GameActions(makeBattlefield(freshController(), makeWallet(1000)));
+    assert.strictEqual(actions.useItem('tripo').error, 'ITEM_NOT_READY', `${label}: model action rejects`);
+}
+
+assertFrozen('IDLE');
+gameLoop.start();
+assert.strictEqual(gameLoop.state, 'running');
+{
     const controller = freshController();
     const wallet = makeWallet(1000);
     const actions = new GameActions(makeBattlefield(controller, wallet));
@@ -493,17 +541,7 @@ console.log('TacticalItems core audit (issue #69)');
     // Insufficient funds through GameActions: rejected, no state advance.
     const controller = freshController();
     const wallet = makeWallet(999);
-    const actions = new GameActions({
-        gridWidth: 10, gridHeight: 10, maxTowerLevel: 5,
-        cash: () => wallet.balance,
-        towerOptions: () => [], towers: () => [], towerAt: () => undefined,
-        canPlaceAt: () => ({ok: true}), canAfford: a => wallet.canWithdraw(a),
-        build: () => undefined, upgrade: () => false, snapshot: () => ({}),
-        useItem(item) {
-            const r = controller.activate(item, true, wallet, {});
-            return r.ok ? {ok: true} : {ok: false, error: r.reason};
-        },
-    });
+    const actions = new GameActions(makeBattlefield(controller, wallet));
     const result = actions.useItem('hypershell');
     assert.strictEqual(result.ok, false);
     assert.strictEqual(result.error, 'INSUFFICIENT_FUNDS');
@@ -512,30 +550,47 @@ console.log('TacticalItems core audit (issue #69)');
 }
 
 {
-    // FINDING — the running-state gate is NOT reachable through the agent path.
-    // InertBattlefield.useItem (src/agent/InertBattlefield.ts) calls
-    // `tacticalItemsController.activate(item, true, cashManager, ...)` with
-    // `isRunning` hard-coded to true. Replicating that exact forwarding shows the
-    // controller's NOT_RUNNING guard can never fire for the model, even though
-    // the UI path (src/InterfaceManager.ts) passes the real loop state. Funds,
-    // cooldown and legality are still enforced; only the frozen-sim gate leaks.
-    const controller = freshController();
-    const wallet = makeWallet(5000);
-    const actions = new GameActions({
-        gridWidth: 10, gridHeight: 10, maxTowerLevel: 5,
-        cash: () => wallet.balance,
-        towerOptions: () => [], towers: () => [], towerAt: () => undefined,
-        canPlaceAt: () => ({ok: true}), canAfford: a => wallet.canWithdraw(a),
-        build: () => undefined, upgrade: () => false, snapshot: () => ({}),
-        useItem(item) {
-            // Exact shape of InertBattlefield.useItem.
-            const r = controller.activate(item, true, wallet, {});
-            return r.ok ? {ok: true} : {ok: false, error: r.reason};
-        },
-    });
-    const gameIsPaused = true;
-    assert.strictEqual(gameIsPaused, true, 'stand-in for paused/planning state');
-    assert.strictEqual(actions.useItem('natural_oil').ok, true, 'agent path activates while sim is frozen');
+    // RUNNING parity: both entry points execute the same real activation for all items.
+    for (const key of ITEM_KEYS) {
+        const model = freshController();
+        const ui = freshController();
+        const wallet = makeWallet(5000);
+        const uiWallet = makeWallet(5000);
+        const modelEnemy = new FakeEnemy(100);
+        const uiEnemy = new FakeEnemy(100);
+        const modelBase = new FakeBase(20, 10);
+        const uiBase = new FakeBase(20, 10);
+        const modelResult = activateModelItem(key, model, wallet, {enemyManager: {all: () => [modelEnemy]}, homeBase: modelBase});
+        const uiResult = ui.activate(key, gameLoop.state === 'running', uiWallet,
+            {enemyManager: {all: () => [uiEnemy]}, homeBase: uiBase});
+        assert.deepStrictEqual(modelResult, {ok: true}, `${key}: model can activate during RUNNING`);
+        assert.deepStrictEqual(modelResult, uiResult, `${key}: model and UI agree`);
+        assert.deepStrictEqual(model.getAllItemSnapshots(), ui.getAllItemSnapshots(), `${key}: same item transition`);
+        assert.strictEqual(wallet.balance, uiWallet.balance, `${key}: same charge`);
+        assert.strictEqual(modelEnemy.damageTaken, uiEnemy.damageTaken, `${key}: same enemy effect`);
+        assert.strictEqual(modelBase.getLife(), uiBase.getLife(), `${key}: same base effect`);
+    }
 }
 
-console.log('All TacticalItems core audit checks passed.');
+{
+    // A wallet that refuses to withdraw must still fail closed via GameActions.
+    const controller = freshController();
+    const refused = {balance: 1000, canWithdraw: () => true, withdraw: () => false};
+    assert.strictEqual(new GameActions(makeBattlefield(controller, refused)).useItem('tripo').error,
+        'INSUFFICIENT_FUNDS');
+    assert.deepStrictEqual(controller.getState('tripo'), {kind: 'ready'});
+}
+
+gameLoop.pause();
+assert.strictEqual(gameLoop.state, 'paused');
+assertFrozen('PAUSED');
+gameLoop.resume();
+
+// PLANNING is also a real GameLoop transition, not a simulated boolean.
+gameLoop.holdForPlanning({plan: async () => {
+    assert.strictEqual(gameLoop.state, 'planning');
+    assertFrozen('PLANNING');
+}}).then(() => {
+    assert.strictEqual(gameLoop.state, 'running');
+    console.log('All TacticalItems core audit checks passed.');
+}).catch(error => { console.error(error); process.exitCode = 1; });
