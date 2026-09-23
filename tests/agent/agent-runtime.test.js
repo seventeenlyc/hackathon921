@@ -157,6 +157,35 @@ function makeStore(text = 'hold the base') {
         assert.deepStrictEqual(summaries, [null, null]);
     });
 
+    await test('shows a readable action plan when a successful tool response has no summary', async () => {
+        const actions = new FakeActions();
+        const summaries = [];
+        let call = 0;
+        const runtime = new AgentRuntime({
+            actions,
+            store: makeStore('defend the turn'),
+            fetchImpl: async () => jsonResponse(200, {
+                ok: true,
+                summary: null,
+                actions: call++ === 0
+                    ? [{name: 'build_tower', arguments: {type: 'gatling', i: 27, j: 19}}]
+                    : [{name: 'upgrade_tower', arguments: {id: '27:19'}}],
+            }),
+            onSummary: summary => summaries.push(summary),
+        });
+
+        await runtime.plan();
+        await runtime.plan();
+
+        assert.deepStrictEqual(actions.buildCalls, [{type: 'gatling', i: 27, j: 19}]);
+        assert.deepStrictEqual(actions.upgradeCalls, ['27:19']);
+        assert.equal(summaries.length, 2);
+        assert.match(summaries[0], /Gatling/);
+        assert.match(summaries[0], /27, 19/);
+        assert.match(summaries[1], /upgrade/);
+        assert.match(summaries[1], /27:19/);
+    });
+
     await test('ignores unknown action names without executing them', async () => {
         const actions = new FakeActions();
         const decisions = [];

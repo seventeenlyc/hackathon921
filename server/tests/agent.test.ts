@@ -130,6 +130,24 @@ test('extractAgentSummary exposes only concise player-facing content, never a re
     assert.equal(extractAgentSummary({choices: [{message: {content: '', reasoning_content: 'private'}}]}), null);
 });
 
+test('工具调用的公开摘要在 content 为空时可用，且不进入引擎动作参数', () => {
+    const payload = {choices: [{message: {
+        content: null,
+        reasoning_content: 'private chain of thought',
+        tool_calls: [
+            {function: {name: 'delete_everything', arguments: '{"decision_summary":"不可信工具"}'}},
+            {function: {name: 'build_tower', arguments: '{"type":"gatling","i":27,"j":19,"decision_summary":"在敌方密集的转向节点补充持续火力。"}'}},
+        ],
+    }}]};
+
+    assert.equal((agentModule as any).extractAgentSummary(payload), '在敌方密集的转向节点补充持续火力。');
+    payload.choices[0].message.content = 'I will call a tool.' as any;
+    assert.equal((agentModule as any).extractAgentSummary(payload), '在敌方密集的转向节点补充持续火力。');
+    assert.deepEqual(extractAgentActions(payload), [
+        {name: 'build_tower', arguments: {type: 'gatling', i: 27, j: 19}},
+    ]);
+});
+
 test('mapProviderError 把 provider 失败映射成可读错误码', () => {
     assert.equal(mapProviderError(401, {}).error, 'PROVIDER_AUTH_ERROR');
     assert.equal(mapProviderError(429, {}).error, 'PROVIDER_RATE_LIMITED');
@@ -195,6 +213,8 @@ test('成功时下发给 provider 的是服务端系统指令与工具 schema，
     assert.ok(sent.body.messages[1].content.indexOf('hold the base') !== -1);
     assert.equal(sent.body.model, 'deepseek-chat');
     assert.ok(Array.isArray(sent.body.tools) && sent.body.tools.length === 3);
+    assert.ok(sent.body.tools.every((tool: any) =>
+        tool.function.parameters.required.includes('decision_summary')));
     const itemTool = sent.body.tools.find((t: any) => t.function.name === 'use_item');
     assert.ok(itemTool);
     assert.deepEqual(itemTool.function.parameters.properties.item.enum, [
