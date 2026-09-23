@@ -35,6 +35,7 @@ import {devController} from "./dev";
 import {NarrativeDirector} from "./narrative/NarrativeDirector";
 import {NARRATIVE_SCENES} from "./narrative/NarrativeScript";
 import {narrativeOverlay} from "./narrative/NarrativeOverlay";
+import {storyReader} from "./narrative/StoryReader";
 
 // Settlement stats gathered across the run (see the result screen).
 let runStartedAt: number | null = null;
@@ -327,5 +328,12 @@ export function startHumanRun(username: string): void {
             }
             return true;
         },
+    },
+    // QA surface for the background-story reader (issue #99). Opening or
+    // closing it is a pure view action: no simulation, wave or Prompt state.
+    story: {
+        open: () => storyReader.open(),
+        close: () => storyReader.close(),
+        isOpen: () => storyReader.isOpen,
     },
 };
