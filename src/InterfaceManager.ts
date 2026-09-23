@@ -15,13 +15,11 @@ import {getControlLayer} from "./ControlLayer";
 import {applyStaticTranslations, onLangChange, t, toggleLang} from './i18n';
 import {audioManager} from './AudioManager';
 import {cashManager} from './CashManager';
-import {naturalOilController, OilActivationResult} from './items/NaturalOil';
 import {tacticalItemsController} from './items/TacticalItems';
+import {enemyLifeAtWave, enemySpeedAtWave} from './tools/enemyScaling';
 import {isEnemyTypeId} from './tools/enemyCatalog';
 import {texturePaths} from './tools/texturePaths';
 import {DevPanel} from './DevPanel';
-
-type OilFailureReason = Extract<OilActivationResult, {ok: false}>['reason'];
 
 /** Summary shown on the settlement screen after the base falls. */
 export interface RunStats {
@@ -59,9 +57,7 @@ class InterfaceManager {
     private pauseButton = document.getElementById('pause') as HTMLButtonElement;
     private resumeButton = document.getElementById('resume') as HTMLButtonElement;
     private audioButton = document.getElementById('audio-toggle') as HTMLButtonElement | null;
-    private naturalOilButton = document.getElementById('natural-oil') as HTMLButtonElement;
-    private naturalOilStatus = document.getElementById('natural-oil-status')!;
-    private naturalOilFailure: OilFailureReason | null = null;
+    private hostileStatsWave = 1;
     private tripoButton = document.getElementById('item-tripo') as HTMLButtonElement | null;
     private seeedButton = document.getElementById('item-seeed') as HTMLButtonElement | null;
     private evomapButton = document.getElementById('item-evomap') as HTMLButtonElement | null;
@@ -98,13 +94,6 @@ class InterfaceManager {
         gameLoop.onChange(state => {
             this.setState(state);
         });
-        this.naturalOilButton.addEventListener('click', () => {
-            const result = naturalOilController.activate(gameLoop.state === 'running', cashManager);
-            this.naturalOilFailure = result.ok ? null : result.reason;
-            this.updateNaturalOil();
-        });
-
-        this.bindItemHover(this.naturalOilButton, t('oil.label'), 'oil.desc');
         this.bindItemHover(this.tripoButton, 'Tripo', 'item.tripo.desc');
         this.bindItemHover(this.seeedButton, 'Seeed Studio', 'item.seeed.desc');
         this.bindItemHover(this.evomapButton, 'EvoMap', 'item.evomap.desc');
@@ -119,17 +108,17 @@ class InterfaceManager {
             button?.addEventListener('click', () => {
                 const result = tacticalItemsController.activate(key, gameLoop.state === 'running', cashManager);
                 this.snackbar.toast(t(result.ok ? 'item.used' : `item.failure.${result.reason}`, {name: brand}));
-                this.updateNaturalOil();
+                this.updateTacticalItems();
             });
         }
 
         this.setState(gameLoop.state);
         this.updateSpeedLabel();
         this.updateAudioLabel();
-        this.updateNaturalOil();
+        this.updateTacticalItems();
         this.setupDatabaseTabs();
         this.setupHostileImages();
-        this.setupHostileStats();
+        this.updateHostileStats(1); // IDLE 阶段按第 1 波展示基础成长值
         this.startHeaderClock();
         this.setupDevPanel();
 
@@ -144,9 +133,9 @@ class InterfaceManager {
             this.setState(gameLoop.state);
             this.updateSpeedLabel();
             this.updateAudioLabel();
-            this.updateNaturalOil();
+            this.updateTacticalItems();
             this.setupModeButton();
-            this.setupHostileStats();
+            this.updateHostileStats(this.hostileStatsWave);
             if (this.lastWave > 0) {
                 const tag = t('map.waveTag', {wave: String(this.lastWave).padStart(3, '0')});
                 setText('map-wave', tag);
@@ -175,6 +164,7 @@ class InterfaceManager {
         // 设计稿的波次为三位补零样式（037 / 200 中的前半），与地图 livebar 的 waveTag 一致。
         this.waveElement.textContent = String(wave).padStart(3, '0');
         setText('map-wave', tag);
+        this.updateHostileStats(wave);
     }
 
     /** Human mode's `delayBetweenWaves` countdown, shown next to the wave number. */
@@ -197,22 +187,10 @@ class InterfaceManager {
         // red stays reserved for the settlement screen (issue #66 palette).
         const alert = document.getElementById('map-alert');
         if (alert) alert.hidden = state !== 'running';
-        this.updateNaturalOil();
+        this.updateTacticalItems();
     }
 
-    updateNaturalOil() {
-        const state = naturalOilController.state;
-        this.naturalOilButton.disabled = state.kind !== 'ready' || gameLoop.state !== 'running';
-        this.naturalOilButton.setAttribute('aria-label', t('oil.button', {cost: 1000}));
-        if (state.kind === 'active' || state.kind === 'cooldown') {
-            const seconds = Math.ceil(state.remainingMs / 1000);
-            this.naturalOilStatus.textContent = t(`oil.${state.kind}`, {seconds});
-        } else {
-            this.naturalOilStatus.textContent = this.naturalOilFailure
-                ? t(`oil.failure.${this.naturalOilFailure}`)
-                : t(gameLoop.state === 'running' ? 'oil.ready' : 'oil.notRunning');
-        }
-
+    updateTacticalItems() {
         const running = gameLoop.state === 'running';
         for (const [key, id, button, brand] of [
             ['evomap', 'evomap', this.evomapButton, 'EvoMap'],
@@ -317,25 +295,34 @@ class InterfaceManager {
     }
 
     /**
-     * 敌方情报卡片的数据条（对照我方兵力卡片）：数值取自卡片上的 data-* 属性
-     * （与敌方实体字段保持一致：life / speed / cash），按五种敌人中的最大值归一化。
-     * 语言切换时重复调用，先清空再重建。
+     * 敌方情报卡片的实时数值：data-* 保存基础值（与敌方实体字段一致），
+     * 按 tools/enemyScaling 换算成当前波次的有效数值（与 WavesManager 生成逻辑同源），
+     * 分段条按当前波次下五种敌人的最大值归一化。语言切换时重复调用，先清空再重建。
      */
-    private setupHostileStats() {
+    private updateHostileStats(wave: number): void {
         const cards = Array.from(document.querySelectorAll<HTMLElement>('.hostile-card[data-life]'));
         if (!cards.length) return;
-        const life = cards.map(card => Number(card.dataset.life));
-        const speed = cards.map(card => Number(card.dataset.speed));
-        const cash = cards.map(card => Number(card.dataset.cash));
+        this.hostileStatsWave = wave;
+        const stats = cards.map(card => {
+            // Boss 卡在 201 波起会冻结属性，标记在 data-boss 上以便与引擎同源换算。
+            const isBoss = card.dataset.boss === '1';
+            return {
+                life: enemyLifeAtWave(Number(card.dataset.life), wave, isBoss),
+                speed: enemySpeedAtWave(Number(card.dataset.speed), wave, Number(card.dataset.speedCap), isBoss),
+                cash: Number(card.dataset.cash),
+            };
+        });
         const rows: Array<[string, number[], number]> = [
-            [t('enemy.stat.hp'), life, Math.max(...life)],
-            [t('enemy.stat.speed'), speed, Math.max(...speed)],
-            [t('enemy.stat.cash'), cash, Math.max(...cash)],
+            [t('enemy.stat.hp'), stats.map(s => s.life), Math.max(...stats.map(s => s.life))],
+            [t('enemy.stat.speed'), stats.map(s => s.speed), Math.max(...stats.map(s => s.speed))],
+            [t('enemy.stat.cash'), stats.map(s => s.cash), Math.max(...stats.map(s => s.cash))],
         ];
+        const waveTag = document.getElementById('hostile-wave-tag');
+        if (waveTag) waveTag.textContent = t('database.waveTag', {wave: String(wave).padStart(3, '0')});
         cards.forEach((card, index) => {
-            const stats = card.querySelector('.hostile-stats');
-            if (!stats) return;
-            stats.textContent = '';
+            const statsEl = card.querySelector('.hostile-stats');
+            if (!statsEl) return;
+            statsEl.textContent = '';
             rows.forEach(([label, values, max]) => {
                 const row = document.createElement('span');
                 row.className = 'tower-stat';
@@ -344,7 +331,7 @@ class InterfaceManager {
                 labelSpan.textContent = label;
                 const valueSpan = document.createElement('span');
                 valueSpan.className = 'stat-value';
-                valueSpan.textContent = String(values[index]);
+                valueSpan.textContent = String(Math.round(values[index] * 10) / 10);
                 const bar = document.createElement('span');
                 bar.className = 'stat-bar';
                 const fill = document.createElement('span');
@@ -352,7 +339,7 @@ class InterfaceManager {
                 fill.style.width = `${Math.max(0, Math.min(1, values[index] / max)) * 100}%`;
                 bar.appendChild(fill);
                 row.append(labelSpan, valueSpan, bar);
-                stats.appendChild(row);
+                statsEl.appendChild(row);
             });
         });
     }

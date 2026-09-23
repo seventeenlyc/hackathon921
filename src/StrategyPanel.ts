@@ -76,11 +76,9 @@ export class StrategyPanel {
 
         this.status.classList.remove('warn');
         queueStrategy(text);
-        if (idle) startRun();
+        // 提交命令（开局或更新）都不再自动隐藏控制面板：
+        // 玩家可用头部「控制面板」开关自行收起，或双击战场切换。
         this.render();
-        const controlLayer = getControlLayer();
-        controlLayer.hide();
-        controlLayer.showHint();
     }
 
     private warnOverLimit(length: number) {

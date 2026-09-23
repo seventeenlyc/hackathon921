@@ -37,8 +37,7 @@ const STRINGS: { [key: string]: Entry } = {
     'aria.battlefieldControls': {zh: '战场控制', en: 'Battlefield controls'},
     'aria.battlefieldStatus': {zh: '战场状态', en: 'Battlefield status'},
     'aria.deployableUnits': {zh: '可部署塔奇克马机体', en: 'Deployable Tachikoma units'},
-    'aria.hideControls': {zh: '隐藏作战终端', en: 'Hide command terminal'},
-    'title.hideControls': {zh: '隐藏终端', en: 'Hide terminal'},
+    'controls.panelToggle': {zh: '控制面板', en: 'CONTROLS'},
     'aria.gameControls': {zh: '作战控制', en: 'Operation controls'},
     'aria.githubRepository': {zh: 'GitHub 源代码仓库', en: 'GitHub source repository'},
 
@@ -123,16 +122,6 @@ const STRINGS: { [key: string]: Entry } = {
 
     'speed.label': {zh: '演算速度 x{speed}', en: 'Simulation x{speed}'},
 
-    'oil.label': {zh: '天然机油', en: 'Natural Oil'},
-    'oil.button': {zh: '天然机油，花费 {cost} 金币，攻速提高 50% 持续 5 秒', en: 'Natural Oil, costs {cost} cash, increases attack speed by 50% for 5 seconds'},
-    'oil.ready': {zh: '可使用 · 1000 ¢', en: 'Ready · 1000 ¢'},
-    'oil.notRunning': {zh: '仅运行时可使用', en: 'Available while running'},
-    'oil.active': {zh: '生效中 · 剩余 {seconds} 秒', en: 'Active · {seconds}s left'},
-    'oil.cooldown': {zh: '冷却中 · 剩余 {seconds} 秒', en: 'Cooldown · {seconds}s left'},
-    'oil.failure.NOT_RUNNING': {zh: '仅运行时可使用', en: 'Available while running'},
-    'oil.failure.ALREADY_ACTIVE': {zh: '机油正在生效', en: 'Natural Oil is already active'},
-    'oil.failure.COOLDOWN': {zh: '机油仍在冷却', en: 'Natural Oil is cooling down'},
-    'oil.failure.INSUFFICIENT_FUNDS': {zh: '金币不足，需要 1000 ¢', en: 'Insufficient cash: 1000 ¢ required'},
 
     'item.evomap.name': {zh: '全域轨道打击', en: 'Orbital Strike'},
     'item.tripo.name': {zh: '火力重构', en: 'Firepower Reconfiguration'},
@@ -152,7 +141,6 @@ const STRINGS: { [key: string]: Entry } = {
     'item.failure.INSUFFICIENT_FUNDS': {zh: '战术资源不足', en: 'Insufficient resources'},
     'item.failure.UNKNOWN_ITEM': {zh: '未知战术道具', en: 'Unknown tactical item'},
 
-    'oil.desc': {zh: '5 秒内所有塔奇克马攻击速度提升 150%。冷却时间 10 秒。消耗 1000 战术资源。', en: 'Increases attack speed of all Tachikomas by 150% for 5s. 10s cooldown. Costs 1000.'},
     'item.tripo.desc': {zh: '5 秒内所有塔奇克马火力提升至 300%（单发伤害 ×3）。冷却时间 10 秒。消耗 1000 战术资源。', en: 'Increases firepower of all Tachikomas to 300% (damage x3) for 5s. 10s cooldown. Costs 1000.'},
     'item.seeed.desc': {zh: '5 秒内所有塔奇克马攻击速度提升至 150%。冷却时间 10 秒。消耗 1000 战术资源。', en: 'Increases attack speed of all Tachikomas to 150% for 5s. 10s cooldown. Costs 1000.'},
     'item.evomap.desc': {zh: '对全图所有存活敌方单位造成当前生命值 2% 的伤害（至少 1 点）。前 2 次使用免费，随后 1000 战术资源/次。冷却时间 10 秒。', en: 'Deals 2% of current HP to all living enemies (min 1). First 2 uses free, then 1000 each. 10s cooldown.'},
@@ -235,6 +223,7 @@ const STRINGS: { [key: string]: Entry } = {
     'items.title': {zh: '支援道具', en: 'BATTLE ITEMS'},
     'database.title': {zh: '战术数据库', en: 'TACTICAL DATABASE'},
     'database.tabHostile': {zh: '敌方情报', en: 'ENEMY INTELLIGENCE'},
+    'database.waveTag': {zh: '第 {wave} 波 · 实时数值', en: 'WAVE {wave} · LIVE STATS'},
     'enemy.stat.hp': {zh: '生命', en: 'HP'},
     'enemy.stat.speed': {zh: '速度', en: 'SPD'},
     'enemy.stat.cash': {zh: '赏金', en: 'BOUNTY'},

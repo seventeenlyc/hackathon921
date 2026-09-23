@@ -9,10 +9,19 @@ function loadWaveManager(dependencies) {
         compilerOptions: {module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2017},
     }).outputText;
     const moduleObj = {exports: {}};
-    new Function('module', 'exports', 'require', js)(moduleObj, moduleObj.exports, name => {
+    const requireWithScaling = name => {
+        if (name === './tools/enemyScaling') {
+            return {
+                waveLifeRatio: wave => 1 + wave / 10,
+                waveSpeedMultiplier: (wave, cap) => Math.min(1 + wave / 30, cap),
+                earlyWaveReliefFactor: (wave, isBoss) => (wave <= 200 || isBoss ? 0.4 : 1),
+                bossLifeRatio: wave => (wave >= 201 ? 1 + 152 / 10 : 1 + wave / 10),
+            };
+        }
         if (!(name in dependencies)) throw new Error('Unexpected dependency: ' + name);
         return dependencies[name];
-    });
+    };
+    new Function('module', 'exports', 'require', js)(moduleObj, moduleObj.exports, requireWithScaling);
     return moduleObj.exports.waveManager;
 }
 

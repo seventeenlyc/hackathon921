@@ -82,12 +82,13 @@
         <div class="header-side header-left">
           <span class="eyebrow" data-i18n="shell.eyebrow">公安九课 // 战术网络</span>
           <span class="header-sub" data-i18n="header.subtitle">公安九课 · 塔奇克马防御协议</span>
-          <span id="version" class="header-ver">v0.2.14</span>
+          <span id="version" class="header-ver">v0.2.15</span>
         </div>
         <h1 class="header-title" data-i18n="app.name">保护笑脸男</h1>
         <div class="header-side header-right">
           <span class="live-indicator"><span class="live-dot" aria-hidden="true"></span><span data-i18n="map.live">LIVE</span></span>
           <span id="header-clock" class="header-clock">--:--:--</span>
+          <button id="controls-panel-toggle" class="controls-panel-toggle" type="button" aria-pressed="true" data-i18n="controls.panelToggle">控制面板</button>
           <button id="dev-wrench" class="dev-wrench" type="button" data-i18n-aria-label="dev.wrenchLabel" aria-label="开发模式入口" data-i18n-title="dev.wrenchTitle" title="开发模式（不计榜）" aria-expanded="false">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M22 7.5a5 5 0 0 1-7.4 4.38L9 17.5a2.5 2.5 0 1 1-3.5-3.5l5.62-5.6A5 5 0 1 1 22 7.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
           </button>
@@ -121,7 +122,6 @@
                 <div class="eyebrow" data-i18n="console.eyebrow">塔奇克马指挥网络</div>
                 <h2 id="chatbox-heading" data-i18n="console.heading">战术命令终端</h2>
               </div>
-              <button id="controls-collapse" class="icon-button" type="button" data-i18n-aria-label="aria.hideControls" aria-label="隐藏作战终端" data-i18n-title="title.hideControls" title="隐藏终端">×</button>
             </div>
             <div class="strategy">
               <label class="strategy-label" for="strategy-input"><span data-i18n="strategy.label">作战命令</span></label>
@@ -183,12 +183,6 @@
 
           <section class="control-card items-panel" aria-labelledby="items-heading">
             <h2 id="items-heading" class="panel-title" data-i18n="items.title">支援道具</h2>
-            <button id="natural-oil" class="natural-oil" type="button" disabled aria-describedby="natural-oil-status">
-              <span class="natural-oil-icon" aria-hidden="true"></span>
-              <span class="natural-oil-label" data-i18n="oil.label">天然机油</span>
-              <span class="natural-oil-cost">1000 ¢</span>
-            </button>
-            <span id="natural-oil-status" class="natural-oil-status" role="status" aria-live="polite"></span>
             <div id="tactical-items-grid" class="tactical-items-grid">
               <button id="item-evomap" class="tactical-item-btn item-evomap" type="button" disabled>
                 <span class="tactical-item-icon icon-evomap" aria-hidden="true"></span>
@@ -218,7 +212,7 @@
           </section>
         </aside>
 
-        <section class="database-panel">
+        <section id="database-panel" class="database-panel">
           <div class="database-header">
             <div class="database-title" data-i18n="database.title">战术数据库</div>
             <div class="database-tabs">
@@ -232,12 +226,13 @@
           </section>
           <section class="hostile-panel db-view" id="db-view-hostile" aria-labelledby="hostile-heading" hidden>
             <h2 id="hostile-heading" class="visually-hidden" data-i18n="database.tabHostile">敌方情报</h2>
+            <div id="hostile-wave-tag" class="hostile-wave-tag"></div>
             <div class="hostile-grid">
-              <div class="hostile-card" data-life="50" data-speed="2.5" data-cash="5"><span class="hostile-card-head"><img data-enemy-img="simple" alt=""/><span class="hostile-name-block"><span class="hostile-name" data-i18n="enemy.simple.name">傀儡型</span><span class="hostile-code">PUPPET</span></span></span><span class="hostile-stats"></span><span class="hostile-desc" data-i18n="enemy.simple.desc">数量最多的基础敌性体，成群涌向核心。</span></div>
-              <div class="hostile-card" data-life="200" data-speed="4" data-cash="20"><span class="hostile-card-head"><img data-enemy-img="fast" alt=""/><span class="hostile-name-block"><span class="hostile-name" data-i18n="enemy.fast.name">猎袭型</span><span class="hostile-code">HUNTER</span></span></span><span class="hostile-stats"></span><span class="hostile-desc" data-i18n="enemy.fast.desc">高速突进型，行动最快，需要提前拦截。</span></div>
-              <div class="hostile-card" data-life="200" data-speed="2.5" data-cash="10"><span class="hostile-card-head"><img data-enemy-img="armored" alt=""/><span class="hostile-name-block"><span class="hostile-name" data-i18n="enemy.armored.name">装甲执行体</span><span class="hostile-code">ENFORCER</span></span></span><span class="hostile-stats"></span><span class="hostile-desc" data-i18n="enemy.armored.desc">重装甲执行单位，需要集中火力击穿。</span></div>
-              <div class="hostile-card" data-life="200" data-speed="2.5" data-cash="10"><span class="hostile-card-head"><img data-enemy-img="healer" alt=""/><span class="hostile-name-block"><span class="hostile-name" data-i18n="enemy.healer.name">中继型</span><span class="hostile-code">RELAY</span></span></span><span class="hostile-stats"></span><span class="hostile-desc" data-i18n="enemy.healer.desc">修复周围敌性体，应当优先排除。</span></div>
-              <div class="hostile-card" data-life="2000" data-speed="2.5" data-cash="100"><span class="hostile-card-head"><img data-enemy-img="boss" alt=""/><span class="hostile-name-block"><span class="hostile-name" data-i18n="enemy.boss.name">压制体</span><span class="hostile-code">SUPPRESSOR</span></span></span><span class="hostile-stats"></span><span class="hostile-desc" data-i18n="enemy.boss.desc">高耐久压制单位，突破后威胁最大。</span></div>
+              <div class="hostile-card" data-life="50" data-speed="2.5" data-cash="5" data-speed-cap="1"><span class="hostile-card-head"><img data-enemy-img="simple" alt=""/><span class="hostile-name-block"><span class="hostile-name" data-i18n="enemy.simple.name">傀儡型</span><span class="hostile-code">PUPPET</span></span></span><span class="hostile-stats"></span><span class="hostile-desc" data-i18n="enemy.simple.desc">数量最多的基础敌性体，成群涌向核心。</span></div>
+              <div class="hostile-card" data-life="200" data-speed="4" data-cash="20" data-speed-cap="1.7"><span class="hostile-card-head"><img data-enemy-img="fast" alt=""/><span class="hostile-name-block"><span class="hostile-name" data-i18n="enemy.fast.name">猎袭型</span><span class="hostile-code">HUNTER</span></span></span><span class="hostile-stats"></span><span class="hostile-desc" data-i18n="enemy.fast.desc">高速突进型，行动最快，需要提前拦截。</span></div>
+              <div class="hostile-card" data-life="200" data-speed="2.5" data-cash="10" data-speed-cap="1.5"><span class="hostile-card-head"><img data-enemy-img="armored" alt=""/><span class="hostile-name-block"><span class="hostile-name" data-i18n="enemy.armored.name">装甲执行体</span><span class="hostile-code">ENFORCER</span></span></span><span class="hostile-stats"></span><span class="hostile-desc" data-i18n="enemy.armored.desc">重装甲执行单位，需要集中火力击穿。</span></div>
+              <div class="hostile-card" data-life="200" data-speed="2.5" data-cash="10" data-speed-cap="1.5"><span class="hostile-card-head"><img data-enemy-img="healer" alt=""/><span class="hostile-name-block"><span class="hostile-name" data-i18n="enemy.healer.name">中继型</span><span class="hostile-code">RELAY</span></span></span><span class="hostile-stats"></span><span class="hostile-desc" data-i18n="enemy.healer.desc">修复周围敌性体，应当优先排除。</span></div>
+              <div class="hostile-card" data-life="2000" data-speed="2.5" data-cash="100" data-speed-cap="1" data-boss="1"><span class="hostile-card-head"><img data-enemy-img="boss" alt=""/><span class="hostile-name-block"><span class="hostile-name" data-i18n="enemy.boss.name">压制体</span><span class="hostile-code">SUPPRESSOR</span></span></span><span class="hostile-stats"></span><span class="hostile-desc" data-i18n="enemy.boss.desc">高耐久压制单位，突破后威胁最大。</span></div>
             </div>
           </section>
         </section>

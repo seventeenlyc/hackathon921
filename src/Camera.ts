@@ -32,11 +32,29 @@ export class Camera {
         };
     }
 
+    // "Cover" semantics (user-confirmed 2026-09-24): at minimum zoom the map must
+    // still reach every edge of the fixed central viewport, never shrink inside
+    // the frame — so the larger map/viewport ratio wins.
     private getMinimumScale(): number {
         const viewport = this.getViewport();
         const mapWidth = Map.TILE_SIZE * Map.GRID_W;
         const mapHeight = Map.TILE_SIZE * Map.GRID_H;
-        return Math.min(viewport.width / mapWidth, viewport.height / mapHeight);
+        return Math.max(viewport.width / mapWidth, viewport.height / mapHeight);
+    }
+
+    // The viewport must never show anything beyond the map: clamp the effective
+    // camera center (position minus live drag offset) so the map rect always
+    // covers the frame. At minimum zoom one axis may have zero slack, which
+    // locks the camera on that axis — any offset would expose the background.
+    private clampCenterToViewport(viewport: {width: number, height: number}): {x: number, y: number} {
+        const mapWidth = Map.TILE_SIZE * Map.GRID_W;
+        const mapHeight = Map.TILE_SIZE * Map.GRID_H;
+        const halfVisibleW = Math.min(viewport.width / (2 * this.scaleRatio), mapWidth / 2);
+        const halfVisibleH = Math.min(viewport.height / (2 * this.scaleRatio), mapHeight / 2);
+        return {
+            x: Math.min(Math.max(this.x - this.dragDeltaDistances.x, halfVisibleW), mapWidth - halfVisibleW),
+            y: Math.min(Math.max(this.y - this.dragDeltaDistances.y, halfVisibleH), mapHeight - halfVisibleH),
+        };
     }
 
     constructor() {
@@ -69,9 +87,10 @@ export class Camera {
     process(ctx: CanvasRenderingContext2D): void {
         const viewport = this.getViewport();
         this.scaleRatio = Math.max(this.scaleRatio, this.getMinimumScale());
+        const center = this.clampCenterToViewport(viewport);
         ctx.translate(viewport.x, viewport.y)
         ctx.scale(this.scaleRatio, this.scaleRatio)
-        ctx.translate(-this.x + this.dragDeltaDistances.x, -this.y + this.dragDeltaDistances.y);
+        ctx.translate(-center.x, -center.y);
 
         canvas.updateTransformMatrix();
     }
