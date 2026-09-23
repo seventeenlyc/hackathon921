@@ -306,4 +306,26 @@ export function startHumanRun(username: string): void {
     // Debug view (issue #4): what the AI actually observed this round.
     state: () => actions.getState(),
     stateText: () => formatSnapshot(actions.getState()),
+    // QA preview for the story scenes (issue #100): list the beats and play one
+    // immediately instead of playing up to wave 51/201/256. Uses the same
+    // overlay and freeze as the real trigger; before a run starts it just shows
+    // the scene without touching the IDLE state.
+    narrative: {
+        scenes: () => NARRATIVE_SCENES.map(scene => ({
+            id: scene.id,
+            beforeWave: scene.beforeWave,
+            codeName: scene.codeName,
+        })),
+        play: (id: string) => {
+            const scene = NARRATIVE_SCENES.find(candidate => candidate.id === id)
+                ?? NARRATIVE_SCENES.find(candidate => candidate.codeName === id);
+            if (!scene) return false;
+            if (gameLoop.isIdle()) {
+                void narrativeOverlay.play(scene);
+            } else {
+                void gameLoop.holdForNarrative(() => narrativeOverlay.play(scene));
+            }
+            return true;
+        },
+    },
 };

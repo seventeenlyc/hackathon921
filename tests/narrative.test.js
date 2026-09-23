@@ -350,6 +350,15 @@ function fakePorts(overrides = {}) {
         assert.doesNotMatch(game, /state === 'narrative'/, 'reading a scene must not change Prompt state');
     });
 
+    await test('promptDefense exposes a QA preview for every beat', () => {
+        const game = read('src/Game.ts');
+        assert.match(game, /narrative:\s*\{/, 'the QA surface must expose the story scenes');
+        assert.match(game, /scenes: \(\) => NARRATIVE_SCENES\.map/);
+        assert.match(game, /play: \(id: string\)/);
+        assert.match(game, /gameLoop\.holdForNarrative\(\(\) => narrativeOverlay\.play\(scene\)\)/,
+            'a preview during a live run must freeze like the real trigger');
+    });
+
     await test('the status panel knows the narrative state in both languages', () => {
         const i18n = read('src/i18n.ts');
         assert.match(i18n, /'state\.narrative': \{zh: '[^']*[\u4e00-\u9fff][^']*', en: '[A-Z][^']*'\}/);
