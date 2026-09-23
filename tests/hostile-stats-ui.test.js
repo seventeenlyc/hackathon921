@@ -33,6 +33,10 @@ assert.ok(Math.abs(scaling.enemyLifeAtWave(2000, 1) - 880) < 1e-9, 'boss wave 1 
 assert.strictEqual(scaling.enemyLifeAtWave(50, 200), 50 * 21 * 0.4, 'wave 200 keeps the relief factor');
 // 波 201：缓冲取消
 assert.strictEqual(scaling.enemyLifeAtWave(50, 201), 50 * (1 + 201 / 10), 'wave 201 drops the relief factor');
+// 精英 Boss：201 波起生命冻结在等效第 152 波，且始终保留 0.4 缓冲
+assert.strictEqual(scaling.enemyLifeAtWave(2000, 300, true), scaling.enemyLifeAtWave(2000, 152, false),
+    'boss life after wave 201 must freeze at the wave-152 value');
+assert.strictEqual(scaling.enemySpeedAtWave(2.5, 300, 1, true), 1, 'boss speed stays at its wave-152 effective value');
 // 速度：fast cap 1.7，波 30 时乘数 2 已被封顶为 1.7 → 4 × 1.7 × 0.4 = 2.72
 assert.ok(Math.abs(scaling.enemySpeedAtWave(4, 30, 1.7) - 2.72) < 1e-9, 'fast speed at wave 30 = 4 × 1.7 × 0.4');
 // 速度上限钳制：波 100 时 fast 的乘数封顶 1.7
@@ -58,6 +62,7 @@ assert.ok(cards.every(card => /data-life="\d+"/.test(card)), 'every hostile card
 assert.ok(cards.every(card => /data-speed="[\d.]+"/.test(card)), 'every hostile card must declare base speed');
 assert.ok(cards.every(card => /data-cash="\d+"/.test(card)), 'every hostile card must declare base cash');
 assert.ok(cards.every(card => /data-speed-cap="[\d.]+"/.test(card)), 'every hostile card must declare its speed cap');
+assert.ok(cards.some(card => /data-boss="1"/.test(card)), 'the boss card must be flagged for the frozen-stats rule');
 assert.match(index, /id="hostile-wave-tag"/, 'the hostile panel must expose the current-wave tag');
 assert.ok(i18nHasWaveTag(), 'the wave tag must have an i18n entry');
 
