@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "npm run build && node tests/texture-assets.test.js && node tests/leaderboard-store.test.js && node tests/leaderboard-ui.test.js && node tests/control-layer.test.js && node tests/human-mode.test.js && node tests/leaderboard-session.test.js && node tests/leaderboard-client.test.js && node tests/leaderboard-sync.test.js && node tests/leaderboard-history.test.js && node tests/audio-manager.test.js && npm run test:agent",
+    "test": "npm run build && node tests/texture-assets.test.js && node tests/leaderboard-store.test.js && node tests/leaderboard-ui.test.js && node tests/control-layer.test.js && node tests/human-mode.test.js && node tests/leaderboard-session.test.js && node tests/leaderboard-client.test.js && node tests/leaderboard-sync.test.js && node tests/leaderboard-history.test.js && node tests/audio-manager.test.js && npm run test:agent && node tests/i18n.test.js",
     "test:agent": "tsc -p tsconfig.test.json && node tests/agent/play-mode.test.js && node tests/agent/game-actions.test.js && node tests/agent/game-loop.test.js && node tests/agent/strategy-store.test.js && node tests/agent/strategy-library.test.js && node tests/agent/strategy-limits.test.js && node tests/agent/agent-runtime.test.js && node tests/agent/snapshot.test.js && node tests/agent/spawn-settings.test.js",
     "build:server": "tsc -p tsconfig.server.json",
     "test:server": "npm run build:server && node --test \"server-dist/tests/*.test.js\""
