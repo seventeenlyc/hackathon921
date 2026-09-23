@@ -40,27 +40,29 @@ assert.match(styles, /#inert[\s\S]*\.leaderboard-panel/,
 assert.doesNotMatch(uiSource, /No scores yet[\s\S]{0,180}return;/,
     'Empty leaderboard must not return before rendering the current-user footer');
 assert.match(index, /id="control-layer"/, 'the page must expose a stable control-layer root');
-assert.match(index, /class="control-card status-panel/, 'the page must expose the lower-left status region');
-assert.match(index, /class="control-card chatbox-panel/, 'the page must expose the lower-right Chatbox region');
+assert.match(index, /class="control-card status-panel/, 'the page must expose the ghost status region');
+assert.match(index, /class="control-card chatbox-panel/, 'the page must expose the directive (chatbox) region');
 const statusStart = index.indexOf('class="control-card status-panel"');
 const statusClose = index.indexOf('</section>', statusStart);
-const towerPanel = index.indexOf('class="tower-panel"');
+const towerPanel = index.indexOf('class="tower-panel');
 assert.ok(statusStart >= 0 && statusClose >= 0 && towerPanel > statusClose,
-    'the tower panel must not obscure the left-side wave status card');
+    'the tactical database must come after the left-rail sections in source order');
 assert.match(index, /id="controls-collapse"/, 'the page must expose an accessible collapse control');
 assert.match(index, /tabindex="0"/, 'the battlefield must be keyboard focusable');
 assert.match(index, /id="towers-wrapper"/, 'the page must expose the human deployable tower mount');
-assert.match(styles, /\.leaderboard-panel[\s\S]*position:\s*fixed[\s\S]*left:\s*0;/,
-    'the leaderboard must stay pinned to the primary view\'s upper-left corner');
+assert.match(index, /class="tactical-header"/, 'the page must expose the workstation header strip');
+assert.match(index, /id="threat-list"/, 'the page must expose the threat information readout');
+assert.match(styles, /#inert > \.leaderboard-panel[\s\S]*position:\s*fixed[\s\S]*right:\s*12px;/,
+    'the leaderboard fallback must pin to the top-right like the right rail');
 assert.match(styles, /\.leaderboard-panel[\s\S]*pointer-events:\s*auto;/,
     'the leaderboard must opt back into pointer events inside the click-through control layer');
-assert.match(index, /class="left-rail"[\s\S]*id="leaderboard-slot"[\s\S]*class="tower-panel"[\s\S]*<\/div>/,
-    'the leaderboard and tower catalogue must share a left rail in leaderboard-first order');
-assert.match(styles, /#inert\.mode-ai \.left-rail[\s\S]*display:\s*flex[\s\S]*flex-direction:\s*column;/,
-    'the AI left rail must lay its panels out vertically');
-assert.match(styles, /#inert\.mode-ai \.left-rail \.tower-panel[\s\S]*position:\s*static;/,
-    'the AI tower catalogue must flow directly below the leaderboard instead of overlaying it');
-assert.match(styles, /#inert\.mode-human \.chatbox-panel/, 'the AI strategy panel must stay hidden in human mode');
+assert.match(index, /class="rail rail-right"[\s\S]*id="leaderboard-slot"[\s\S]*class="control-card items-panel"/,
+    'the right rail must lead with the network archive and close with battle items');
+assert.match(styles, /\.rail-left,[\s\S]*?flex-direction:\s*column;/,
+    'the workstation rails must lay their panels out vertically');
+assert.match(styles, /\.database-panel \{[\s\S]*?position:\s*absolute;/,
+    'the tactical database must be its own bottom-center surface');
+assert.match(styles, /#inert\.mode-human \.chatbox-panel/, 'the directive panel must stay hidden in human mode');
 assert.match(strategySource, /getControlLayer\(\)\.hide\(\)/,
     'valid strategy submission must hide the control layer after queueing');
 assert.match(strategySource, /showHint\(\)/,
