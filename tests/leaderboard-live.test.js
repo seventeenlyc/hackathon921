@@ -174,6 +174,7 @@ async function test(name, fn) {
 
     await test('the current player score is submitted at each reached wave and after username entry', () => {
         const submissions = [];
+        const musicWaves = [];
         let username = 'Alice';
         const waveManager = { waveCounter: 1, looping: true, setPlanner() {}, setInterWaveDelay() {}, start() { this.onWaveReached(this.waveCounter); } };
         const game = loadSource('Game.ts', {
@@ -206,7 +207,7 @@ async function test(name, fn) {
             './DecisionSummary': { DecisionSummary: class {} },
             './i18n': { t: key => key },
             './leaderboard/RunSync': { runSync: { enqueuePrompt() {}, retryPending() {} } },
-            './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, startMusic() {} } },
+            './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, startMusic() {}, setWave: wave => musicWaves.push(wave) } },
         }, {
             window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {} },
             setInterval: () => 1,
@@ -225,6 +226,7 @@ async function test(name, fn) {
         // wave 2. Wave 3 is skipped while no username is set, then Bob's manual
         // recordReachedWave() picks the current counter back up.
         assert.deepStrictEqual(submissions, [['Alice', 2, 'ai'], ['Bob', 3, 'ai']]);
+        assert.deepStrictEqual(musicWaves, [3, 4]);
     });
 
     await test('human mode records wave and submits with mode human', () => {
@@ -262,7 +264,7 @@ async function test(name, fn) {
             './DecisionSummary': { DecisionSummary: class {} },
             './i18n': { t: key => key },
             './leaderboard/RunSync': { runSync: { prepareRun() {}, enqueuePrompt() {}, retryPending() {} } },
-            './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, startMusic() {} } },
+            './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, startMusic() {}, setWave() {} } },
         }, {
             window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {} },
             setInterval: () => 1,

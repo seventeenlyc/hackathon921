@@ -86,6 +86,7 @@ class Game {
         if (wave > this.lastSoundWave) {
             this.lastSoundWave = wave;
             audioManager.playWaveReached();
+            audioManager.setWave(wave + 1);
         }
         const username = getSessionUsername();
         if (username) submitRunScore(username, wave, playMode);

@@ -2,14 +2,16 @@ export interface AudioLike {
     loop: boolean;
     currentTime: number;
     volume: number;
+    onended: HTMLAudioElement['onended'];
     play(): void | Promise<void>;
     pause(): void;
 }
 
 export type AudioFactory = (src: string) => AudioLike;
 
+declare const __BACKGROUND_TRACKS__: readonly string[];
+
 const AUDIO_PATHS = {
-    music: '/audio/background.mp3',
     wave: '/audio/wave.wav',
     gameOver: '/audio/game-over.wav',
 } as const;
@@ -21,7 +23,11 @@ function defaultAudioFactory(src: string): AudioLike {
 /** Optional media hooks that never own or mutate deterministic game state. */
 export class AudioManager {
     private readonly factory: AudioFactory;
+    private readonly backgroundTracks: readonly string[];
+    private readonly random: () => number;
     private music: AudioLike | null = null;
+    private lastMusicIndex = -1;
+    private currentWave = 1;
     private wave: AudioLike | null = null;
     private gameOver: AudioLike | null = null;
     private muted = false;
@@ -29,25 +35,40 @@ export class AudioManager {
     private waveActive = false;
     private gameOverPlayed = false;
 
-    constructor(factory: AudioFactory = defaultAudioFactory) {
+    constructor(
+        factory: AudioFactory = defaultAudioFactory,
+        backgroundTracks: readonly string[] = __BACKGROUND_TRACKS__,
+        random: () => number = Math.random,
+    ) {
         this.factory = factory;
+        this.backgroundTracks = backgroundTracks;
+        this.random = random;
     }
 
     startMusic(): void {
-        if (this.muted || this.musicStarted) return;
-        const audio = this.getAudio('music');
+        if (this.muted || this.musicStarted || this.gameOverPlayed || this.currentWave > 200) return;
+        const audio = this.music || this.createMusic();
         if (!audio) return;
-        audio.loop = true;
+        audio.loop = false;
         audio.volume = 0.24;
         this.musicStarted = true;
         try {
             const result = audio.play();
             if (result && typeof (result as Promise<void>).catch === 'function') {
-                void (result as Promise<void>).catch(() => { this.musicStarted = false; });
+                void (result as Promise<void>).catch(() => {
+                    if (this.music === audio) this.musicStarted = false;
+                });
             }
         } catch (error) {
             this.musicStarted = false;
         }
+    }
+
+    /** Advance the non-simulation playlist boundary after a completed wave. */
+    setWave(wave: number): void {
+        if (!Number.isInteger(wave) || wave <= this.currentWave) return;
+        this.currentWave = wave;
+        if (wave > 200) this.stopMusic();
     }
 
     stopMusic(): void {
@@ -99,6 +120,30 @@ export class AudioManager {
 
     isMuted(): boolean {
         return this.muted;
+    }
+
+    private createMusic(): AudioLike | null {
+        const count = this.backgroundTracks.length;
+        if (!count) return null;
+        const value = this.random();
+        const sample = Number.isFinite(value) ? Math.max(0, Math.min(value, 1 - Number.EPSILON)) : 0;
+        const index = this.lastMusicIndex < 0 || count === 1
+            ? Math.floor(sample * count)
+            : (this.lastMusicIndex + 1 + Math.floor(sample * (count - 1))) % count;
+        try {
+            const audio = this.factory(this.backgroundTracks[index]);
+            this.lastMusicIndex = index;
+            this.music = audio;
+            audio.onended = () => {
+                if (this.music !== audio || !this.musicStarted) return;
+                this.music = null;
+                this.musicStarted = false;
+                this.startMusic();
+            };
+            return audio;
+        } catch (error) {
+            return null;
+        }
     }
 
     private getAudio(kind: keyof typeof AUDIO_PATHS): AudioLike | null {

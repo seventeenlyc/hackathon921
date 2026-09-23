@@ -3,13 +3,15 @@ const fs = require('fs');
 const path = require('path');
 const ts = require('typescript');
 
-function loadAudioManager() {
+function loadAudioManager(tracks = ['/audio/background/background.mp3']) {
     const source = fs.readFileSync(path.join(__dirname, '..', 'src', 'AudioManager.ts'), 'utf8');
     const js = ts.transpileModule(source, {
         compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2017 },
     }).outputText;
     const moduleObj = { exports: {} };
-    new Function('module', 'exports', 'require', js)(moduleObj, moduleObj.exports, require);
+    new Function('module', 'exports', 'require', '__BACKGROUND_TRACKS__', js)(
+        moduleObj, moduleObj.exports, require, tracks,
+    );
     return moduleObj.exports.AudioManager;
 }
 
@@ -21,6 +23,7 @@ class FakeAudio {
         this.currentTime = 0;
         this.playCount = 0;
         this.pauseCount = 0;
+        this.onended = null;
     }
     play() {
         this.playCount += 1;
@@ -29,6 +32,7 @@ class FakeAudio {
         return Promise.resolve();
     }
     pause() { this.pauseCount += 1; }
+    end() { if (this.onended) this.onended(); }
 }
 
 async function test(name, fn) {
@@ -39,7 +43,7 @@ async function test(name, fn) {
 (async () => {
     const AudioManager = loadAudioManager();
 
-    await test('music loops, reuses its element, and does not reset on repeated start', async () => {
+    await test('music reuses its element and does not reset on repeated start', async () => {
         const created = [];
         const manager = new AudioManager(src => {
             const audio = new FakeAudio(src);
@@ -50,11 +54,53 @@ async function test(name, fn) {
         created[0].currentTime = 12;
         manager.startMusic();
         assert.strictEqual(created.length, 1);
-        assert.strictEqual(created[0].src, '/audio/background.mp3');
-        assert.strictEqual(created[0].loop, true);
+        assert.strictEqual(created[0].src, '/audio/background/background.mp3');
+        assert.strictEqual(created[0].loop, false);
         assert.strictEqual(created[0].volume, 0.24);
         assert.strictEqual(created[0].playCount, 1);
         assert.strictEqual(created[0].currentTime, 12);
+    });
+
+    await test('ended tracks choose another folder track without an immediate repeat', async () => {
+        const tracks = [
+            '/audio/background/a.mp3',
+            '/audio/background/b.ogg',
+            '/audio/background/c.wav',
+        ];
+        const created = [];
+        const randomValues = [0, 0, 0.9];
+        const manager = new AudioManager(src => {
+            const audio = new FakeAudio(src);
+            created.push(audio);
+            return audio;
+        }, tracks, () => randomValues.shift());
+
+        manager.startMusic();
+        created[0].end();
+        created[1].end();
+
+        assert.deepStrictEqual(created.map(audio => audio.src), [tracks[0], tracks[1], tracks[0]]);
+        assert.ok(created.every(audio => audio.volume === 0.24 && audio.loop === false));
+    });
+
+    await test('music stops after wave 200 and cannot restart on unmute', async () => {
+        const created = [];
+        const manager = new AudioManager(src => {
+            const audio = new FakeAudio(src);
+            created.push(audio);
+            return audio;
+        });
+        manager.setWave(200);
+        manager.startMusic();
+        manager.setWave(201);
+        manager.setMuted(true);
+        manager.setMuted(false);
+        manager.startMusic();
+        created[0].end();
+
+        assert.strictEqual(created.length, 1);
+        assert.strictEqual(created[0].playCount, 1);
+        assert.ok(created[0].pauseCount >= 1);
     });
 
     await test('playback rejection and synchronous media errors are non-fatal', async () => {
@@ -90,7 +136,7 @@ async function test(name, fn) {
     });
 
     await test('background asset is MP3 and cue assets remain valid PCM WAV files', () => {
-        const background = fs.readFileSync(path.join(__dirname, '..', 'public', 'audio', 'background.mp3'));
+        const background = fs.readFileSync(path.join(__dirname, '..', 'public', 'audio', 'background', 'background.mp3'));
         const startsWithId3 = background.toString('ascii', 0, 3) === 'ID3';
         const startsWithMpegFrame = background.length > 1 && background[0] === 0xff && (background[1] & 0xe0) === 0xe0;
         assert.ok(startsWithId3 || startsWithMpegFrame);
@@ -103,5 +149,17 @@ async function test(name, fn) {
             assert.strictEqual(file.toString('ascii', 12, 16), 'fmt ');
             assert.ok(file.length > 44);
         }
+    });
+
+    await test('Vite playlist includes every supported audio file in the background folder', async () => {
+        const { default: config } = await import('../vite.config.mjs');
+        const tracks = JSON.parse(config.define.__BACKGROUND_TRACKS__);
+        const directory = path.join(__dirname, '..', 'public', 'audio', 'background');
+        const expected = fs.readdirSync(directory)
+            .filter(name => /\.(mp3|ogg|wav|m4a)$/i.test(name))
+            .sort()
+            .map(name => `/audio/background/${encodeURIComponent(name)}`);
+        assert.deepStrictEqual(tracks, expected);
+        assert.ok(tracks.length > 0);
     });
 })();
