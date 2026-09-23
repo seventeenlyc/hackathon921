@@ -83,7 +83,7 @@ async function test(name, fn) {
         assert.ok(created.every(audio => audio.volume === 0.24 && audio.loop === false));
     });
 
-    await test('music stops after wave 200 and cannot restart on unmute', async () => {
+    await test('wave 201 switches from the playlist to the fixed final track', async () => {
         const created = [];
         const manager = new AudioManager(src => {
             const audio = new FakeAudio(src);
@@ -93,14 +93,18 @@ async function test(name, fn) {
         manager.setWave(200);
         manager.startMusic();
         manager.setWave(201);
+        assert.strictEqual(created[0].pauseCount, 1);
+        assert.strictEqual(created[1].src, '/audio/final_bgm.mp3');
+        assert.strictEqual(created[1].loop, true);
+        assert.strictEqual(created[1].volume, 0.24);
+        assert.strictEqual(created[1].playCount, 1);
         manager.setMuted(true);
         manager.setMuted(false);
         manager.startMusic();
         created[0].end();
 
-        assert.strictEqual(created.length, 1);
-        assert.strictEqual(created[0].playCount, 1);
-        assert.ok(created[0].pauseCount >= 1);
+        assert.strictEqual(created.length, 2);
+        assert.strictEqual(created[1].playCount, 2);
     });
 
     await test('playback rejection and synchronous media errors are non-fatal', async () => {
@@ -141,6 +145,11 @@ async function test(name, fn) {
         const startsWithMpegFrame = background.length > 1 && background[0] === 0xff && (background[1] & 0xe0) === 0xe0;
         assert.ok(startsWithId3 || startsWithMpegFrame);
         assert.ok(background.length > 0);
+
+        const finalTrack = fs.readFileSync(path.join(__dirname, '..', 'public', 'audio', 'final_bgm.mp3'));
+        const finalStartsWithId3 = finalTrack.toString('ascii', 0, 3) === 'ID3';
+        const finalStartsWithMpegFrame = finalTrack.length > 1 && finalTrack[0] === 0xff && (finalTrack[1] & 0xe0) === 0xe0;
+        assert.ok(finalStartsWithId3 || finalStartsWithMpegFrame);
 
         for (const name of ['wave.wav', 'game-over.wav']) {
             const file = fs.readFileSync(path.join(__dirname, '..', 'public', 'audio', name));

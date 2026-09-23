@@ -15,6 +15,7 @@ const AUDIO_PATHS = {
     wave: '/audio/wave.wav',
     gameOver: '/audio/game-over.wav',
 } as const;
+const FINAL_MUSIC_PATH = '/audio/final_bgm.mp3';
 
 function defaultAudioFactory(src: string): AudioLike {
     return new Audio(src);
@@ -46,10 +47,11 @@ export class AudioManager {
     }
 
     startMusic(): void {
-        if (this.muted || this.musicStarted || this.gameOverPlayed || this.currentWave > 200) return;
-        const audio = this.music || this.createMusic();
+        if (this.muted || this.musicStarted || this.gameOverPlayed) return;
+        const isFinalWave = this.currentWave > 200;
+        const audio = this.music || (isFinalWave ? this.createFinalMusic() : this.createMusic());
         if (!audio) return;
-        audio.loop = false;
+        audio.loop = isFinalWave;
         audio.volume = 0.24;
         this.musicStarted = true;
         try {
@@ -67,8 +69,13 @@ export class AudioManager {
     /** Advance the non-simulation playlist boundary after a completed wave. */
     setWave(wave: number): void {
         if (!Number.isInteger(wave) || wave <= this.currentWave) return;
+        const wasPlaylistWave = this.currentWave <= 200;
         this.currentWave = wave;
-        if (wave > 200) this.stopMusic();
+        if (wasPlaylistWave && wave > 200) {
+            this.stopMusic();
+            this.music = null;
+            this.startMusic();
+        }
     }
 
     stopMusic(): void {
@@ -141,6 +148,15 @@ export class AudioManager {
                 this.startMusic();
             };
             return audio;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    private createFinalMusic(): AudioLike | null {
+        try {
+            this.music = this.factory(FINAL_MUSIC_PATH);
+            return this.music;
         } catch (error) {
             return null;
         }
