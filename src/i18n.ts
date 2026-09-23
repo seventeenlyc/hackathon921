@@ -60,7 +60,7 @@ const STRINGS: { [key: string]: Entry } = {
     'strategy.active': {zh: 'EXECUTING ORDER · 第 {wave} 波起', en: 'EXECUTING ORDER · Active from wave {wave}'},
     'strategy.tooLong': {zh: '命令 {length} 个字符，超过终端上限 {max}。', en: 'Order is {length} characters; terminal limit is {max}.'},
 
-    'reasoning.title': {zh: 'AI 决策终端', en: 'AI DECISION TERMINAL'},
+    'reasoning.title': {zh: '塔奇克马判断', en: 'AI DECISION TERMINAL'},
     'reasoning.status.waiting': {zh: '等待分析', en: 'AWAITING ANALYSIS'},
     'reasoning.status.planning': {zh: '战术分析中', en: 'ANALYZING BATTLEFIELD'},
     'reasoning.status.ready': {zh: '本轮决策摘要', en: 'WAVE DECISION SUMMARY'},
