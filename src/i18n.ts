@@ -63,6 +63,17 @@ const STRINGS: { [key: string]: Entry } = {
 
     'speed.label': {zh: '速度 x{speed}', en: 'Speed x{speed}'},
 
+    'oil.label': {zh: '天然机油', en: 'Natural Oil'},
+    'oil.button': {zh: '天然机油，花费 {cost} 金币，攻速提高 50% 持续 5 秒', en: 'Natural Oil, costs {cost} cash, increases attack speed by 50% for 5 seconds'},
+    'oil.ready': {zh: '可使用 · 2000 ¢', en: 'Ready · 2000 ¢'},
+    'oil.notRunning': {zh: '仅运行时可使用', en: 'Available while running'},
+    'oil.active': {zh: '生效中 · 剩余 {seconds} 秒', en: 'Active · {seconds}s left'},
+    'oil.cooldown': {zh: '冷却中 · 剩余 {seconds} 秒', en: 'Cooldown · {seconds}s left'},
+    'oil.failure.NOT_RUNNING': {zh: '仅运行时可使用', en: 'Available while running'},
+    'oil.failure.ALREADY_ACTIVE': {zh: '机油正在生效', en: 'Natural Oil is already active'},
+    'oil.failure.COOLDOWN': {zh: '机油仍在冷却', en: 'Natural Oil is cooling down'},
+    'oil.failure.INSUFFICIENT_FUNDS': {zh: '金币不足，需要 2000 ¢', en: 'Insufficient cash: 2000 ¢ required'},
+
     'result.gameOver': {zh: '游戏结束', en: 'Game Over'},
     'result.wave': {zh: '到达波次', en: 'Wave reached'},
     'result.rank': {zh: '名次', en: 'Rank'},

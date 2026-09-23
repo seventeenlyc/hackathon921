@@ -27,6 +27,7 @@ import {decisionLog} from "./DecisionLog";
 import {queueStrategy, startRun} from "./StrategyQueue";
 import {humanPlanner} from "./WavesManager";
 import {playMode, switchPlayMode} from "./PlayMode";
+import {naturalOilController} from "./items/NaturalOil";
 
 // Settlement stats gathered across the run (see the result screen).
 let runStartedAt: number | null = null;
@@ -92,11 +93,13 @@ class Game {
         // Fast mode advances the deterministic simulation more times per real
         // frame instead of changing the tick rate, so entity maths is untouched.
         for (let step = 0; step < gameLoop.speed; ++step) {
+            naturalOilController.update(1000 / fps, gameLoop.state === 'running');
             map.update();
             munitionManager.update()
             enemyManager.update()
             if (playMode === 'human') towerPlacer.update();
         }
+        interfaceManager.updateNaturalOil();
     }
 
     drawLoop() {

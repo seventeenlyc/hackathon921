@@ -14,6 +14,10 @@ import {towerPlacer} from "./TowerPlacer";
 import {getControlLayer} from "./ControlLayer";
 import {applyStaticTranslations, onLangChange, t, toggleLang} from './i18n';
 import {audioManager} from './AudioManager';
+import {cashManager} from './CashManager';
+import {naturalOilController, OilActivationResult} from './items/NaturalOil';
+
+type OilFailureReason = Extract<OilActivationResult, {ok: false}>['reason'];
 
 /** Summary shown on the settlement screen after the base falls. */
 export interface RunStats {
@@ -50,6 +54,9 @@ class InterfaceManager {
     private pauseButton = document.getElementById('pause') as HTMLButtonElement;
     private resumeButton = document.getElementById('resume') as HTMLButtonElement;
     private audioButton = document.getElementById('audio-toggle') as HTMLButtonElement | null;
+    private naturalOilButton = document.getElementById('natural-oil') as HTMLButtonElement;
+    private naturalOilStatus = document.getElementById('natural-oil-status')!;
+    private naturalOilFailure: OilFailureReason | null = null;
     private controlLayer = getControlLayer();
     private lastTower: Tower | null = null;
     public snackbar = new Snackbar();
@@ -81,9 +88,15 @@ class InterfaceManager {
         gameLoop.onChange(state => {
             this.setState(state);
         });
+        this.naturalOilButton.addEventListener('click', () => {
+            const result = naturalOilController.activate(gameLoop.state === 'running', cashManager);
+            this.naturalOilFailure = result.ok ? null : result.reason;
+            this.updateNaturalOil();
+        });
         this.setState(gameLoop.state);
         this.updateSpeedLabel();
         this.updateAudioLabel();
+        this.updateNaturalOil();
 
         // The class scopes which half of the UI is visible (see styles.less).
         document.getElementById('inert')!.classList.add('mode-' + playMode);
@@ -95,6 +108,7 @@ class InterfaceManager {
             this.setState(gameLoop.state);
             this.updateSpeedLabel();
             this.updateAudioLabel();
+            this.updateNaturalOil();
             this.setupModeButton();
             if (this.lastTower) this.showTowerStats(this.lastTower);
         });
@@ -129,6 +143,21 @@ class InterfaceManager {
         this.pauseButton.hidden = state === 'paused';
         this.pauseButton.disabled = state === 'idle' || state === 'planning';
         this.resumeButton.hidden = state !== 'paused';
+        this.updateNaturalOil();
+    }
+
+    updateNaturalOil() {
+        const state = naturalOilController.state;
+        this.naturalOilButton.disabled = state.kind !== 'ready' || gameLoop.state !== 'running';
+        this.naturalOilButton.setAttribute('aria-label', t('oil.button', {cost: 2000}));
+        if (state.kind === 'active' || state.kind === 'cooldown') {
+            const seconds = Math.ceil(state.remainingMs / 1000);
+            this.naturalOilStatus.textContent = t(`oil.${state.kind}`, {seconds});
+            return;
+        }
+        this.naturalOilStatus.textContent = this.naturalOilFailure
+            ? t(`oil.failure.${this.naturalOilFailure}`)
+            : t(gameLoop.state === 'running' ? 'oil.ready' : 'oil.notRunning');
     }
 
     updateSpeedLabel() {

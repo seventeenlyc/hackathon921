@@ -184,6 +184,7 @@ async function test(name, fn) {
             './TowerPlacer': { towerPlacer: { placing: false, update() {}, draw() {} } },
             './InterfaceManager': { interfaceManager: { showGameOver() {}, setResultRank() {} } },
             './CashManager': { cashManager: { getBalance: () => 0 } },
+            './items/NaturalOil': { naturalOilController: { update() {} } },
             './entities/towers/Tower': { Tower: class {} },
             './WavesManager': { waveManager, humanPlanner: { plan: async () => {} } },
             './PlayMode': { playMode: 'ai', switchPlayMode() {} },
