@@ -11,6 +11,7 @@ import {tacticalItemsController} from "../../items/TacticalItems";
 import {t} from "../../i18n";
 
 const frameDuration = 1000 / fps;
+const rotationSpeedRadiansPerSecond = Math.PI * 2;
 
 export abstract class Tower extends GridRenderable {
     abstract towerType: TowerType;
@@ -19,6 +20,7 @@ export abstract class Tower extends GridRenderable {
     abstract cost: number;
     private countdown: number = 0;
     protected canShoot: boolean = true;
+    protected turretRotation: number = 0;
     public traversable = false;
     abstract target: Enemy | undefined;
     abstract aimRadius: number;
@@ -111,6 +113,24 @@ export abstract class Tower extends GridRenderable {
             this.targetInRange = false;
         }
 
+        this.updateTurretRotation();
+
+    }
+
+    private updateTurretRotation(): void {
+        if (!this.target || !this.target.alive) {
+            return;
+        }
+
+        const targetAngle = Math.atan2(this.target.y - this.center.y, this.target.x - this.center.x);
+        const angleDifference = Math.atan2(
+            Math.sin(targetAngle - this.turretRotation),
+            Math.cos(targetAngle - this.turretRotation)
+        );
+        const maxStep = rotationSpeedRadiansPerSecond * frameDuration / 1000;
+        const step = Math.sign(angleDifference) * Math.min(Math.abs(angleDifference), maxStep);
+
+        this.turretRotation += step;
     }
 
     drawAimingRadius(ctx: CanvasRenderingContext2D) {
@@ -122,10 +142,8 @@ export abstract class Tower extends GridRenderable {
         ctx.fillStyle = tmpColor;
     }
 
-    // Whole-unit artwork stays upright even when the tower tracks a target;
-    // projectiles and beams still use the target position independently.
-    protected drawTexture(ctx: CanvasRenderingContext2D) {
-        textureManager.draw(ctx, this.texturePath, this.center.x, this.center.y, this.width, this.width);
+    protected drawTexture(ctx: CanvasRenderingContext2D, rotation = 0) {
+        textureManager.draw(ctx, this.texturePath, this.center.x, this.center.y, this.width, this.width, rotation);
     }
 
     draw(ctx: CanvasRenderingContext2D): void {
