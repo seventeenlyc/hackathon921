@@ -56,6 +56,8 @@ function mountedInterface() {
     const i18n = loadSource('src/i18n.ts', {}, {document, location: {search: '?lang=zh'}});
     const {NaturalOilController} = require('../.test-build/items/NaturalOil.js');
     const naturalOilController = new NaturalOilController();
+    const {TacticalItemsController} = require('../.test-build/items/TacticalItems.js');
+    const tacticalItemsController = new TacticalItemsController();
     const cashManager = loadSource('src/CashManager.ts', {
         './config.json': {initialBalance: 200},
     }, {document}).cashManager;
@@ -77,7 +79,7 @@ function mountedInterface() {
         SniperTower: FakeTower, LaserTower: FakeTower};
     const dependencies = {
         './../package.json': {version: 'test'},
-        './tools/Snackbar': {Snackbar: class {}},
+        './tools/Snackbar': {Snackbar: class { toast(text) { this.lastToast = text; } }},
         './entities/towers/LaserTower': {LaserTower: tower.LaserTower},
         './entities/towers/SlowTower': {SlowTower: tower.SlowTower},
         './tools/TextureManager': {textureManager: {onLoaded() {}}},
@@ -93,7 +95,7 @@ function mountedInterface() {
         './AudioManager': {audioManager: {isMuted: () => false, setMuted() {}, startMusic() {}}},
         './CashManager': {cashManager},
         './items/NaturalOil': {naturalOilController},
-        './items/TacticalItems': {tacticalItemsController: {getState: () => ({kind: 'ready'}), cost: () => 1000, activate: () => ({ok: true})}},
+        './items/TacticalItems': {tacticalItemsController},
         './tools/enemyCatalog': {
             ENEMY_TYPE_IDS: ['simple', 'fast', 'armored', 'healer', 'boss'],
             countEnemiesByType: () => ({simple: 0, fast: 0, armored: 0, healer: 0, boss: 0}),
@@ -106,7 +108,7 @@ function mountedInterface() {
     const interfaceManager = loadSource('src/InterfaceManager.ts', dependencies, {document}).interfaceManager;
     return {button: document.getElementById('natural-oil'),
         status: document.getElementById('natural-oil-status'), cashManager,
-        naturalOilController, gameLoop, interfaceManager,
+        naturalOilController, tacticalItemsController, gameLoop, interfaceManager, document, i18n,
         tachikomaTab: document.getElementById('db-tab-tachikoma'),
         hostileTab: document.getElementById('db-tab-hostile'),
         tachikomaView: document.getElementById('db-view-tachikoma'),
@@ -115,15 +117,15 @@ function mountedInterface() {
 
 const itemsHeading = index.indexOf('id="items-heading"');
 const palette = index.indexOf('id="towers-wrapper"');
-const item = index.indexOf('id="natural-oil"');
+const oilItem = index.indexOf('id="natural-oil"');
 const stats = index.indexOf('id="towers-stats"');
-assert.ok(itemsHeading >= 0 && item > itemsHeading,
+assert.ok(itemsHeading >= 0 && oilItem > itemsHeading,
     'Natural Oil must live inside the BATTLE ITEMS panel');
 assert.ok(palette >= 0 && stats > palette,
     'the tower catalogue and its stats must keep their order in the database');
-assert.match(index.slice(item, item + 400), /天然机油/);
-assert.match(index.slice(item, item + 400), /1000/);
-assert.match(index.slice(item, item + 600), /aria-live="polite"/);
+assert.match(index.slice(oilItem, oilItem + 400), /天然机油/);
+assert.match(index.slice(oilItem, oilItem + 400), /1000/);
+assert.match(index.slice(oilItem, oilItem + 600), /aria-live="polite"/);
 assert.match(styles, /\.natural-oil-icon[\s\S]*background:/,
     'the item needs a CSS color-block icon');
 assert.match(gameSource, /for \(let step = 0; step < gameLoop\.speed; \+\+step\) \{[\s\S]*naturalOilController\.update\(1000 \/ fps, gameLoop\.state === 'running'\)/,
@@ -204,3 +206,45 @@ oil.update(16, false);
 assert.deepStrictEqual(oil.state, {kind: 'cooldown', remainingMs: 10000});
 
 console.log('Natural Oil UI click, state, wallet, and simulation timing assertions passed.');
+
+const tactical = mountedInterface();
+const item = name => tactical.document.getElementById(`item-${name}`);
+const label = id => tactical.document.getElementById(id).textContent;
+assert.strictEqual(item('tripo').disabled, true, 'tactical items stay disabled before RUNNING');
+assert.strictEqual(label('item-tripo-state'), '待机');
+tactical.gameLoop.change('running');
+assert.strictEqual(item('evomap').disabled, false, 'free EvoMap is usable during RUNNING');
+assert.strictEqual(label('item-evomap-cost'), '免费');
+tactical.i18n.setLang('en');
+assert.strictEqual(label('item-evomap-cost'), 'FREE', 'language switch re-renders dynamic prices');
+assert.strictEqual(label('item-tripo-state'), 'READY', 'language switch re-renders item states');
+tactical.i18n.setLang('zh');
+item('evomap').click();
+assert.strictEqual(tactical.cashManager.getBalance(), 2200, 'first EvoMap use is free');
+assert.strictEqual(item('evomap').disabled, true, 'cooldown prevents a duplicate activation');
+assert.match(label('item-evomap-state'), /冷却/);
+tactical.tacticalItemsController.update(10000, true);
+tactical.interfaceManager.updateNaturalOil();
+item('evomap').click();
+assert.strictEqual(tactical.cashManager.getBalance(), 2200, 'second EvoMap use is free');
+tactical.tacticalItemsController.update(10000, true);
+tactical.interfaceManager.updateNaturalOil();
+assert.strictEqual(label('item-evomap-cost'), '1000 ¢', 'third EvoMap use shows its real cost');
+item('evomap').click();
+assert.strictEqual(tactical.cashManager.getBalance(), 1200);
+item('tripo').click();
+assert.strictEqual(tactical.cashManager.getBalance(), 200);
+assert.strictEqual(item('tripo').disabled, true, 'active buff cannot be activated twice');
+assert.match(label('item-tripo-state'), /生效/);
+tactical.tacticalItemsController.update(5000, true);
+tactical.interfaceManager.updateNaturalOil();
+assert.match(label('item-tripo-state'), /冷却/);
+tactical.tacticalItemsController.update(10000, true);
+tactical.interfaceManager.updateNaturalOil();
+assert.strictEqual(item('tripo').disabled, true, 'unaffordable item cannot be accidentally used');
+assert.strictEqual(label('item-tripo-state'), '资源不足');
+assert.strictEqual(item('seeed').disabled, true);
+assert.strictEqual(item('hypershell').disabled, true);
+item('tripo').click();
+assert.strictEqual(tactical.cashManager.getBalance(), 200, 'disabled click never spends cash');
+console.log('Tactical item UI activation, cooldown, pricing, affordability, and language assertions passed.');
