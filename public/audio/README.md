@@ -33,7 +33,7 @@ Confirm the rights for any additional tracks.
 - `AI戦队タチコマンズ.mp4`
 - `Blue.mp4`
 - `Freak Out (151波次专用曲).mp4`
-- `Hi?.mp4`
+- `Hi.mp4`
 - `M01 謡I-Making of Cyborg （201波次启动此曲专用）.mp4`
 - `MVlithium flower(256彩蛋专用）.mp4`
 - `PRAYER~祈~OPEN.mp4`
