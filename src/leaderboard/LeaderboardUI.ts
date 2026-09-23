@@ -7,14 +7,14 @@ import {
 } from './LeaderboardStore';
 import type { LeaderboardEntry, PlayMode, LeaderboardMode } from './LeaderboardStore';
 import {getSessionUsername, setSessionUsername, setSessionAvatar} from './SessionIdentity';
-import {AVATARS, isKnownAvatarId, randomAvatarId} from './AvatarCatalog';
+import {AVATARS, isKnownAvatarId, randomAvatarId, randomUsername} from './AvatarCatalog';
 import type {AvatarId} from './AvatarCatalog';
 import {AVATAR_SRC} from './avatarAssets';
 import { fetchSharedLeaderboard } from './LeaderboardClient';
 import type { RemoteLeaderboard } from './LeaderboardClient';
 import {runSync} from './RunSync';
 import {PromptHistoryDialog} from './PromptHistoryDialog';
-import {onLangChange, t, toggleLang} from '../i18n';
+import {getLang, onLangChange, t, toggleLang} from '../i18n';
 import {playMode} from '../PlayMode';
 
 const TOP_N = 10;
@@ -59,7 +59,12 @@ export class UsernameGate {
             if (id && isKnownAvatarId(id)) this.selectAvatar(id);
         });
         const randomButton = this.overlay.querySelector('.gate-random') as HTMLButtonElement;
-        randomButton.addEventListener('click', () => this.selectAvatar(randomAvatarId()));
+        randomButton.addEventListener('click', () => {
+            this.selectAvatar(randomAvatarId());
+            this.input.value = randomUsername(getLang());
+            this.errorEl.textContent = '';
+            this.updateCounter();
+        });
         const langButton = this.overlay.querySelector('.gate-lang') as HTMLButtonElement;
         langButton.addEventListener('click', () => toggleLang());
         this.input.value = value;
