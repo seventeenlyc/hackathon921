@@ -61,6 +61,45 @@ const DEFAULT_ENDPOINT = '/api/agent/decide';
 const DEFAULT_MAX_ACTIONS = 8;
 const MAX_DECISION_SUMMARY_LENGTH = 240;
 const DEFAULT_TIMEOUT_MS = 12000;
+const TOWER_TYPES = ['canon', 'gatling', 'slow', 'sniper', 'laser'];
+const ITEM_NAMES: { [key: string]: string } = {
+    tripo: 'Tripo',
+    seeed_studio: 'Seeed Studio',
+    evomap: 'EvoMap',
+    hypershell: 'HyperShell',
+};
+
+/** Tool calls remain useful as a localized action plan when the provider omits public text. */
+function actionPlanSummary(actions: AgentAction[]): string | null {
+    if (!actions.length) return null;
+    const first = actions[0];
+    const args = first.arguments || {};
+    let plan: string | null = null;
+
+    if (first.name === 'build_tower' && typeof args.type === 'string' &&
+        TOWER_TYPES.indexOf(args.type) !== -1 &&
+        Number.isSafeInteger(args.i) && Number.isSafeInteger(args.j)) {
+        plan = t('reasoning.plan.build', {
+            type: t(`tower.${args.type}.name`), i: args.i as number, j: args.j as number,
+        });
+    } else if (first.name === 'upgrade_tower' && typeof args.id === 'string' &&
+        /^\d+:\d+$/.test(args.id) && args.id.length <= 20) {
+        plan = t('reasoning.plan.upgrade', {id: args.id});
+    } else if (first.name === 'use_item' && typeof args.item === 'string') {
+        const item = args.item === 'natural_oil'
+            ? t('reasoning.item.naturalOil')
+            : ITEM_NAMES[args.item];
+        if (item) plan = t('reasoning.plan.item', {item});
+    }
+
+    if (!plan) return t('reasoning.plan.generic', {count: actions.length});
+    const full = actions.length > 1
+        ? `${plan} ${t('reasoning.plan.more', {count: actions.length - 1})}`
+        : plan;
+    return full.length <= MAX_DECISION_SUMMARY_LENGTH
+        ? full
+        : t('reasoning.plan.generic', {count: actions.length});
+}
 
 export class AgentRuntime implements Planner {
     private readonly actions: ActionPort;
@@ -161,9 +200,12 @@ export class AgentRuntime implements Planner {
             return;
         }
 
+        const plannedActions = payload.actions.slice(0, this.maxActions);
         const summary = typeof payload.summary === 'string' ? payload.summary.trim() : '';
-        this.onSummary(summary.length > 0 && summary.length <= MAX_DECISION_SUMMARY_LENGTH ? summary : null);
-        payload.actions.slice(0, this.maxActions).forEach(action => this.execute(action, wave));
+        this.onSummary(summary.length > 0 && summary.length <= MAX_DECISION_SUMMARY_LENGTH
+            ? summary
+            : actionPlanSummary(plannedActions));
+        plannedActions.forEach(action => this.execute(action, wave));
     }
 
     private async readErrorMessage(response: Response): Promise<string | null> {

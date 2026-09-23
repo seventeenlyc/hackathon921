@@ -14,9 +14,9 @@
 | 线上地址 | `https://prompt-defense.crowntime.cn` |
 | 上线方式 | **合并到 `main` 自动部署**，没有手动步骤 |
 | PR 上会发生什么 | 跑 `CI` workflow（构建 + 类型检查 + 后端测试），不部署 |
-| 线上现在是什么 | 静态前端 + **排行榜后端服务**（Node.js 22 + SQLite） |
+| 线上现在是什么 | 静态前端 + **排行榜与 LLM 代理后端服务**（Node.js 22 + SQLite） |
 | 数据库 | SQLite，独立文件（`deploy/README.md`） |
-| LLM 代理 | **还不存在** |
+| LLM 代理 | **已实现**：`POST /api/agent/decide`；`GET /api/health` 报告 `providerConfigured` |
 
 ## 一、你的代码怎么上线
 
@@ -73,7 +73,7 @@ npm run test:server  # 后端 API 测试：tsc 编译后由 Node 内置 test run
 
 契约与约束：
 
-- 前端只通过 `/api/` 调用。**不要顺手新增其他服务端能力**——LLM 代理仍未实现。
+- 前端只通过 `/api/` 调用。LLM 代理已在 `server/src/agent.ts` 实现；不要顺手新增其他服务端能力。
 - 成绩写入以**服务端记录的对局证据**为准，不是客户端上报的最终分数（§9）。
 - 改 API 路径或语义时，同步更新 `docs/PRODUCT_CONCEPT.md` §9。
 - 后端 TypeScript 源码在 `server/`，由 CI 用 `npm run build:server` 编译成 JS；**服务器上不构建、
@@ -96,7 +96,7 @@ npm run test:server  # 后端 API 测试：tsc 编译后由 Node 内置 test run
   被地域封锁、`api.openai.com` DNS 被污染；`api.deepseek.com` 通，项目因此选了 DeepSeek
   （见 §14）。
 
-所以服务端代理不是「以后再优化的安全加固」，是**功能前提**。在它存在之前，
+所以服务端代理不是「以后再优化的安全加固」，是**功能前提**。当前代理已由排行榜后端承载；
 前端不要写任何直连模型服务的代码。
 
 ### 3. 构建产物必须是 `dist/`，且必须有 `index.html`
@@ -163,17 +163,16 @@ PR 与部署是两个独立的 workflow：PR 上跑 `CI`，合并到 `main` 才�
 
 需要回滚或服务器出了问题，找项目负责人，操作手册在 `deploy/README.md`。
 
-## 六、还不存在的东西
+## 六、能力状态
 
-别假设它们存在，也不要在没有对应决定的情况下顺手加上：
+以当前代码与部署为准；尚未实现的能力不要在没有对应决定的情况下顺手加上：
 
-| 缺什么 | 状态 |
+| 能力 | 状态 |
 |---|---|
-| 服务端 DeepSeek 代理 | 无代码。后端栈已选型（Node.js 22 内置模块），可复用排行榜服务 |
+| 服务端 DeepSeek 代理 | **已实现**：经会话 token 准入；密钥、系统指令与工具 schema 留在服务端 |
 | 数据库 | SQLite，已用于排行榜（`docs/PRODUCT_CONCEPT.md` §14） |
 | 排行榜持久化 | **已实现**：服务端签发对局会话 + 逐波 append-only，成绩取服务端记录的最大波次（§9） |
-| Agent 运行时 | 无代码。issue #7 的「范围说明」写明待单独开 issue |
+| Agent 运行时 | **已实现**：按波次向代理请求决策，动作通过引擎接口执行 |
 | 监控 / 告警 | 无 |
 
-**当前线上版本不含任何 AI 能力**，就是塔防游戏本身加一个排行榜后端。issue #6 的 P0 验证
-（两个不同 Prompt 产生可见不同的 AI 行为）尚未通过，这是预期内的阶段状态。
+当前线上版本已具备 AI 决策代理和运行时。issue #6 的 P0 验证（两个不同 Prompt 产生可见不同的 AI 行为）仍未通过，不能据此宣称验证完成。
