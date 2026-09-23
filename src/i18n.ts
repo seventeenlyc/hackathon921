@@ -216,7 +216,7 @@ const STRINGS: { [key: string]: Entry } = {
     'map.waveTag': {zh: '波次 {wave}', en: 'WAVE {wave}'},
     'neural.title': {zh: '神经链接', en: 'NEURAL LINK'},
     'items.title': {zh: '支援道具', en: 'BATTLE ITEMS'},
-    'database.title': {zh: '战术数据库', en: 'TACTICAL DATABASE'},
+    'database.title': {zh: '战力数据库', en: 'COMBAT DATABASE'},
     'database.tabHostile': {zh: '敌方情报', en: 'ENEMY INTELLIGENCE'},
     'enemy.stat.hp': {zh: '生命', en: 'HP'},
     'enemy.stat.speed': {zh: '速度', en: 'SPD'},
