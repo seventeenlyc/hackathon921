@@ -48,9 +48,6 @@ class Game {
         map.on('added', () => {
             enemyManager.updatePaths()
         });
-        // THREAT INFORMATION panel: read-only view of live hostiles, polled by the
-        // UI on its own timer — the game loop and the agent boundary stay untouched.
-        interfaceManager.bindThreatSource(() => enemyManager.all());
         // Human-mode runs are not leaderboard entries: the board compares AI
         // strategies, so a hand-played wave would not be comparable (see §9).
         waveManager.onWaveReached = wave => this.recordReachedWave(wave);

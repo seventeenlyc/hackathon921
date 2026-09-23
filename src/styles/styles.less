@@ -686,75 +686,10 @@ body {
       }
     }
 
-    .threat-panel,
     .neural-panel,
     .items-panel {
       flex: none;
       padding: 12px 14px;
-    }
-
-    .threat-wave {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      margin-top: 10px;
-      color: var(--dim);
-      font-size: 10px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-
-      strong {
-        color: var(--accent);
-        font-family: var(--font-mono);
-        font-size: 15px;
-      }
-    }
-
-    .threat-list {
-      margin-top: 6px;
-      list-style: none;
-
-      .threat-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 5px 0;
-        border-bottom: 1px solid rgba(120, 160, 175, 0.12);
-        color: var(--muted);
-        font-size: 11px;
-
-        // 新机体/敌性体贴图为非正方形的平滑插画：等比缩放、平滑采样，避免拉伸与锯齿。
-        img {
-          width: 26px;
-          height: 26px;
-          object-fit: contain;
-          image-rendering: auto;
-        }
-
-        .threat-name {
-          flex: 1;
-          min-width: 0;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .threat-count {
-          color: var(--accent);
-          font-family: var(--font-mono);
-          font-size: 12px;
-        }
-      }
-    }
-
-    .threat-idle {
-      margin-top: 8px;
-      color: var(--dim);
-      font-size: 11px;
-
-      &[hidden] {
-        display: none;
-      }
     }
 
     // BATTLE ITEMS：天然机油是当前唯一道具，单槽展示（不做新道具玩法）。
@@ -821,7 +756,7 @@ body {
       }
     }
 
-    // 战术数据库：底部居中面板，含塔奇克马 / 敌性体两个 tab。
+    // 战术数据库：底部居中面板，含塔奇克马 / 敌人情报两个 tab。
     .database-panel {
       position: absolute;
       bottom: 12px;
@@ -1066,7 +1001,7 @@ body {
         background: rgba(8, 16, 22, 0.72);
         text-align: center;
 
-        // 同 threat-list：非正方形插画需要 contain 与平滑采样。
+        // 非正方形敌人插画需要 contain 与平滑采样。
         img {
           width: 34px;
           height: 34px;
