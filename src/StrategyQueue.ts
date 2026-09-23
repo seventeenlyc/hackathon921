@@ -40,10 +40,17 @@ export function startRun(): void {
     // Apply the opening prompt BEFORE the loop can plan wave 1, so the run never
     // starts on the previous/empty version. `activateForRun` returns null when
     // there is no prompt, in which case the run refuses to start (§5).
-    if (!strategyStore.activateForRun()) return;
+    const openingPrompt = strategyStore.activateForRun();
+    if (!openingPrompt) return;
 
     audioManager.startMusic();
-    if (playMode === 'ai') runSync.prepareRun(getSessionUsername()!, 'ai');
+    if (playMode === 'ai') {
+        const username = getSessionUsername()!;
+        runSync.prepareRun(username, 'ai');
+        // The opening version was activated while IDLE, before Game's PLANNING
+        // listener can observe a version change. Record it explicitly per run.
+        runSync.enqueuePrompt(username, openingPrompt);
+    }
     gameLoop.start();
     void waveManager.start();
 }

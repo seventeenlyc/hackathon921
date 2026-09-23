@@ -2,7 +2,7 @@ import {fetchBestRunPrompts} from './LeaderboardClient';
 import type {BestRunPrompts, PromptNode} from './LeaderboardClient';
 import {t} from '../i18n';
 
-export type FetchBestRunPrompts = (username: string) => Promise<BestRunPrompts | null>;
+export type FetchBestRunPrompts = (uid: number) => Promise<BestRunPrompts | null>;
 
 /** Public, plain-text detail view for the selected user's best-scoring run. */
 export class PromptHistoryDialog {
@@ -43,7 +43,7 @@ export class PromptHistoryDialog {
         this.renderLoading('');
     }
 
-    async open(username: string): Promise<void> {
+    async open(uid: number, username: string): Promise<void> {
         const requestNumber = ++this.requestNumber;
         if (!this.isOpen()) {
             const active = document.activeElement;
@@ -61,7 +61,7 @@ export class PromptHistoryDialog {
 
         let result: BestRunPrompts | null;
         try {
-            result = await this.fetchHistory(username);
+            result = await this.fetchHistory(uid);
         } catch (error) {
             if (requestNumber === this.requestNumber) this.renderError();
             return;

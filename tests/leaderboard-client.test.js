@@ -19,6 +19,8 @@ function loadClient(fetchImpl) {
         moduleObj.exports,
         name => {
             if (name === './LeaderboardStore') return { sanitizeUsername: value => typeof value === 'string' ? value.trim() : null };
+            if (name === './SessionIdentity') return { getSessionAvatar: () => 'aramaki' };
+            if (name === './AvatarCatalog') return { isKnownAvatarId: id => ['aramaki', 'boma'].includes(id) };
             throw new Error('Unexpected dependency: ' + name);
         },
         fetchImpl,
@@ -41,6 +43,7 @@ async function test(name, fn) {
         const first = client.ensureSessionToken('Alice');
         const second = client.ensureSessionToken('Alice');
         assert.strictEqual(pending.length, 1);
+        assert.deepStrictEqual(JSON.parse(pending[0].init.body), { username: 'Alice', avatarId: 'aramaki' });
         pending.shift().resolve(response({ token: 'alice-token', username: 'Alice' }));
         assert.deepStrictEqual(await Promise.all([first, second]), ['alice-token', 'alice-token']);
 
@@ -63,6 +66,18 @@ async function test(name, fn) {
         pending[0].resolve(response({ token: 'alice-token', username: 'Alice' }));
         assert.strictEqual(await alice, 'alice-token');
         assert.strictEqual(client.getSessionToken(), 'bob-token');
+    });
+
+    await test('prompt history is fetched by internal numeric UID', async () => {
+        const calls = [];
+        const client = loadClient(async (url, init) => {
+            calls.push({ url, init });
+            return response({ uid: 23, username: 'Alice', runId: null, wave: null, prompts: [] });
+        });
+        const result = await client.fetchBestRunPrompts(23);
+        assert.strictEqual(result.uid, 23);
+        assert.strictEqual(calls[0].url, '/api/leaderboard/23/prompts');
+        assert.strictEqual(await client.fetchBestRunPrompts(0), null);
     });
 
     await test('a lost prompt response retries the same version and payload for server idempotency', async () => {

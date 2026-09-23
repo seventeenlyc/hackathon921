@@ -28,7 +28,7 @@ function request(over: Partial<ApiRequest>): ApiRequest {
 
 /** 走一遍 session → runs，返回可用于后续请求的 token 与 runId。 */
 function openRun(deps: ApiDeps, username: string, mode?: string): { token: string; runId: string } {
-    const session = handleApi(deps, request({ method: 'POST', pathname: '/api/session', body: { username } }));
+    const session = handleApi(deps, request({ method: 'POST', pathname: '/api/session', body: { username, avatarId: 'aramaki' } }));
     assert.equal(session.status, 200);
     const token = session.body.token as string;
 
@@ -36,6 +36,12 @@ function openRun(deps: ApiDeps, username: string, mode?: string): { token: strin
     const run = handleApi(deps, request({ method: 'POST', pathname: '/api/runs', token, body }));
     assert.equal(run.status, 201);
     return { token, runId: run.body.runId as string };
+}
+
+function createRun(deps: ApiDeps, token: string, mode: string): string {
+    const run = handleApi(deps, request({ method: 'POST', pathname: '/api/runs', token, body: { mode } }));
+    assert.equal(run.status, 201);
+    return run.body.runId as string;
 }
 
 test('GET /api/health 返回 ok，并报告 provider 是否已配置', () => {
@@ -53,11 +59,48 @@ test('GET /api/health 在配了 provider key 时 providerConfigured 为 true', (
 });
 
 test('POST /api/session 用合法昵称换取 token', () => {
-    const res = handleApi(makeDeps(), request({ method: 'POST', pathname: '/api/session', body: { username: '  Alice ' } }));
+    const res = handleApi(makeDeps(), request({ method: 'POST', pathname: '/api/session', body: { username: '  Alice ', avatarId: 'aramaki' } }));
     assert.equal(res.status, 200);
     assert.equal(res.body.username, 'Alice');
     assert.equal(typeof res.body.token, 'string');
     assert.ok(res.body.token.length > 0);
+    assert.equal(res.body.uid, undefined, 'the internal UID is not shown on the profile response');
+});
+
+test('相同昵称和头像每次确认都会创建独立 UID，排行榜按 UID 分开', () => {
+    const deps = makeDeps();
+    const createProfile = () => handleApi(deps, request({
+        method: 'POST', pathname: '/api/session',
+        body: { username: 'Alice', avatarId: 'aramaki' },
+    }));
+    const first = createProfile();
+    const second = createProfile();
+    assert.equal(first.status, 200);
+    assert.equal(second.status, 200);
+    assert.notEqual(first.body.token, second.body.token, '同名同头像也必须拿到不同身份 token');
+
+    const startRun = (token: string) => handleApi(deps, request({ method: 'POST', pathname: '/api/runs', token }));
+    const firstRun = startRun(first.body.token);
+    const secondRun = startRun(second.body.token);
+    for (const [run, token, wave] of [[firstRun, first.body.token, 8], [secondRun, second.body.token, 6]] as const) {
+        assert.equal(run.status, 201);
+        handleApi(deps, request({ method: 'POST', pathname: `/api/runs/${run.body.runId}/waves`, token, body: { wave } }));
+    }
+    const board = handleApi(deps, request({ pathname: '/api/leaderboard' }));
+    assert.equal(board.body.entries.length, 2);
+    assert.deepEqual(board.body.entries.map((entry: any) => [entry.username, entry.avatarId, entry.wave]), [
+        ['Alice', 'aramaki', 8],
+        ['Alice', 'aramaki', 6],
+    ]);
+    assert.notEqual(board.body.entries[0].uid, board.body.entries[1].uid);
+});
+
+test('POST /api/session 拒绝未知头像', () => {
+    const res = handleApi(makeDeps(), request({
+        method: 'POST', pathname: '/api/session', body: { username: 'Alice', avatarId: 'unknown' },
+    }));
+    assert.equal(res.status, 400);
+    assert.deepEqual(res.body, { error: 'INVALID_AVATAR' });
 });
 
 test('POST /api/session 拒绝非法昵称', () => {
@@ -79,7 +122,7 @@ test('POST /api/runs 需要有效会话', () => {
 
 test('POST /api/runs 与 GET /api/leaderboard 校验模式并拒绝非法值', () => {
     const deps = makeDeps();
-    const session = handleApi(deps, request({ method: 'POST', pathname: '/api/session', body: { username: 'Alice' } }));
+    const session = handleApi(deps, request({ method: 'POST', pathname: '/api/session', body: { username: 'Alice', avatarId: 'aramaki' } }));
     const token = session.body.token as string;
 
     const badRun = handleApi(
@@ -100,7 +143,7 @@ test('POST /api/runs 与 GET /api/leaderboard 校验模式并拒绝非法值', (
 test('排行榜按模式隔离查询，缺省为 AI，总榜合并且 me 选择更优记录', () => {
     const deps = makeDeps();
     const aliceAi = openRun(deps, 'Alice', 'ai');
-    const aliceHuman = openRun(deps, 'Alice', 'human');
+    const aliceHuman = { token: aliceAi.token, runId: createRun(deps, aliceAi.token, 'human') };
     const bobAi = openRun(deps, 'Bob'); // 缺省 mode => ai
 
     handleApi(deps, request({ method: 'POST', pathname: `/api/runs/${aliceAi.runId}/waves`, token: aliceAi.token, body: { wave: 10 } }));
@@ -117,7 +160,8 @@ test('排行榜按模式隔离查询，缺省为 AI，总榜合并且 me 选择�
             [2, 'Alice', 10, 'ai'],
         ]
     );
-    assert.deepEqual(defaultBoard.body.me, { username: 'Alice', rank: 2, wave: 10, mode: 'ai' });
+    assert.deepEqual(defaultBoard.body.me, { uid: defaultBoard.body.me.uid, username: 'Alice', avatarId: 'aramaki', rank: 2, wave: 10, mode: 'ai' });
+    assert.ok(Number.isSafeInteger(defaultBoard.body.me.uid));
 
     // human 榜：只有 Alice 的 human 成绩
     const humanBoard = handleApi(deps, request({ pathname: '/api/leaderboard', searchParams: { mode: 'human' }, token: aliceAi.token }));
@@ -128,7 +172,7 @@ test('排行榜按模式隔离查询，缺省为 AI，总榜合并且 me 选择�
             [1, 'Alice', 25, 'human'],
         ]
     );
-    assert.deepEqual(humanBoard.body.me, { username: 'Alice', rank: 1, wave: 25, mode: 'human' });
+    assert.deepEqual(humanBoard.body.me, { uid: defaultBoard.body.me.uid, username: 'Alice', avatarId: 'aramaki', rank: 1, wave: 25, mode: 'human' });
 
     // total 榜：包含两种模式记录，Alice 的总榜 me 选更优的 human/25
     const totalBoard = handleApi(deps, request({ pathname: '/api/leaderboard', searchParams: { mode: 'total' }, token: aliceAi.token }));
@@ -141,7 +185,7 @@ test('排行榜按模式隔离查询，缺省为 AI，总榜合并且 me 选择�
             [3, 'Alice', 10, 'ai'],
         ]
     );
-    assert.deepEqual(totalBoard.body.me, { username: 'Alice', rank: 1, wave: 25, mode: 'human' });
+    assert.deepEqual(totalBoard.body.me, { uid: defaultBoard.body.me.uid, username: 'Alice', avatarId: 'aramaki', rank: 1, wave: 25, mode: 'human' });
 });
 
 test('波次上报：正向路径返回 accepted 与最佳波次', () => {

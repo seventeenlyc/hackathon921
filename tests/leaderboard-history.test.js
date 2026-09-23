@@ -96,12 +96,17 @@ async function test(name, fn) {
         const document = new FakeDocument();
         const previous = document.createElement('input');
         document.activeElement = previous;
-        const { PromptHistoryDialog } = loadDialog(document, async () => ({
-            username: 'Alice', runId: 'run-1', wave: 7,
+        let fetchedUid = null;
+        const { PromptHistoryDialog } = loadDialog(document, async uid => {
+            fetchedUid = uid;
+            return ({
+            uid: 1, username: 'Alice', runId: 'run-1', wave: 7,
             prompts: [{ id: 'p1', runId: 'run-1', version: 1, prompt: '<img onerror="alert(1)">', fromWave: 1, prevId: null, createdAt: 1 }],
-        }));
+            });
+        });
         const dialog = new PromptHistoryDialog();
-        await dialog.open('Alice');
+        await dialog.open(1, 'Alice');
+        assert.strictEqual(fetchedUid, 1, 'history request must target the selected internal UID');
         assert.strictEqual(document.inert.children.length, 1);
         assert.match(allText(dialog.dialog), /Alice/);
         assert.match(allText(dialog.dialog), /<img onerror="alert\(1\)">/);
@@ -115,11 +120,11 @@ async function test(name, fn) {
         const pending = {};
         const { PromptHistoryDialog } = loadDialog(document, username => new Promise(resolve => { pending[username] = resolve; }));
         const dialog = new PromptHistoryDialog();
-        const first = dialog.open('Alice');
-        const second = dialog.open('Bob');
-        pending.Bob({ username: 'Bob', runId: 'run-b', wave: 2, prompts: [] });
+        const first = dialog.open(1, 'Alice');
+        const second = dialog.open(2, 'Bob');
+        pending[2]({ uid: 2, username: 'Bob', runId: 'run-b', wave: 2, prompts: [] });
         await second;
-        pending.Alice({ username: 'Alice', runId: 'run-a', wave: 9, prompts: [] });
+        pending[1]({ uid: 1, username: 'Alice', runId: 'run-a', wave: 9, prompts: [] });
         await first;
         assert.match(allText(dialog.dialog), /Bob/);
         assert.doesNotMatch(allText(dialog.dialog), /Alice - best run/);
@@ -130,13 +135,13 @@ async function test(name, fn) {
         let mode = 'empty';
         const { PromptHistoryDialog } = loadDialog(document, async () => {
             if (mode === 'failed') throw new Error('offline');
-            return { username: 'Alice', runId: 'run-a', wave: 4, prompts: [] };
+            return { uid: 1, username: 'Alice', runId: 'run-a', wave: 4, prompts: [] };
         });
         const dialog = new PromptHistoryDialog();
-        await dialog.open('Alice');
+        await dialog.open(1, 'Alice');
         assert.match(allText(dialog.dialog), /No Prompt history/);
         mode = 'failed';
-        await dialog.open('Alice');
+        await dialog.open(1, 'Alice');
         assert.match(allText(dialog.dialog), /unavailable/);
     });
 
@@ -146,9 +151,9 @@ async function test(name, fn) {
             id: 'p' + index, runId: 'run-a', version: index + 1, prompt: 'Prompt ' + index,
             fromWave: index + 1, prevId: index ? 'p' + (index - 1) : null, createdAt: index,
         }));
-        const { PromptHistoryDialog } = loadDialog(document, async () => ({ username: 'Alice', runId: 'run-a', wave: 41, prompts }));
+        const { PromptHistoryDialog } = loadDialog(document, async () => ({ uid: 1, username: 'Alice', runId: 'run-a', wave: 41, prompts }));
         const dialog = new PromptHistoryDialog();
-        await dialog.open('Alice');
+        await dialog.open(1, 'Alice');
         assert.match(allText(dialog.dialog), /Prompt 40/);
         assert.strictEqual(dialog.dialog.children.length, 3);
     });

@@ -22,7 +22,7 @@ function loadSource(file, dependencies = {}) {
     return moduleObj.exports;
 }
 
-const { toggleVisibility, isEditableTarget } = loadSource('ControlLayer.ts', {
+const { toggleVisibility, isEditableTarget, ControlLayer } = loadSource('ControlLayer.ts', {
     './Controls': { controls: { on() {} } },
     './tools/input': { isEditableTarget: target => target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target?.isContentEditable === true },
 });
@@ -33,6 +33,32 @@ assert.strictEqual(isEditableTarget({ tagName: 'TEXTAREA' }), true);
 assert.strictEqual(isEditableTarget({ tagName: 'INPUT' }), true);
 assert.strictEqual(isEditableTarget({ tagName: 'BUTTON' }), false);
 assert.strictEqual(isEditableTarget({ tagName: 'DIV', isContentEditable: true }), true);
+
+function classList(initial = []) {
+    const values = new Set(initial);
+    return {
+        contains: name => values.has(name),
+        toggle(name, force) {
+            const enabled = force === undefined ? !values.has(name) : Boolean(force);
+            if (enabled) values.add(name);
+            else values.delete(name);
+            return enabled;
+        },
+    };
+}
+const root = { classList: classList(['is-visible']), setAttribute() {}, inert: false };
+const mapFrame = { classList: classList() };
+const controlListeners = {};
+const eventSource = { on: (name, fn) => { controlListeners[name] = fn; } };
+const collapseButton = { addEventListener() {} };
+const battlefield = { focus() {} };
+const layer = new ControlLayer(root, battlefield, collapseButton, eventSource, null, mapFrame);
+controlListeners.doubleclick();
+assert.strictEqual(mapFrame.classList.contains('is-hidden'), true,
+    'double-clicking the battlefield must hide the center window border with the control layer');
+controlListeners.doubleclick();
+assert.strictEqual(mapFrame.classList.contains('is-hidden'), false,
+    'showing the control layer must restore the center window border');
 
 console.log('Control layer helpers passed.');
 
@@ -63,6 +89,8 @@ assert.match(stylesSource, /(?:\.controls\.is-hidden|&\.is-hidden)[\s\S]*visibil
     'hidden controls must be removed from hit testing and visibility');
 assert.match(stylesSource, /(?:\.controls\.is-hidden|&\.is-hidden)[\s\S]*pointer-events:\s*none/,
     'hidden controls must not intercept pointer input');
+assert.match(stylesSource, /\.map-frame\.is-hidden[\s\S]*visibility:\s*hidden/,
+    'the map window chrome must disappear in immersive mode');
 assert.match(stylesSource, /prefers-reduced-motion/,
     'control-layer transitions must respect reduced-motion preferences');
 assert.match(stylesSource, /@media\s*\(max-width:\s*760px\)/,

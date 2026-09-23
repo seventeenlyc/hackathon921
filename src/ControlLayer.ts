@@ -23,6 +23,7 @@ export class ControlLayer {
         collapseButton: HTMLButtonElement,
         eventSource: ControlEvents,
         private readonly hint: HTMLElement | null = null,
+        private readonly mapFrame: HTMLElement | null = null,
     ) {
         this.visibility = root.classList.contains('is-visible') ? 'visible' : 'hidden';
         this.syncDom();
@@ -79,6 +80,7 @@ export class ControlLayer {
         this.root.classList.toggle('is-hidden', !visible);
         this.root.setAttribute('aria-hidden', String(!visible));
         (this.root as HTMLElement & {inert: boolean}).inert = !visible;
+        this.mapFrame?.classList.toggle('is-hidden', !visible);
     }
 }
 
@@ -91,10 +93,11 @@ export function getControlLayer(): ControlLayer {
     const battlefield = document.getElementById('canvas');
     const collapseButton = document.getElementById('controls-collapse');
     const hint = document.getElementById('controls-hint');
+    const mapFrame = document.getElementById('map-frame');
     if (!(root instanceof HTMLElement) || !(battlefield instanceof HTMLCanvasElement) || !(collapseButton instanceof HTMLButtonElement)) {
         throw new Error('Control layer markup is incomplete');
     }
 
-    singleton = new ControlLayer(root, battlefield, collapseButton, controls, hint);
+    singleton = new ControlLayer(root, battlefield, collapseButton, controls, hint, mapFrame);
     return singleton;
 }
