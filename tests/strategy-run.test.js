@@ -29,7 +29,7 @@ const dependencies = {
             enqueuePrompt: (username, version) => events.push(['prompt', username, version]),
         },
     },
-    './AudioManager': { audioManager: { startMusic: () => events.push('music-start') } },
+    './AudioManager': { audioManager: { setWave: wave => events.push(['music-wave', wave]), startMusic: () => events.push('music-start') } },
 };
 const moduleObj = { exports: {} };
 new Function('module', 'exports', 'require', js)(
@@ -50,5 +50,7 @@ assert.deepStrictEqual(promptEvent, ['prompt', 'Alice', openingPrompt],
 assert.ok(events.findIndex(event => Array.isArray(event) && event[0] === 'prepare')
     < events.findIndex(event => Array.isArray(event) && event[0] === 'prompt'),
 'the run must be prepared before its opening prompt is appended');
+assert.ok(events.findIndex(event => Array.isArray(event) && event[0] === 'music-wave' && event[1] === 1)
+    < events.indexOf('music-start'), 'the opening wave is sent to audio before music playback starts');
 
 console.log('Opening prompt run recording passed.');

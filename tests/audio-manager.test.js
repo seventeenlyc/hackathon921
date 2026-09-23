@@ -3,7 +3,13 @@ const fs = require('fs');
 const path = require('path');
 const ts = require('typescript');
 
-function loadAudioManager(tracks = ['/audio/background/background.mp3']) {
+function loadAudioManager(tracks = [
+    '/audio/background/background.mp3',
+    '/audio/background/1.mp3',
+    '/audio/background/151.mp3',
+    '/audio/background/201.mp3',
+    '/audio/background/256.mp3',
+]) {
     const source = fs.readFileSync(path.join(__dirname, '..', 'src', 'AudioManager.ts'), 'utf8');
     const js = ts.transpileModule(source, {
         compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2017 },
@@ -49,7 +55,7 @@ async function test(name, fn) {
             const audio = new FakeAudio(src);
             created.push(audio);
             return audio;
-        });
+        }, undefined, () => 0);
         manager.startMusic();
         created[0].currentTime = 12;
         manager.startMusic();
@@ -64,6 +70,7 @@ async function test(name, fn) {
     await test('ended tracks choose another folder track without an immediate repeat', async () => {
         const tracks = [
             '/audio/background/a.mp3',
+            '/audio/background/151.mp3',
             '/audio/background/b.ogg',
             '/audio/background/c.wav',
         ];
@@ -79,32 +86,48 @@ async function test(name, fn) {
         created[0].end();
         created[1].end();
 
-        assert.deepStrictEqual(created.map(audio => audio.src), [tracks[0], tracks[1], tracks[0]]);
+        assert.deepStrictEqual(created.map(audio => audio.src), [tracks[0], tracks[2], tracks[0]]);
         assert.ok(created.every(audio => audio.volume === 0.24 && audio.loop === false));
     });
 
-    await test('wave 201 switches from the playlist to the fixed final track', async () => {
+    await test('waves 1, 151, 201 and 256 play their dedicated tracks once outside the loop', async () => {
         const created = [];
+        const tracks = [
+            '/audio/background/background.mp3',
+            '/audio/background/1.mp3',
+            '/audio/background/151.mp3',
+            '/audio/background/201.mp3',
+            '/audio/background/256.mp3',
+            '/audio/background/extra.ogg',
+        ];
         const manager = new AudioManager(src => {
             const audio = new FakeAudio(src);
             created.push(audio);
             return audio;
-        });
-        manager.setWave(200);
+        }, tracks, () => 0);
         manager.startMusic();
-        manager.setWave(201);
-        assert.strictEqual(created[0].pauseCount, 1);
-        assert.strictEqual(created[1].src, '/audio/final_bgm.mp3');
-        assert.strictEqual(created[1].loop, true);
-        assert.strictEqual(created[1].volume, 0.24);
-        assert.strictEqual(created[1].playCount, 1);
+        for (const wave of [1, 151, 201, 256]) {
+            manager.setWave(wave);
+            const dedicated = created[created.length - 1];
+            assert.strictEqual(dedicated.src, `/audio/background/${wave}.mp3`);
+            assert.strictEqual(dedicated.loop, false);
+            assert.strictEqual(dedicated.playCount, 1);
+            manager.setWave(wave);
+            dedicated.end();
+        }
+
+        const dedicatedTracks = created.filter(audio => /\/(1|151|201|256)\.mp3$/.test(audio.src));
+        assert.deepStrictEqual(dedicatedTracks.map(audio => audio.src), [
+            '/audio/background/1.mp3',
+            '/audio/background/151.mp3',
+            '/audio/background/201.mp3',
+            '/audio/background/256.mp3',
+        ]);
+        assert.ok(created.filter(audio => !dedicatedTracks.includes(audio)).every(audio => audio.loop === false));
         manager.setMuted(true);
         manager.setMuted(false);
         manager.startMusic();
-        created[0].end();
-
-        assert.strictEqual(created.length, 2);
-        assert.strictEqual(created[1].playCount, 2);
+        assert.ok(created.every(audio => audio.src !== '/audio/final_bgm.mp3'));
     });
 
     await test('playback rejection and synchronous media errors are non-fatal', async () => {
@@ -146,10 +169,12 @@ async function test(name, fn) {
         assert.ok(startsWithId3 || startsWithMpegFrame);
         assert.ok(background.length > 0);
 
-        const finalTrack = fs.readFileSync(path.join(__dirname, '..', 'public', 'audio', 'final_bgm.mp3'));
-        const finalStartsWithId3 = finalTrack.toString('ascii', 0, 3) === 'ID3';
-        const finalStartsWithMpegFrame = finalTrack.length > 1 && finalTrack[0] === 0xff && (finalTrack[1] & 0xe0) === 0xe0;
-        assert.ok(finalStartsWithId3 || finalStartsWithMpegFrame);
+        for (const name of ['1.mp3', '151.mp3', '201.mp3', '256.mp3']) {
+            const specialTrack = fs.readFileSync(path.join(__dirname, '..', 'public', 'audio', 'background', name));
+            const startsWithId3 = specialTrack.toString('ascii', 0, 3) === 'ID3';
+            const startsWithMpegFrame = specialTrack.length > 1 && specialTrack[0] === 0xff && (specialTrack[1] & 0xe0) === 0xe0;
+            assert.ok(startsWithId3 || startsWithMpegFrame, `${name} should contain a playable MP3 placeholder`);
+        }
 
         for (const name of ['wave.wav', 'game-over.wav']) {
             const file = fs.readFileSync(path.join(__dirname, '..', 'public', 'audio', name));
