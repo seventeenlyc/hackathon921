@@ -138,12 +138,31 @@ class WavesManager {
                 (<any>enemy[<K>specKey]) *= specMultiplier;
             }
         }
+
+        if (this.waveCounter <= 200) {
+            enemy.life *= 0.4;
+            enemy.speed *= 0.4;
+        }
+
         return enemy;
     }
 
     private generateWave(): Wave {
         const wave = [];
         const ratio = 1 + this.waveCounter / 10;
+
+        if (this.waveCounter >= 201) {
+            wave.push({
+                enemyClass: BossEnemy,
+                enemySpecsMultiplier: {
+                    life: ratio,
+                },
+                quantity: 10 + this.waveCounter,
+                delay: Math.max(500 - this.waveCounter, 100)
+            });
+
+            return wave;
+        }
 
         if (this.waveCounter % 8 === 0) {
             wave.push({
