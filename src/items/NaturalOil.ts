@@ -2,6 +2,10 @@ export const NATURAL_OIL_COST = 2000;
 export const NATURAL_OIL_ACTIVE_MS = 5000;
 export const NATURAL_OIL_COOLDOWN_MS = 10000;
 
+export function attackClockDelta(frameDurationMs: number, reloadDurationMs: number, multiplier: number): number {
+    return reloadDurationMs > 0 ? frameDurationMs * multiplier : frameDurationMs;
+}
+
 export interface CashPort {
     canWithdraw(amount: number): boolean;
     withdraw(amount: number): boolean;

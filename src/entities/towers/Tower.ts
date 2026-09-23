@@ -6,6 +6,7 @@ import {enemyManager} from "../../EnemyManager";
 import {PI2} from "../../tools/constants";
 import {textureManager} from "../../tools/TextureManager";
 import {TowerType} from "./towerTypes";
+import {attackClockDelta, naturalOilController} from "../../items/NaturalOil";
 
 const frameDuration = 1000 / fps;
 
@@ -63,7 +64,7 @@ export abstract class Tower extends GridRenderable {
     update() {
         super.update();
 
-        this.countdown += frameDuration;
+        this.countdown += attackClockDelta(frameDuration, this.reloadDurationMs, naturalOilController.attackSpeedMultiplier);
         if (this.countdown >= this.reloadDurationMs) {
             this.canShoot = true;
             this.countdown = 0;

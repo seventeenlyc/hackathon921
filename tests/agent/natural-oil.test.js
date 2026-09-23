@@ -1,5 +1,9 @@
 const assert = require('assert');
-const {NaturalOilController} = require('../../.test-build/items/NaturalOil.js');
+const {NaturalOilController, attackClockDelta} = require('../../.test-build/items/NaturalOil.js');
+
+assert.strictEqual(attackClockDelta(16, 200, 1.5), 24);
+assert.strictEqual(attackClockDelta(16, 200, 1), 16);
+assert.strictEqual(attackClockDelta(16, 0, 1.5), 16);
 
 function cash(balance) {
     return {
