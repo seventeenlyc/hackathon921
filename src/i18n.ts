@@ -65,6 +65,7 @@ const STRINGS: { [key: string]: Entry } = {
     'reasoning.status.planning': {zh: '战术分析中', en: 'ANALYZING BATTLEFIELD'},
     'reasoning.status.ready': {zh: '本轮决策摘要', en: 'WAVE DECISION SUMMARY'},
     'reasoning.status.unavailable': {zh: '摘要不可用', en: 'SUMMARY UNAVAILABLE'},
+    'reasoning.summaryUnavailable': {zh: '本轮暂无战术研判', en: 'No tactical assessment available this wave'},
     'reasoning.empty': {zh: '等待塔奇克马对下一波做出决策…', en: 'Awaiting the next tactical decision…'},
     'reasoning.plan.build': {zh: '本轮计划在 ({i}, {j}) 部署 {type}。', en: 'Plan to deploy {type} at ({i}, {j}) this wave.'},
     'reasoning.plan.upgrade': {zh: '本轮计划升级坐标 {id} 的机体。', en: 'Plan to upgrade the unit at {id} this wave.'},

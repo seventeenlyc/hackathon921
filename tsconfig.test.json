@@ -5,6 +5,7 @@
        `moduleResolution: bundler` is only valid with ESNext modules, hence the
        reset to `node` here. */
     "outDir": ".test-build",
+    "rootDir": "src",
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "ES2017",

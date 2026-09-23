@@ -241,7 +241,7 @@ test('getState returns the snapshot the battlefield provides', () => {
         towers: [],
         towerOptions: OPTIONS,
         path: {waypoints: [{i: 0, j: 9}, {i: 5, j: 5}], length: 12},
-        buildCandidates: [{i: 1, j: 8, coverage: 3, distanceToBase: 10}],
+        buildCandidates: [{i: 1, j: 8, coverage: 3, distanceToBase: 10, zone: 'midfield'}],
     };
     field._snapshot = snapshot;
 
