@@ -206,6 +206,7 @@ const STRINGS: { [key: string]: Entry } = {
     'items.title': {zh: '支援道具', en: 'BATTLE ITEMS'},
     'database.title': {zh: '战术数据库', en: 'TACTICAL DATABASE'},
     'database.tabHostile': {zh: '敌方情报', en: 'ENEMY INTELLIGENCE'},
+    'database.waveTag': {zh: '第 {wave} 波 · 实时数值', en: 'WAVE {wave} · LIVE STATS'},
     'enemy.stat.hp': {zh: '生命', en: 'HP'},
     'enemy.stat.speed': {zh: '速度', en: 'SPD'},
     'enemy.stat.cash': {zh: '赏金', en: 'BOUNTY'},
