@@ -69,6 +69,8 @@ export interface SnapshotInput {
      * injected lets `buildSnapshot` stay pure and testable without the engine.
      */
     routeLengthAfterBuilding?: (lane: number, i: number, j: number) => number | null;
+    /** Optional set of coordinates (formatted "i:j") permanently invalid for placement. */
+    invalidCells?: string[] | Set<string>;
     items?: ItemStateSnapshot[];
 }
 
@@ -205,12 +207,22 @@ function scoreLaneCandidates(
         }
 
         if (coverage === 0) return;
+        const totalSteps = Math.max(cells.length - 1, 1);
+        const progress = deepestIndex / totalSteps;
+        let zone: 'frontline' | 'midfield' | 'base' = 'midfield';
+        if (progress <= 0.35) {
+            zone = 'frontline';
+        } else if (progress >= 0.70) {
+            zone = 'base';
+        }
+
         scored.push({
             i: cell.i,
             j: cell.j,
             lane,
             coverage,
             distanceToBase: cells.length - 1 - deepestIndex,
+            zone,
         });
     });
 
@@ -229,6 +241,13 @@ function scoreLaneCandidates(
  */
 function buildCandidates(routes: LaneRoute[], input: SnapshotInput): BuildCandidate[] {
     if (routes.length === 0) return [];
+
+    const invalidSet = new Set<string>();
+    if (input.invalidCells) {
+        for (const item of input.invalidCells) {
+            invalidSet.add(item);
+        }
+    }
 
     // A cell on ANY lane's route is not a build spot, even if it neighbours another lane.
     const onRoute = new Set<string>();
@@ -253,7 +272,7 @@ function buildCandidates(routes: LaneRoute[], input: SnapshotInput): BuildCandid
             advanced = true;
 
             const key = `${candidate.i}:${candidate.j}`;
-            if (seen.has(key)) continue;
+            if (seen.has(key) || invalidSet.has(key)) continue;
 
             probes += 1;
             if (input.isBuildable(candidate.i, candidate.j)) {
@@ -282,6 +301,13 @@ function pathShapingCandidates(routes: LaneRoute[], input: SnapshotInput): PathS
     const measure = input.routeLengthAfterBuilding;
     if (!measure || routes.length === 0) return [];
 
+    const invalidSet = new Set<string>();
+    if (input.invalidCells) {
+        for (const item of input.invalidCells) {
+            invalidSet.add(item);
+        }
+    }
+
     const accepted: Array<PathShapingCandidate & { index: number }> = [];
     const seen = new Set<string>();
     let probes = 0;
@@ -300,7 +326,7 @@ function pathShapingCandidates(routes: LaneRoute[], input: SnapshotInput): PathS
 
             const cell = cells[rank];
             const key = `${cell.i}:${cell.j}`;
-            if (seen.has(key)) continue;
+            if (seen.has(key) || invalidSet.has(key)) continue;
             seen.add(key);
 
             if (!input.isFree(cell.i, cell.j)) continue;

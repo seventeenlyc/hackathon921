@@ -163,7 +163,28 @@ test('build candidates are off-route, free, legal, and ranked by coverage', () =
     }
 
     // (2,1) sees route cells 1..3 (coverage 3) and is the deepest such cell.
-    assert.deepStrictEqual(candidates[0], {i: 2, j: 1, lane: 0, coverage: 3, distanceToBase: 1});
+    assert.deepStrictEqual(candidates[0], {i: 2, j: 1, lane: 0, coverage: 3, distanceToBase: 1, zone: 'base'});
+});
+
+test('build candidates and path shaping candidates filter out invalidCells', () => {
+    const cells = [];
+    for (let i = 0; i < 10; ++i) cells.push({i, j: 0});
+
+    const snapshot = buildSnapshot(baseInput({
+        gridWidth: 15,
+        gridHeight: 5,
+        routes: [{spawn: {i: 0, j: 0}, cells}],
+        invalidCells: ['1:1', '2:1', '3:0'],
+        routeLengthAfterBuilding: (lane, i, j) => (i === 3 && j === 0 ? 15 : null),
+    }));
+
+    // (1,1) and (2,1) were neighbours to route; must be excluded
+    assert.ok(!snapshot.buildCandidates.some(c => c.i === 1 && c.j === 1));
+    assert.ok(!snapshot.buildCandidates.some(c => c.i === 2 && c.j === 1));
+    // (3,0) was an invalid cell on route; must be excluded from pathShapingCandidates
+    assert.ok(!snapshot.pathShapingCandidates.some(c => c.i === 3 && c.j === 0));
+    // Verify zones are populated
+    assert.ok(snapshot.buildCandidates.every(c => ['frontline', 'midfield', 'base'].includes(c.zone)));
 });
 
 test('build candidates cover every lane, not just the longest', () => {
