@@ -1,9 +1,6 @@
-// 排行榜存储逻辑。
-// 纯前端本地实现（当前阶段无后端、不允许可伪造的服务端接口，见 AGENTS.md 与 DEPLOYMENT.md §三.1）：
-//  - 用户名保存在 cookie（用户显式要求「保存用户的cookies」），并在 localStorage 缓存一份；
-//  - 排行榜记录保存在 localStorage（每台设备本地一份，非共享，待服务端就绪后替换）。
-// 代码刻意与 DOM 解耦，便于在无 DOM 环境下单测。
-// 排行榜渲染对用户名转义，禁止 innerHTML 直出（用户名字符串不可信，AGENTS.md「不可信输入」）。
+// 本地排行榜仅在共享服务不可用时提供离线展示，不作为共享成绩的真值来源。
+// 离线身份使用页面内存中的 userId，刷新后重新选择昵称和头像会生成新身份。
+// 代码刻意与 DOM 解耦，便于在无 DOM 环境下单测；用户名只按纯文本展示。
 
 export const STORAGE_KEY = 'pd_leaderboard_v1';
 
@@ -11,7 +8,10 @@ export type PlayMode = 'ai' | 'human';
 export type LeaderboardMode = PlayMode | 'total';
 
 export interface LeaderboardEntry {
+    /** Page-scoped UID in offline mode; never a display name. */
+    userId: string;
     username: string;
+    avatarId: string | null;
     wave: number;
     /* 产生时间戳（毫秒）：用于平局时更早达成者靠前、以及将来展示。 */
     timestamp: number;
@@ -38,8 +38,10 @@ export function readStoredLeaderboard(): LeaderboardEntry[] | null {
         const valid = (parsed.entries as any[]).filter(e =>
             e && typeof e.username === 'string' && typeof e.wave === 'number' && typeof e.timestamp === 'number'
         );
-        return valid.map(e => ({
+        return valid.map((e, index) => ({
+            userId: typeof e.userId === 'string' && e.userId ? e.userId : `legacy-${index}-${e.timestamp}`,
             username: sanitizeUsername(e.username) || '???',
+            avatarId: typeof e.avatarId === 'string' ? e.avatarId : null,
             wave: Math.max(0, Math.floor(e.wave)),
             timestamp: e.timestamp,
             mode: (e.mode === 'human' ? 'human' : 'ai') as PlayMode,
@@ -67,12 +69,17 @@ export function sortEntries(entries: LeaderboardEntry[]): LeaderboardEntry[] {
     });
 }
 
-/* 合并同一用户名在同一模式下的多条记录为最佳成绩（取最高分，平手取更早）。 */
+/* 合并同一 UID 在同一模式下的多条记录为最佳成绩（取最高分，平手取更早）。 */
 export function dedupeByUser(entries: LeaderboardEntry[]): LeaderboardEntry[] {
     const byKey: { [key: string]: LeaderboardEntry } = {};
+    entries = entries.map((entry, index) => ({
+        ...entry,
+        userId: typeof entry.userId === 'string' && entry.userId ? entry.userId : `legacy-${index}-${entry.timestamp}`,
+        avatarId: typeof entry.avatarId === 'string' ? entry.avatarId : null,
+    }));
     for (const e of entries) {
         const mode: PlayMode = e.mode === 'human' ? 'human' : 'ai';
-        const key = `${e.username.toLowerCase()}#${mode}`;
+        const key = `${e.userId}#${mode}`;
         const prev = byKey[key];
         if (!prev || e.wave > prev.wave || (e.wave === prev.wave && e.timestamp < prev.timestamp)) {
             byKey[key] = { ...e, mode };
@@ -93,19 +100,20 @@ export function submitScore(
     username: string,
     score: number,
     stored: LeaderboardEntry[] | null,
-    mode: PlayMode = 'ai'
+    mode: PlayMode = 'ai',
+    userId = `offline-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    avatarId: string | null = null,
 ): { entries: LeaderboardEntry[]; rank: number | null } {
     const clean = sanitizeUsername(username);
     const safeScore = Math.max(1, Math.floor(score));
     const safeMode: PlayMode = mode === 'human' ? 'human' : 'ai';
     const entries = stored && stored.length ? stored.slice() : [];
     const ts = Date.now();
-    entries.push({ username: clean || '???', wave: safeScore, timestamp: ts, mode: safeMode });
+    entries.push({ userId, username: clean || '???', avatarId, wave: safeScore, timestamp: ts, mode: safeMode });
     let merged = dedupeByUser(entries);
     merged = sortEntries(merged);
     const boardEntries = entriesForBoard(merged, safeMode);
-    const lower = clean ? clean.toLowerCase() : '';
-    const idx = clean ? boardEntries.findIndex(e => e.username.toLowerCase() === lower && e.mode === safeMode) : -1;
+    const idx = clean ? boardEntries.findIndex(e => e.userId === userId && e.mode === safeMode) : -1;
     const rank = idx >= 0 ? idx + 1 : null;
     return { entries: merged, rank };
 }

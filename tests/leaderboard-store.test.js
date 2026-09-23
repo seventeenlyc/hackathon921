@@ -54,38 +54,39 @@ test('sortEntries: higher wave first, ties by earlier timestamp, input untouched
     assert.strictEqual(sorted.length, 3);
 });
 
-test('dedupeByUser: keeps single best per username (case-insensitive)', () => {
+test('dedupeByUser: same UID keeps best score while matching display names stay separate', () => {
     const rows = [
-        { username: 'Luna', wave: 10, timestamp: 1 },
-        { username: 'luna', wave: 14, timestamp: 2 },
-        { username: 'Alex', wave: 12, timestamp: 3 },
+        { userId: 'uid-1', username: 'Luna', wave: 10, timestamp: 1 },
+        { userId: 'uid-1', username: 'Luna', wave: 14, timestamp: 2 },
+        { userId: 'uid-2', username: 'Luna', wave: 12, timestamp: 3 },
     ];
     const deduped = S.dedupeByUser(rows);
     assert.strictEqual(deduped.length, 2);
-    const luna = deduped.find(e => e.username.toLowerCase() === 'luna');
+    const luna = deduped.find(e => e.userId === 'uid-1');
     assert.strictEqual(luna.wave, 14, 'keep higher wave');
+    assert.strictEqual(deduped.find(e => e.userId === 'uid-2').wave, 12);
 });
 
 test('submitScore computes global rank and inserts new best', () => {
     const stored = [
-        { username: 'Alice', wave: 30, timestamp: 1 },
-        { username: 'Bob', wave: 20, timestamp: 2 },
+        { userId: 'uid-alice', username: 'Alice', wave: 30, timestamp: 1 },
+        { userId: 'uid-bob', username: 'Bob', wave: 20, timestamp: 2 },
     ];
-    const r = S.submitScore('Carol', 25, stored);
+    const r = S.submitScore('Carol', 25, stored, 'ai', 'uid-carol');
     assert.strictEqual(r.rank, 2);
     assert.deepStrictEqual(r.entries.map(e => e.wave), [30, 25, 20]);
 });
 
 test('submitScore: lower score for existing user keeps personal best', () => {
-    const stored = [{ username: 'Carol', wave: 25, timestamp: 2 }];
-    const r = S.submitScore('Carol', 18, stored);
+    const stored = [{ userId: 'uid-carol', username: 'Carol', wave: 25, timestamp: 2 }];
+    const r = S.submitScore('Carol', 18, stored, 'ai', 'uid-carol');
     assert.strictEqual(r.entries[0].wave, 25);
     assert.strictEqual(r.entries.length, 1);
 });
 
 test('submitScore: non-positive score clamped to 1', () => {
-    const stored = [{ username: 'X', wave: 5, timestamp: 1 }];
-    const r = S.submitScore('Y', 0, stored);
+    const stored = [{ userId: 'uid-x', username: 'X', wave: 5, timestamp: 1 }];
+    const r = S.submitScore('Y', 0, stored, 'ai', 'uid-y');
     assert.strictEqual(r.entries.find(e => e.username === 'Y').wave, 1);
 });
 
@@ -118,9 +119,9 @@ test('旧本地存储条目缺失 mode 自动补齐为 ai 模式', () => {
 
 test('同一昵称在 AI 与 Human 模式下分别保留成绩，entriesForBoard(total) 均返回', () => {
     let stored = [];
-    const r1 = S.submitScore('Alice', 10, stored, 'ai');
+    const r1 = S.submitScore('Alice', 10, stored, 'ai', 'uid-alice');
     stored = r1.entries;
-    const r2 = S.submitScore('Alice', 20, stored, 'human');
+    const r2 = S.submitScore('Alice', 20, stored, 'human', 'uid-alice');
     stored = r2.entries;
 
     assert.strictEqual(stored.length, 2);

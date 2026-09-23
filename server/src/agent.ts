@@ -330,8 +330,8 @@ async function callProvider(
  * 由前端运行时 fail closed（不下动作、下一波照常开始）。
  */
 export async function handleAgentDecide(deps: ApiDeps, req: ApiRequest): Promise<ApiResponse> {
-    const username = verifyToken(deps.secret, req.token, deps.now());
-    if (!username) {
+    const uid = verifyToken(deps.secret, req.token, deps.now());
+    if (!uid || !deps.store.getUser(uid)) {
         return {
             status: 401,
             body: { error: 'INVALID_SESSION', message: 'A valid session is required before the AI can act.' },
