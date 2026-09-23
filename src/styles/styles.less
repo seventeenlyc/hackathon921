@@ -532,6 +532,56 @@ body {
         }
       }
 
+      .natural-oil {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        margin-top: 10px;
+        padding: 7px 9px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(16, 25, 23, 0.72);
+        color: var(--ink);
+        cursor: pointer;
+        font: inherit;
+        font-size: 11px;
+
+        &:hover:not(:disabled),
+        &:focus-visible {
+          border-color: var(--accent);
+          outline: 2px solid var(--accent-soft);
+        }
+
+        &:disabled {
+          cursor: default;
+          opacity: 0.65;
+        }
+
+        .natural-oil-icon {
+          flex: 0 0 20px;
+          width: 20px;
+          height: 20px;
+          border-radius: 4px;
+          background: linear-gradient(135deg, #d5a73b, #70541b);
+          box-shadow: inset 0 0 0 2px rgba(255, 237, 165, 0.25);
+        }
+
+        .natural-oil-cost {
+          margin-left: auto;
+          color: var(--accent);
+          white-space: nowrap;
+        }
+      }
+
+      .natural-oil-status {
+        display: block;
+        min-height: 1.3em;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 10px;
+      }
+
       .tower-stats {
         min-height: 54px;
         margin-top: 9px;
@@ -596,25 +646,13 @@ body {
         content: '−';
       }
 
-      .settings-note,
-      .spawner-setting,
       footer {
         margin-top: 10px;
+        border-top: 1px solid rgba(146, 169, 160, 0.14);
+        padding-top: 10px;
         color: var(--muted);
         font-size: 11px;
         line-height: 1.4;
-      }
-
-      .spawner-setting {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-      }
-
-      footer {
-        border-top: 1px solid rgba(146, 169, 160, 0.14);
-        padding-top: 10px;
         text-align: right;
 
         & > div {
@@ -625,27 +663,6 @@ body {
           display: inline-block;
           vertical-align: middle;
         }
-      }
-    }
-
-    .spawner {
-      padding: 3px 6px;
-      border-radius: 5px;
-      color: var(--accent);
-      text-decoration: none;
-      padding: 2px 5px;
-      border-radius: 4px;
-      /* Rendered as a button so a lane change does not reload the page (#40). */
-      background: transparent;
-      border: 0;
-      font-family: inherit;
-      font-size: inherit;
-      line-height: inherit;
-      cursor: pointer;
-
-      &:hover, &.active {
-        background: var(--accent);
-        color: #102018;
       }
     }
 
@@ -698,6 +715,27 @@ body {
       text-transform: uppercase;
     }
 
+    .leaderboard-mode-toggle {
+      display: inline-block;
+      margin: 4px 0;
+      padding: 2px 8px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: rgba(16, 25, 23, 0.72);
+      color: var(--accent);
+      cursor: pointer;
+      font: inherit;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+
+      &:hover {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+    }
+
     .leaderboard-status {
       margin: 8px 0 5px;
       color: var(--dim);
@@ -731,6 +769,24 @@ body {
           width: 18px;
           color: var(--accent);
           font-weight: 700;
+        }
+
+        .mode-tag {
+          padding: 1px 4px;
+          border-radius: 3px;
+          font-size: 9px;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+
+          &.mode-ai {
+            background: rgba(47, 204, 113, 0.15);
+            color: var(--accent);
+          }
+
+          &.mode-human {
+            background: rgba(224, 160, 60, 0.18);
+            color: #e0a03c;
+          }
         }
 
         .name {
@@ -789,13 +845,6 @@ body {
     &.is-visible {
       opacity: 1;
       transform: translate(-50%, 0);
-    }
-
-    .spawner-status {
-      margin-top: 4px;
-      font-size: 11px;
-      color: #8b8b8b;
-      min-height: 14px;
     }
   }
 
@@ -1263,7 +1312,7 @@ body {
   }
 
   #inert.mode-ai .left-rail .tower-panel {
-    max-height: 110px;
+    max-height: min(260px, 42vh);
     overflow-y: auto;
   }
 

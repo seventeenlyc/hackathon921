@@ -1,16 +1,15 @@
 import {initialBalance} from './config.json'
-import {interfaceManager} from "./InterfaceManager";
 
 class CashManager {
     private balance: number = initialBalance;
 
     constructor() {
-        interfaceManager.setCash(this.balance);
+        this.showBalance();
     }
 
     add(amount: number) {
         this.balance += amount;
-        interfaceManager.setCash(this.balance);
+        this.showBalance();
     }
 
     getBalance() {
@@ -21,11 +20,16 @@ class CashManager {
         return this.balance - amount >= 0;
     }
 
-    withdraw(amount: number) {
-        if (this.canWithdraw(amount)) {
-            this.balance -= amount
-            interfaceManager.setCash(this.balance);
-        }
+    withdraw(amount: number): boolean {
+        if (!this.canWithdraw(amount)) return false;
+        this.balance -= amount;
+        this.showBalance();
+        return true;
+    }
+
+    private showBalance() {
+        const cash = document.getElementById('cash');
+        if (cash) cash.textContent = String(this.balance);
     }
 }
 

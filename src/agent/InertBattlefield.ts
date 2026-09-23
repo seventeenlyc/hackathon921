@@ -157,24 +157,22 @@ export class InertBattlefield implements Battlefield {
      * the cell is restored and the path cache is dropped before returning, so a
      * probe can never leave a phantom detour in the live simulation.
      *
-     * Returns null when the placement would seal any spawn off. It does NOT run
-     * the full `map.canBePlaced()` (which A*s every live enemy): the extra
-     * per-enemy check only matters when a placement traps an enemy in a pocket,
-     * a rare rejection GameActions surfaces to the model anyway.
+     * Returns null when the shared placement gate rejects the cell, including
+     * a route from a spawn point that has not opened yet.
      */
     private routeLengthAfterBuilding(lane: number, i: number, j: number): number | null {
         const base = map.enemyBases[lane];
-        if (!base || !map.grid[i] || map.grid[i][j] !== 0) return null;
+        if (!base || !map.canBePlaced(i, j)) return null;
 
         map.grid[i][j] = 1;
-        const everySpawnReaches = map.enemyBases.every(spawn => map.pathFind(spawn.i, spawn.j));
-        const lanePath = everySpawnReaches ? map.pathFind(base.i, base.j) : null;
-        map.grid[i][j] = 0;
-        // Any cached enemy route may assume this wall exists; drop it so the
-        // real run always recomputes from the true grid.
-        map.invalidatePathsCache();
-
-        return lanePath ? lanePath.length - 1 : null;
+        try {
+            const lanePath = map.pathFind(base.i, base.j);
+            return lanePath ? lanePath.length - 1 : null;
+        } finally {
+            map.grid[i][j] = 0;
+            // A probe must not leave a cached route from its temporary wall.
+            map.invalidatePathsCache();
+        }
     }
 
     private infoFor(tower: Tower): TowerInfo {

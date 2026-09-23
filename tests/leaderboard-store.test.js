@@ -94,4 +94,55 @@ test('store is safe without document / localStorage', () => {
     assert.doesNotThrow(() => S.writeStoredLeaderboard([]));
 });
 
+test('旧本地存储条目缺失 mode 自动补齐为 ai 模式', () => {
+    // 模拟包含旧条目的 localStorage
+    const legacyJson = JSON.stringify({
+        entries: [
+            { username: 'OldHero', wave: 42, timestamp: 100 }
+        ]
+    });
+    global.localStorage = {
+        getItem: () => legacyJson,
+        setItem: () => {},
+    };
+    try {
+        const loaded = S.readStoredLeaderboard();
+        assert.ok(loaded && loaded.length === 1);
+        assert.strictEqual(loaded[0].username, 'OldHero');
+        assert.strictEqual(loaded[0].wave, 42);
+        assert.strictEqual(loaded[0].mode, 'ai');
+    } finally {
+        delete global.localStorage;
+    }
+});
+
+test('同一昵称在 AI 与 Human 模式下分别保留成绩，entriesForBoard(total) 均返回', () => {
+    let stored = [];
+    const r1 = S.submitScore('Alice', 10, stored, 'ai');
+    stored = r1.entries;
+    const r2 = S.submitScore('Alice', 20, stored, 'human');
+    stored = r2.entries;
+
+    assert.strictEqual(stored.length, 2);
+    const aiEntries = S.entriesForBoard(stored, 'ai');
+    assert.strictEqual(aiEntries.length, 1);
+    assert.strictEqual(aiEntries[0].mode, 'ai');
+    assert.strictEqual(aiEntries[0].wave, 10);
+
+    const humanEntries = S.entriesForBoard(stored, 'human');
+    assert.strictEqual(humanEntries.length, 1);
+    assert.strictEqual(humanEntries[0].mode, 'human');
+    assert.strictEqual(humanEntries[0].wave, 20);
+
+    const totalEntries = S.entriesForBoard(stored, 'total');
+    assert.strictEqual(totalEntries.length, 2);
+    assert.deepStrictEqual(
+        totalEntries.map(e => [e.username, e.wave, e.mode]),
+        [
+            ['Alice', 20, 'human'],
+            ['Alice', 10, 'ai'],
+        ]
+    );
+});
+
 require('./leaderboard-live.test.js');

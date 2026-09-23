@@ -89,4 +89,26 @@ async function test(name, fn) {
         assert.strictEqual(attempts, 4);
         assert.deepStrictEqual(waits, [1000, 2000, 4000]);
     });
+
+    await test('RunSync keeps separate run promises for AI and human under the same nickname', async () => {
+        const runs = [];
+        const client = {
+            ensureRun: async (username, mode = 'ai') => {
+                runs.push({ username, mode });
+                return `run-${username}-${mode}`;
+            },
+            recordPromptVersion: async () => ({ ok: true, value: { recorded: true, version: 1, fromWave: 1 } }),
+            syncReachedWave: async () => ({ ok: true, value: 1 }),
+        };
+        const { RunSync } = loadSync(client);
+        const sync = new RunSync(client, { wait: async () => {} });
+        sync.prepareRun('Alice', 'ai');
+        sync.prepareRun('Alice', 'human');
+        await sync.whenIdle();
+        assert.strictEqual(runs.length, 2);
+        assert.deepStrictEqual(runs, [
+            { username: 'Alice', mode: 'ai' },
+            { username: 'Alice', mode: 'human' },
+        ]);
+    });
 })();

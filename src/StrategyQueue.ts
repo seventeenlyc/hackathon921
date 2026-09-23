@@ -43,7 +43,7 @@ export function startRun(): void {
     if (!strategyStore.activateForRun()) return;
 
     audioManager.startMusic();
-    if (playMode === 'ai') runSync.prepareRun(getSessionUsername()!);
+    if (playMode === 'ai') runSync.prepareRun(getSessionUsername()!, 'ai');
     gameLoop.start();
     void waveManager.start();
 }

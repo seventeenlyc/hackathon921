@@ -143,3 +143,96 @@ test('migrate 幂等：重复调用不报错', () => {
     assert.doesNotThrow(() => store.migrate());
     assert.doesNotThrow(() => store.migrate());
 });
+
+test('旧表迁移补齐 mode 列且旧数据默认为 ai 模式', () => {
+    const db = new DatabaseSync(':memory:');
+    db.exec(`
+        PRAGMA foreign_keys = OFF;
+        CREATE TABLE runs (
+            id TEXT PRIMARY KEY,
+            username TEXT NOT NULL,
+            created_at INTEGER NOT NULL,
+            last_wave INTEGER NOT NULL DEFAULT 0,
+            prompt_head_id TEXT
+        );
+        CREATE TABLE wave_events (
+            run_id TEXT NOT NULL REFERENCES runs(id),
+            wave INTEGER NOT NULL,
+            at_ms INTEGER NOT NULL,
+            PRIMARY KEY (run_id, wave)
+        );
+        INSERT INTO runs (id, username, created_at, last_wave) VALUES ('legacy-1', 'OldPlayer', 1000, 5);
+        INSERT INTO wave_events (run_id, wave, at_ms) VALUES ('legacy-1', 5, 1050);
+    `);
+    const store = new LeaderboardStore(db);
+    store.migrate();
+
+    const run = store.getRun('legacy-1');
+    assert.ok(run);
+    assert.equal(run?.mode, 'ai');
+
+    const topAi = store.top(10, 'ai');
+    assert.equal(topAi.length, 1);
+    assert.equal(topAi[0].username, 'OldPlayer');
+    assert.equal(topAi[0].mode, 'ai');
+
+    const topHuman = store.top(10, 'human');
+    assert.equal(topHuman.length, 0);
+});
+
+test('AI 与人类模式隔离，总榜合并同昵称不同模式成绩', () => {
+    const store = freshStore();
+    store.createRun('r-ai', 'Alice', T0, 'ai');
+    store.recordWave('r-ai', 'Alice', 12, T0 + 100);
+
+    store.createRun('r-human', 'Alice', T0, 'human');
+    store.recordWave('r-human', 'Alice', 16, T0 + 200);
+
+    const aiTop = store.top(10, 'ai');
+    assert.equal(aiTop.length, 1);
+    assert.deepEqual([aiTop[0].username, aiTop[0].wave, aiTop[0].mode], ['Alice', 12, 'ai']);
+    assert.equal(store.rankOf('Alice', 'ai'), 1);
+    assert.equal(store.bestWaveOf('Alice', 'ai'), 12);
+
+    const humanTop = store.top(10, 'human');
+    assert.equal(humanTop.length, 1);
+    assert.deepEqual([humanTop[0].username, humanTop[0].wave, humanTop[0].mode], ['Alice', 16, 'human']);
+    assert.equal(store.rankOf('Alice', 'human'), 1);
+    assert.equal(store.bestWaveOf('Alice', 'human'), 16);
+
+    const totalTop = store.top(10, 'total');
+    assert.equal(totalTop.length, 2);
+    assert.deepEqual(
+        totalTop.map(e => [e.username, e.wave, e.mode]),
+        [
+            ['Alice', 16, 'human'],
+            ['Alice', 12, 'ai'],
+        ]
+    );
+    assert.equal(store.rankOf('Alice', 'total'), 1);
+});
+
+test('平局时按达成时间升序，总榜最多返回 limit 条记录', () => {
+    const store = freshStore();
+    store.createRun('r1', 'Alice', T0, 'ai');
+    store.recordWave('r1', 'Alice', 20, T0 + 200);
+
+    store.createRun('r2', 'Bob', T0, 'ai');
+    store.recordWave('r2', 'Bob', 20, T0 + 100);
+
+    const top = store.top(10, 'ai');
+    assert.equal(top[0].username, 'Bob', '更早达成者排在前面');
+    assert.equal(top[1].username, 'Alice');
+
+    // 制造 12 条不同模式/用户的记录，测试 limit 10
+    for (let i = 0; i < 6; i++) {
+        const u = `User${i}`;
+        store.createRun(`ai-${i}`, u, T0, 'ai');
+        store.recordWave(`ai-${i}`, u, 10 + i, T0 + i * 10);
+        store.createRun(`hu-${i}`, u, T0, 'human');
+        store.recordWave(`hu-${i}`, u, 10 + i, T0 + i * 10);
+    }
+    const total10 = store.top(10, 'total');
+    assert.equal(total10.length, 10);
+});
+

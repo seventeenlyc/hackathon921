@@ -27,12 +27,13 @@ function request(over: Partial<ApiRequest>): ApiRequest {
 }
 
 /** 走一遍 session → runs，返回可用于后续请求的 token 与 runId。 */
-function openRun(deps: ApiDeps, username: string): { token: string; runId: string } {
+function openRun(deps: ApiDeps, username: string, mode?: string): { token: string; runId: string } {
     const session = handleApi(deps, request({ method: 'POST', pathname: '/api/session', body: { username } }));
     assert.equal(session.status, 200);
     const token = session.body.token as string;
 
-    const run = handleApi(deps, request({ method: 'POST', pathname: '/api/runs', token }));
+    const body = mode !== undefined ? { mode } : {};
+    const run = handleApi(deps, request({ method: 'POST', pathname: '/api/runs', token, body }));
     assert.equal(run.status, 201);
     return { token, runId: run.body.runId as string };
 }
@@ -74,6 +75,73 @@ test('POST /api/runs 需要有效会话', () => {
         handleApi(deps, request({ method: 'POST', pathname: '/api/runs', token: 'forged.token' })).status,
         401
     );
+});
+
+test('POST /api/runs 与 GET /api/leaderboard 校验模式并拒绝非法值', () => {
+    const deps = makeDeps();
+    const session = handleApi(deps, request({ method: 'POST', pathname: '/api/session', body: { username: 'Alice' } }));
+    const token = session.body.token as string;
+
+    const badRun = handleApi(
+        deps,
+        request({ method: 'POST', pathname: '/api/runs', token, body: { mode: 'robot' } })
+    );
+    assert.equal(badRun.status, 400);
+    assert.deepEqual(badRun.body, { error: 'INVALID_MODE' });
+
+    const badBoard = handleApi(
+        deps,
+        request({ pathname: '/api/leaderboard', searchParams: { mode: 'robot' } })
+    );
+    assert.equal(badBoard.status, 400);
+    assert.deepEqual(badBoard.body, { error: 'INVALID_MODE' });
+});
+
+test('排行榜按模式隔离查询，缺省为 AI，总榜合并且 me 选择更优记录', () => {
+    const deps = makeDeps();
+    const aliceAi = openRun(deps, 'Alice', 'ai');
+    const aliceHuman = openRun(deps, 'Alice', 'human');
+    const bobAi = openRun(deps, 'Bob'); // 缺省 mode => ai
+
+    handleApi(deps, request({ method: 'POST', pathname: `/api/runs/${aliceAi.runId}/waves`, token: aliceAi.token, body: { wave: 10 } }));
+    handleApi(deps, request({ method: 'POST', pathname: `/api/runs/${aliceHuman.runId}/waves`, token: aliceHuman.token, body: { wave: 25 } }));
+    handleApi(deps, request({ method: 'POST', pathname: `/api/runs/${bobAi.runId}/waves`, token: bobAi.token, body: { wave: 15 } }));
+
+    // 默认不传 mode => ai 榜
+    const defaultBoard = handleApi(deps, request({ pathname: '/api/leaderboard', token: aliceAi.token }));
+    assert.equal(defaultBoard.status, 200);
+    assert.deepEqual(
+        defaultBoard.body.entries.map((e: any) => [e.rank, e.username, e.wave, e.mode]),
+        [
+            [1, 'Bob', 15, 'ai'],
+            [2, 'Alice', 10, 'ai'],
+        ]
+    );
+    assert.deepEqual(defaultBoard.body.me, { username: 'Alice', rank: 2, wave: 10, mode: 'ai' });
+
+    // human 榜：只有 Alice 的 human 成绩
+    const humanBoard = handleApi(deps, request({ pathname: '/api/leaderboard', searchParams: { mode: 'human' }, token: aliceAi.token }));
+    assert.equal(humanBoard.status, 200);
+    assert.deepEqual(
+        humanBoard.body.entries.map((e: any) => [e.rank, e.username, e.wave, e.mode]),
+        [
+            [1, 'Alice', 25, 'human'],
+        ]
+    );
+    assert.deepEqual(humanBoard.body.me, { username: 'Alice', rank: 1, wave: 25, mode: 'human' });
+
+    // total 榜：包含两种模式记录，Alice 的总榜 me 选更优的 human/25
+    const totalBoard = handleApi(deps, request({ pathname: '/api/leaderboard', searchParams: { mode: 'total' }, token: aliceAi.token }));
+    assert.equal(totalBoard.status, 200);
+    assert.deepEqual(
+        totalBoard.body.entries.map((e: any) => [e.rank, e.username, e.wave, e.mode]),
+        [
+            [1, 'Alice', 25, 'human'],
+            [2, 'Bob', 15, 'ai'],
+            [3, 'Alice', 10, 'ai'],
+        ]
+    );
+    assert.deepEqual(totalBoard.body.me, { username: 'Alice', rank: 1, wave: 25, mode: 'human' });
 });
 
 test('波次上报：正向路径返回 accepted 与最佳波次', () => {

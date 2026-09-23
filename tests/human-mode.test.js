@@ -41,4 +41,15 @@ assert.match(interfaceSource, /pauseButton\.hidden = state === 'paused'/,
 assert.match(interfaceSource, /pauseButton\.disabled = state === 'idle' \|\| state === 'planning'/,
     'the pause control must be disabled until a run can be paused');
 
+const mainSource = read('src/main.ts');
+assert.match(game, /export function startHumanRun/, 'Game.ts must export startHumanRun');
+assert.doesNotMatch(game, /if \(playMode === 'human'\)\s*\{\s*gameLoop\.start\(\)/,
+    'human mode must not auto-start on module load; it waits for nickname confirmation');
+assert.match(game, /submitRunScore\(username, wave, playMode\)/,
+    'Game.recordReachedWave must pass playMode to submitRunScore');
+assert.match(mainSource, /startHumanRun\(name\)/,
+    'main.ts must call startHumanRun upon valid nickname confirmation in human mode');
+assert.doesNotMatch(mainSource, /if \(playMode === 'ai'\)\s*\{\s*if \(document\.readyState/,
+    'main.ts must show UsernameGate in both modes');
+
 console.log('Human mode and random strategy UI assertions passed.');
