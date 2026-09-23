@@ -16,14 +16,10 @@ export class SniperTower extends Tower {
     reloadDurationMs: number = 3000;
     description: string = "Huge range, huge damages, but slow reload.";
     target: Enemy | undefined;
-    private angle: number = 0;
 
-    update() {
-        super.update();
-
-        if (this.target) {
-            this.angle = Math.atan2(this.target.y - this.center.y, this.target.x - this.center.x);
-        }
+    protected get muzzleOffset(): {x: number; y: number} {
+        const scale = this.width / 228;
+        return {x: 103 * scale, y: 10.5 * scale};
     }
 
     shoot(): void {
@@ -34,8 +30,7 @@ export class SniperTower extends Tower {
     }
 
     draw(ctx: CanvasRenderingContext2D) {
-        this.drawTexture(ctx, this.angle);
-
+        this.drawTexture(ctx, this.turretRotation);
         super.draw(ctx);
     }
 

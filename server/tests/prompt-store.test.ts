@@ -5,11 +5,32 @@ import { LeaderboardStore, RUN_TTL_MS } from '../src/store';
 
 const T0 = 1_000_000;
 
-function freshStore(): { store: LeaderboardStore; db: any } {
+function freshStore(): { store: any; db: any } {
     const db = new DatabaseSync(':memory:');
     const store = new LeaderboardStore(db);
     store.migrate();
-    return { store, db };
+    // Each name is shorthand for one UID in these low-level tests. The API
+    // suite verifies that two confirmed profiles with the same name are split.
+    const ids = new Map<string, number>();
+    const uid = (name: string) => {
+        const key = name.toLowerCase();
+        let id = ids.get(key);
+        if (!id) {
+            id = store.createUser(name, 'aramaki', T0);
+            ids.set(key, id);
+        }
+        return id;
+    };
+    const view: any = Object.create(store);
+    view.createRun = (id: string, name: string, now: number, mode?: 'ai' | 'human') => store.createRun(id, uid(name), now, mode);
+    view.recordWave = (id: string, name: string, wave: number, now: number) => store.recordWave(id, uid(name), wave, now);
+    view.recordPrompt = (id: string, name: string, input: any, now: number) => store.recordPrompt(id, uid(name), input, now);
+    view.bestRunPrompts = (name: string) => {
+        const result = store.bestRunPrompts(uid(name));
+        const { uid: hiddenUid, ...visible } = result;
+        return visible;
+    };
+    return { store: view, db };
 }
 
 test('提示词迁移为旧 runs 表补列且重复迁移幂等并开启外键', () => {
@@ -60,7 +81,7 @@ test('提示词节点按生效顺序连接且重试不重复追加', () => {
     assert.equal(rows[0].prev_id, null);
     assert.equal(rows[1].prev_id, rows[0].id);
     assert.equal(db.prepare('SELECT prompt_head_id FROM runs WHERE id = ?').get('r1').prompt_head_id, rows[1].id);
-    assert.deepEqual(store.bestRunPrompts('Alice').prompts.map(node => [node.version, node.prompt, node.fromWave]), [
+    assert.deepEqual(store.bestRunPrompts('Alice').prompts.map((node: any) => [node.version, node.prompt, node.fromWave]), [
         [1, 'A', 1],
         [3, 'C', 2],
     ]);
@@ -77,7 +98,7 @@ test('提示词节点按生效顺序连接且重试不重复追加', () => {
     });
 });
 
-test('提示词校验拒绝非法输入、过期对局和昵称冒用', () => {
+test('提示词校验拒绝非法输入、过期对局和 UID 冒用', () => {
     const { store } = freshStore();
     store.createRun('r1', 'Alice', T0);
     const invalid = [
@@ -92,7 +113,7 @@ test('提示词校验拒绝非法输入、过期对局和昵称冒用', () => {
     }
     assert.deepEqual(store.recordPrompt('r1', 'Mallory', { version: 1, prompt: 'A', fromWave: 1 }, T0), {
         recorded: false,
-        reason: 'USERNAME_MISMATCH',
+        reason: 'UID_MISMATCH',
     });
     assert.deepEqual(store.recordPrompt('missing', 'Alice', { version: 1, prompt: 'A', fromWave: 1 }, T0), {
         recorded: false,
@@ -119,7 +140,7 @@ test('新增提示词事务失败时回滚节点和链头', () => {
     assert.equal(db.prepare('SELECT prompt_head_id FROM runs WHERE id = ?').get('r1').prompt_head_id, null);
 });
 
-test('最佳对局按波次、达成时间和 run id 稳定选择且只读取该局链', () => {
+test('同一 UID 的最佳对局按波次、达成时间和 run id 稳定选择且只读取该局链', () => {
     const { store } = freshStore();
     store.createRun('older-high', 'Alice', T0);
     store.recordPrompt('older-high', 'Alice', { version: 1, prompt: 'best', fromWave: 1 }, T0);
@@ -133,7 +154,7 @@ test('最佳对局按波次、达成时间和 run id 稳定选择且只读取该
     assert.equal(best.username, 'Alice');
     assert.equal(best.runId, 'older-high');
     assert.equal(best.wave, 10);
-    assert.deepEqual(best.prompts.map(node => node.prompt), ['best']);
+    assert.deepEqual(best.prompts.map((node: any) => node.prompt), ['best']);
 
     store.createRun('tie-late', 'Alice', T0 + 30);
     store.recordWave('tie-late', 'Alice', 10, T0 + 200);
@@ -157,7 +178,7 @@ test('提示词历史只读取 AI 模式对局，忽略人类模式的高波次'
     const best = store.bestRunPrompts('Alice');
     assert.equal(best.runId, 'r-ai', '人类模式虽然波次更高，但提示词历史只选 AI 对局');
     assert.equal(best.wave, 10);
-    assert.deepEqual(best.prompts.map(p => p.prompt), ['ai prompt']);
+    assert.deepEqual(best.prompts.map((p: any) => p.prompt), ['ai prompt']);
 });
 
 test('损坏的提示词链不返回假完整结果', () => {

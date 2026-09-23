@@ -42,9 +42,9 @@ const STRINGS: { [key: string]: Entry } = {
     'aria.gameControls': {zh: '作战控制', en: 'Operation controls'},
     'aria.githubRepository': {zh: 'GitHub 源代码仓库', en: 'GitHub source repository'},
 
-    'label.wave': {zh: '防御波次：', en: 'Defense Wave:'},
-    'label.state': {zh: '作战状态：', en: 'Operation:'},
-    'label.cash': {zh: '战术资源：', en: 'Resources:'},
+    'label.wave': {zh: '防御波次', en: 'Wave'},
+    'label.state': {zh: '作战状态', en: 'Phase'},
+    'label.cash': {zh: '战术资源', en: 'Tactical Credit'},
     'label.spawners': {zh: '攻击路线：', en: 'Attack Routes:'},
 
     'strategy.label': {zh: '作战命令', en: 'Tactical Order'},
@@ -60,7 +60,19 @@ const STRINGS: { [key: string]: Entry } = {
     'strategy.active': {zh: 'EXECUTING ORDER · 第 {wave} 波起', en: 'EXECUTING ORDER · Active from wave {wave}'},
     'strategy.tooLong': {zh: '命令 {length} 个字符，超过终端上限 {max}。', en: 'Order is {length} characters; terminal limit is {max}.'},
 
-    'decisions.label': {zh: '塔奇克马判断', en: 'Tachikoma Decisions'},
+    'reasoning.title': {zh: '塔奇克马判断', en: 'AI DECISION TERMINAL'},
+    'reasoning.status.waiting': {zh: '等待分析', en: 'AWAITING ANALYSIS'},
+    'reasoning.status.planning': {zh: '战术分析中', en: 'ANALYZING BATTLEFIELD'},
+    'reasoning.status.ready': {zh: '本轮决策摘要', en: 'WAVE DECISION SUMMARY'},
+    'reasoning.status.unavailable': {zh: '摘要不可用', en: 'SUMMARY UNAVAILABLE'},
+    'reasoning.empty': {zh: '等待塔奇克马对下一波做出决策…', en: 'Awaiting the next tactical decision…'},
+    'reasoning.plan.build': {zh: '本轮计划在 ({i}, {j}) 部署 {type}。', en: 'Plan to deploy {type} at ({i}, {j}) this wave.'},
+    'reasoning.plan.upgrade': {zh: '本轮计划升级坐标 {id} 的机体。', en: 'Plan to upgrade the unit at {id} this wave.'},
+    'reasoning.plan.item': {zh: '本轮计划使用 {item}。', en: 'Plan to use {item} this wave.'},
+    'reasoning.plan.more': {zh: '另有 {count} 项操作。', en: 'Plus {count} more action(s).'},
+    'reasoning.plan.generic': {zh: '模型提交了 {count} 项操作，结果见下方执行日志。', en: 'The model submitted {count} action(s); see the execution log below.'},
+    'reasoning.item.naturalOil': {zh: '天然机油', en: 'Natural Oil'},
+    'decisions.label': {zh: '执行日志', en: 'EXECUTION LOG'},
     'decisions.empty': {zh: '等待塔奇克马自主判断。', en: 'Awaiting Tachikoma decisions.'},
     'decision.entry': {zh: 'WAVE {wave} · {action} // {detail}{message}', en: 'WAVE {wave} · {action} // {detail}{message}'},
 
@@ -78,10 +90,17 @@ const STRINGS: { [key: string]: Entry } = {
     'control.audio': {zh: '音效开', en: 'Sound On'},
     'control.audioMuted': {zh: '音效关', en: 'Sound Off'},
 
+    // 设计稿的状态框是「英文大字 + 汉字小字」双语排布（对照 DEFENSE / 防衛），
+    // 因此主值两种语言都固定英文，副行两种语言都固定中文。
+    // 主值单词必须短（最长 8 字符），才能在 1/3 卡宽内不截断地放下。
     'state.idle': {zh: 'STANDBY', en: 'STANDBY'},
     'state.running': {zh: 'ACTION', en: 'ACTION'},
-    'state.paused': {zh: 'SUSPENDED', en: 'SUSPENDED'},
-    'state.planning': {zh: '战术分析中', en: 'TACTICAL ANALYSIS'},
+    'state.paused': {zh: 'PAUSED', en: 'PAUSED'},
+    'state.planning': {zh: 'PLANNING', en: 'PLANNING'},
+    'stateSub.idle': {zh: '待机', en: '待机'},
+    'stateSub.running': {zh: '行动中', en: '行动中'},
+    'stateSub.paused': {zh: '已暂停', en: '已暂停'},
+    'stateSub.planning': {zh: '战术分析中', en: '战术分析中'},
 
     'speed.label': {zh: '演算速度 x{speed}', en: 'Simulation x{speed}'},
 
@@ -186,19 +205,16 @@ const STRINGS: { [key: string]: Entry } = {
     'history.version': {zh: '命令版本 {version}', en: 'Order Version {version}'},
     'history.fromWave': {zh: 'WAVE {wave} 起执行', en: 'Effective from WAVE {wave}'},
 
-    // 战术工作站位壳层（issue #66）：Header / 地图框 / 三栏面板 / 数据库 / 威胁情报。
+    // 战术工作站位壳层（issue #66）：Header / 地图框 / 三栏面板 / 数据库。
     'map.live': {zh: 'LIVE', en: 'LIVE'},
     'map.sector': {zh: '作战扇区 09-A', en: 'SECTOR 09-A'},
     'map.layer': {zh: '网络层 DEEP_3', en: 'NETWORK LAYER: DEEP_3'},
     'map.intrusion': {zh: '入侵检测 — 自律清除程序接入中', en: 'INTRUSION DETECTED — AUTONOMOUS SUPPRESSION NETWORK'},
     'map.liveBar': {zh: '战术地图 // 实况', en: 'TACTICAL MAP // LIVE'},
     'map.waveTag': {zh: '波次 {wave}', en: 'WAVE {wave}'},
-    'threat.title': {zh: '敌性体情报', en: 'THREAT INFORMATION'},
-    'threat.wave': {zh: '当前波次', en: 'CURRENT WAVE'},
-    'threat.idle': {zh: '待机 — 未捕获敌性体信号', en: 'STANDBY — NO HOSTILE SIGNALS'},
     'neural.title': {zh: '神经链接', en: 'NEURAL LINK'},
     'items.title': {zh: '支援道具', en: 'BATTLE ITEMS'},
-    'database.tabHostile': {zh: '敌性体', en: 'HOSTILE'},
+    'database.tabHostile': {zh: '敌人情报', en: 'ENEMY INTELLIGENCE'},
     'enemy.simple.name': {zh: '傀儡型', en: 'PUPPET'},
     'enemy.simple.desc': {zh: '数量最多的基础敌性体，成群涌向核心。', en: 'The most common hostile; swarms the core in numbers.'},
     'enemy.fast.name': {zh: '猎袭型', en: 'HUNTER'},

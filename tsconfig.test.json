@@ -20,6 +20,7 @@
     "src/items/TacticalItems.ts",
     "src/agent/GameActions.ts",
     "src/agent/GameLoop.ts",
+    "src/agent/modelItemActivation.ts",
     "src/agent/SpawnRoutes.ts",
     "src/agent/StrategyLibrary.ts",
     "src/agent/StrategyLimits.ts",

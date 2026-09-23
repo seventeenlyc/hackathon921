@@ -18,9 +18,63 @@
     <link rel="icon" href="/img/icons/favicon.ico" sizes="any" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#0a121a" />
+    <!-- Critical boot CSS must precede the JS-imported Less: otherwise refresh paints raw HTML and an oversized SVG. -->
+    <style id="boot-style">
+      html, body { margin: 0; min-height: 100%; background: #0a121a; }
+      html:not(.app-ready) #inert { visibility: hidden; }
+      #loading-screen {
+        position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center;
+        box-sizing: border-box; padding: 18px; overflow: hidden;
+        background: radial-gradient(circle at 50% 40%, #183744 0, #0a1b25 48%, #070e15 100%);
+        color: #dfe9ec; font-family: system-ui, -apple-system, sans-serif;
+      }
+      #loading-screen::before {
+        content: ''; position: absolute; inset: 0; pointer-events: none;
+        background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(53, 226, 255, .025) 3px 4px);
+      }
+      .boot-terminal {
+        position: relative; box-sizing: border-box; width: min(440px, 100%);
+        padding: clamp(22px, 5vw, 34px); border: 1px solid rgba(53, 226, 255, .35);
+        background: rgba(7, 18, 25, .92); box-shadow: 0 18px 65px rgba(0, 0, 0, .5);
+      }
+      .boot-eyebrow, .boot-meta {
+        color: #8aa0aa; font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+        letter-spacing: .12em;
+      }
+      .boot-eyebrow { color: #35e2ff; }
+      .boot-terminal h1 { margin: 22px 0 8px; color: #dfe9ec; font-size: clamp(24px, 6vw, 32px); line-height: 1.25; }
+      .boot-message { margin: 0 0 25px; color: #a6b9c1; font-size: 13px; line-height: 1.6; }
+      .boot-track { position: relative; height: 3px; overflow: hidden; background: rgba(53, 226, 255, .14); }
+      .boot-track::after {
+        content: ''; position: absolute; left: 0; top: 0; width: 36%; height: 100%;
+        background: #35e2ff; box-shadow: 0 0 12px rgba(53, 226, 255, .75);
+        animation: boot-scan 1.5s ease-in-out infinite alternate;
+      }
+      .boot-meta { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; }
+      .boot-retry {
+        display: inline-block; margin-top: 24px; color: #8aa0aa; font-size: 11px;
+        text-decoration: underline; visibility: hidden;
+        animation: boot-show-retry 0s 8s forwards;
+      }
+      .boot-retry:focus-visible { outline: 2px solid #35e2ff; outline-offset: 4px; }
+      @keyframes boot-scan { to { transform: translateX(180%); } }
+      @keyframes boot-show-retry { to { visibility: visible; } }
+      @media (prefers-reduced-motion: reduce) { .boot-track::after { animation: none; } }
+      html.app-ready #loading-screen { display: none; }
+    </style>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet" />
   </head>
   <body>
+    <div id="loading-screen" role="status" aria-live="polite">
+      <div class="boot-terminal">
+        <div class="boot-eyebrow">公安九课 // TACTICAL NETWORK</div>
+        <h1>保护笑脸男</h1>
+        <p class="boot-message">正在建立战术链路，请稍候…</p>
+        <div class="boot-track" aria-hidden="true"></div>
+        <div class="boot-meta"><span>SECURE CHANNEL</span><span>INITIALIZING</span></div>
+        <a class="boot-retry" href="">等待过久？点击重新加载</a>
+      </div>
+    </div>
     <div id="inert">
       <canvas id="canvas" tabindex="0" data-i18n-aria-label="aria.battlefield" aria-label="塔奇克马战术防御区域。双击打开作战终端。"></canvas>
 
@@ -28,7 +82,7 @@
         <div class="header-side header-left">
           <span class="eyebrow" data-i18n="shell.eyebrow">公安九课 // 战术网络</span>
           <span class="header-sub" data-i18n="header.subtitle">公安九课 · 塔奇克马防御协议</span>
-          <span id="version" class="header-ver">v0.2.1</span>
+          <span id="version" class="header-ver">v0.2.7</span>
         </div>
         <h1 class="header-title" data-i18n="app.name">保护笑脸男</h1>
         <div class="header-side header-right">
@@ -52,9 +106,9 @@
               <h2 id="status-heading" class="panel-title" data-i18n="aria.battlefieldStatus">战场状态</h2>
             </div>
             <div class="status-grid" data-i18n-aria-label="aria.battlefieldStatus" aria-label="战场状态">
-              <div class="status-metric"><span data-i18n="label.cash">战术资源：</span><strong><span id="cash">200</span></strong></div>
-              <div class="status-metric"><span data-i18n="label.wave">防御波次：</span><strong><span id="wave">1</span> <span id="delay"></span></strong></div>
-              <div class="status-metric"><span data-i18n="label.state">作战状态：</span><strong id="state">STANDBY</strong></div>
+              <div class="status-metric"><span class="status-label" data-i18n="label.cash">战术资源</span><strong><span id="cash">200</span></strong></div>
+              <div class="status-metric"><span class="status-label" data-i18n="label.wave">防御波次</span><strong><span id="wave">001</span> <span id="delay"></span></strong></div>
+              <div class="status-metric"><span class="status-label" data-i18n="label.state">作战状态</span><strong id="state">STANDBY</strong><span class="status-sub" id="state-sub">待机</span></div>
             </div>
           </section>
 
@@ -77,8 +131,16 @@
             </div>
           </section>
 
+          <section id="decision-summary-panel" class="control-card reasoning-panel" data-state="idle" aria-labelledby="reasoning-heading">
+            <div class="reasoning-header">
+              <h2 id="reasoning-heading" class="panel-title" data-i18n="reasoning.title">塔奇克马判断</h2>
+              <span id="decision-summary-status" class="reasoning-status" data-i18n="reasoning.status.waiting">等待分析</span>
+            </div>
+            <p id="decision-summary" class="reasoning-content" aria-live="polite" data-i18n="reasoning.empty">等待塔奇克马对下一波做出决策…</p>
+          </section>
+
           <section class="control-card flux-panel" aria-labelledby="flux-heading">
-            <h2 id="flux-heading" class="panel-title" data-i18n="decisions.label">塔奇克马判断</h2>
+            <h2 id="flux-heading" class="panel-title" data-i18n="decisions.label">执行日志</h2>
             <ul id="decision-log" class="decision-log"></ul>
             <div id="decision-empty" class="decision-empty" data-i18n="decisions.empty">等待塔奇克马自主判断。</div>
           </section>
@@ -86,16 +148,6 @@
 
         <aside class="rail rail-right">
           <div id="leaderboard-slot" class="leaderboard-slot"></div>
-
-          <section class="control-card threat-panel" aria-labelledby="threat-heading">
-            <h2 id="threat-heading" class="panel-title" data-i18n="threat.title">敌性体情报</h2>
-            <div class="threat-wave">
-              <span data-i18n="threat.wave">当前波次</span>
-              <strong id="threat-wave">—</strong>
-            </div>
-            <ul id="threat-list" class="threat-list"></ul>
-            <div id="threat-idle" class="threat-idle" data-i18n="threat.idle">待机 — 未捕获敌性体信号</div>
-          </section>
 
           <section class="control-card neural-panel" aria-labelledby="neural-heading" data-i18n-aria-label="aria.gameControls" aria-label="作战控制">
             <h2 id="neural-heading" class="panel-title" data-i18n="neural.title">神经链接</h2>
@@ -164,7 +216,7 @@
           <div class="database-header">
             <div class="database-tabs">
               <button id="db-tab-tachikoma" class="db-tab active" type="button" aria-selected="true" data-i18n="towers.heading">塔奇克马部署</button>
-              <button id="db-tab-hostile" class="db-tab" type="button" aria-selected="false" data-i18n="database.tabHostile">敌性体</button>
+              <button id="db-tab-hostile" class="db-tab" type="button" aria-selected="false" data-i18n="database.tabHostile">敌人情报</button>
             </div>
           </div>
           <section class="tower-panel db-view active" id="db-view-tachikoma">
@@ -172,7 +224,7 @@
             <div id="towers-stats" class="tower-stats" aria-live="polite">选择塔奇克马机体以查看战术参数。</div>
           </section>
           <section class="hostile-panel db-view" id="db-view-hostile" aria-labelledby="hostile-heading" hidden>
-            <h2 id="hostile-heading" class="visually-hidden" data-i18n="database.tabHostile">敌性体 // 属性库</h2>
+            <h2 id="hostile-heading" class="visually-hidden" data-i18n="database.tabHostile">敌人情报</h2>
             <div class="hostile-grid">
               <div class="hostile-card"><img data-enemy-img="simple" alt=""/><span class="hostile-name" data-i18n="enemy.simple.name">傀儡型</span><span class="hostile-code">PUPPET</span><span class="hostile-desc" data-i18n="enemy.simple.desc">数量最多的基础敌性体，成群涌向核心。</span></div>
               <div class="hostile-card"><img data-enemy-img="fast" alt=""/><span class="hostile-name" data-i18n="enemy.fast.name">猎袭型</span><span class="hostile-code">HUNTER</span><span class="hostile-desc" data-i18n="enemy.fast.desc">高速突进型，行动最快，需要提前拦截。</span></div>

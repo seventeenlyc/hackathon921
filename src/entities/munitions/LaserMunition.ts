@@ -20,7 +20,8 @@ export class LaserMunition extends Munition {
         ctx.shadowBlur = 3 + 5 * this.charge
         ctx.globalAlpha = this.charge + 0.1
         ctx.beginPath();
-        ctx.moveTo(this.emitter.center.x, this.emitter.center.y)
+        const muzzle = this.emitter.getMuzzlePosition();
+        ctx.moveTo(muzzle.x, muzzle.y)
         ctx.lineTo(this.target.x, this.target.y);
         ctx.stroke();
         ctx.shadowBlur = 0

@@ -17,7 +17,7 @@ import {audioManager} from './AudioManager';
 import {cashManager} from './CashManager';
 import {naturalOilController, OilActivationResult} from './items/NaturalOil';
 import {tacticalItemsController} from './items/TacticalItems';
-import {ENEMY_TYPE_IDS, countEnemiesByType, EnemyTypeId, isEnemyTypeId} from './tools/enemyCatalog';
+import {isEnemyTypeId} from './tools/enemyCatalog';
 import {texturePaths} from './tools/texturePaths';
 
 type OilFailureReason = Extract<OilActivationResult, {ok: false}>['reason'];
@@ -52,6 +52,7 @@ class InterfaceManager {
     private towersWrapperElement = document.getElementById('towers-wrapper')!;
     private towersStatsElement = document.getElementById('towers-stats')!;
     private stateElement = document.getElementById('state')!;
+    private stateSubElement = document.getElementById('state-sub')!;
     private speedElement = document.getElementById('speed')!;
     private gameOverElement = document.getElementById('game-over')!;
     private pauseButton = document.getElementById('pause') as HTMLButtonElement;
@@ -67,11 +68,6 @@ class InterfaceManager {
     private controlLayer = getControlLayer();
     private lastTower: Tower | null = null;
     private lastWave = 0;
-    /** Read-only enemy source injected by Game; UI never mutates the battlefield. */
-    private threatSource: (() => readonly unknown[]) | null = null;
-    private threatTimer: number | null = null;
-    // `Map` here is the game's map class, so counters live in a plain record.
-    private threatCountElements: Partial<Record<EnemyTypeId, HTMLElement>> = {};
     public snackbar = new Snackbar();
 
     constructor() {
@@ -132,7 +128,6 @@ class InterfaceManager {
         this.updateNaturalOil();
         this.setupDatabaseTabs();
         this.setupHostileImages();
-        this.buildThreatList();
         this.startHeaderClock();
 
         // The class scopes which half of the UI is visible (see styles.less).
@@ -151,9 +146,7 @@ class InterfaceManager {
             if (this.lastWave > 0) {
                 const tag = t('map.waveTag', {wave: String(this.lastWave).padStart(3, '0')});
                 setText('map-wave', tag);
-                setText('threat-wave', tag);
             }
-            this.buildThreatList();
             if (this.lastTower) {
                 this.showTowerStats(this.lastTower);
             } else {
@@ -175,9 +168,9 @@ class InterfaceManager {
     setWave(wave: number) {
         this.lastWave = wave;
         const tag = t('map.waveTag', {wave: String(wave).padStart(3, '0')});
-        this.waveElement.textContent = String(wave);
+        // 设计稿的波次为三位补零样式（037 / 200 中的前半），与地图 livebar 的 waveTag 一致。
+        this.waveElement.textContent = String(wave).padStart(3, '0');
         setText('map-wave', tag);
-        setText('threat-wave', tag);
     }
 
     /** Human mode's `delayBetweenWaves` countdown, shown next to the wave number. */
@@ -192,6 +185,7 @@ class InterfaceManager {
     setState(state: GameState) {
         // `idle` is the not-started state shown before the player presses Start.
         this.stateElement.textContent = t(`state.${state}`);
+        this.stateSubElement.textContent = t(`stateSub.${state}`);
         this.pauseButton.hidden = state === 'paused';
         this.pauseButton.disabled = state === 'idle' || state === 'planning';
         this.resumeButton.hidden = state !== 'paused';
@@ -270,57 +264,6 @@ class InterfaceManager {
         if (!this.audioButton) return;
         this.audioButton.textContent = audioManager.isMuted() ? t('control.audioMuted') : t('control.audio');
         this.audioButton.setAttribute('aria-pressed', String(audioManager.isMuted()));
-    }
-
-    /** Game injects a read-only enemy source; the panel never mutates the battlefield. */
-    bindThreatSource(source: () => readonly unknown[]) {
-        this.threatSource = source;
-        if (this.threatTimer == null && typeof window !== 'undefined') {
-            // Slow UI-side poll on purpose: never inside the game loop / rAF (AGENTS.md).
-            this.threatTimer = window.setInterval(() => this.updateThreat(), 500);
-        }
-        this.updateThreat();
-    }
-
-    /** THREAT INFORMATION: live per-type counts of hostiles currently on the field. */
-    private updateThreat() {
-        const counts = this.threatSource ? countEnemiesByType(this.threatSource()) : null;
-        let total = 0;
-        for (const typeId of ENEMY_TYPE_IDS) {
-            const element = this.threatCountElements[typeId];
-            if (!element) continue;
-            const count = counts ? counts[typeId] : 0;
-            total += count;
-            element.textContent = '×' + count;
-        }
-        const idle = document.getElementById('threat-idle');
-        if (idle) idle.hidden = counts != null && total > 0;
-    }
-
-    /** Threat rows: existing enemy textures + i18n names + live count readouts. */
-    private buildThreatList() {
-        const list = document.getElementById('threat-list');
-        if (!list) return;
-        list.textContent = '';
-        this.threatCountElements = {};
-        for (const typeId of ENEMY_TYPE_IDS) {
-            const item = document.createElement('li');
-            item.className = 'threat-item';
-            const img = document.createElement('img');
-            img.src = texturePaths.enemies[typeId];
-            img.alt = '';
-            img.setAttribute('aria-hidden', 'true');
-            const name = document.createElement('span');
-            name.className = 'threat-name';
-            name.textContent = t(`enemy.${typeId}.name`);
-            const count = document.createElement('strong');
-            count.className = 'threat-count';
-            count.textContent = '×0';
-            item.append(img, name, count);
-            list.appendChild(item);
-            this.threatCountElements[typeId] = count;
-        }
-        this.updateThreat();
     }
 
     /** Decorative workstation clock in the header (issue #66 art direction). */

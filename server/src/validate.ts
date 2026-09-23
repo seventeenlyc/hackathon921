@@ -9,6 +9,15 @@ export const MIN_USERNAME_LENGTH = 1;
 export const MAX_WAVE = 100000;
 export const MAX_STRATEGY_LENGTH = 5000;
 
+const AVATAR_IDS = new Set([
+    'aramaki', 'kusanagi', 'batou', 'togusa', 'ishikawa', 'saito', 'paz', 'boma',
+]);
+
+/** Validate the selected avatar against the same fixed catalogue used by the login gate. */
+export function sanitizeAvatarId(raw: unknown): string | null {
+    return typeof raw === 'string' && AVATAR_IDS.has(raw) ? raw : null;
+}
+
 const USERNAME_PATTERN = /^[\w\-\u4e00-\u9fa5]+$/;
 
 /** 校验昵称；非法返回 null。与前端同规则：中英文、数字、下划线、短横线，1-16 字符。 */

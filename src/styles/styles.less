@@ -283,6 +283,11 @@ body {
     }
   }
 
+  // Immersive map mode keeps the fixed camera viewport but hides all frame chrome.
+  .map-frame.is-hidden {
+    visibility: hidden;
+  }
+
   .accent {
     color: var(--accent);
   }
@@ -369,15 +374,15 @@ body {
       gap: 10px;
     }
 
-    // 笑脸男徽记：取自 design/smile-man.png 中央徽记（构建期裁剪好的 128px 图标），
-    // 圆形容器裁掉四角残留的环形文字。
+    // 笑脸男徽记：取自 design/smile-face.png 整枚环形徽记（裁掉白边后缩至 128px），
+    // 自带白底与环形文字，容器按圆形裁切后呈徽章效果。
     .ghost-avatar {
       width: 36px;
       height: 36px;
       flex: none;
       border: 1px solid var(--line);
       border-radius: 50%;
-      background: url('../assets/ui/laughing-man.png') center / contain no-repeat;
+      background: url('../assets/ui/smile-face.png') center / contain no-repeat;
     }
 
     .status-grid {
@@ -387,36 +392,63 @@ body {
       margin-top: 12px;
     }
 
+    // 设计稿：青色描边卡片、暗底、小号青色标签、大号亮青数值。
     .status-metric {
       display: flex;
       min-width: 0;
       flex-direction: column;
-      gap: 5px;
-      padding: 8px 9px;
-      border: 1px solid rgba(120, 160, 175, 0.16);
-      border-radius: 2px;
-      background: rgba(4, 10, 14, 0.4);
+      gap: 6px;
+      padding: 10px 10px 12px;
+      border: 1px solid rgba(53, 226, 255, 0.32);
+      border-radius: 4px;
+      background: rgba(3, 10, 15, 0.78);
+      box-shadow: inset 0 0 14px rgba(53, 226, 255, 0.05);
       font-family: var(--font-mono);
 
-      span {
-        color: var(--dim);
+      .status-label {
+        overflow: hidden;
+        color: rgba(53, 226, 255, 0.72);
         font-size: 9px;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       strong {
         overflow: hidden;
-        color: #eff8f3;
-        font-size: 14px;
+        color: var(--accent);
+        font-size: 20px;
         font-weight: 700;
+        letter-spacing: 0.02em;
         text-overflow: ellipsis;
         white-space: nowrap;
+        text-shadow: 0 0 12px rgba(53, 226, 255, 0.35);
+      }
+
+      // 状态词（最长 PLANNING）在 1/3 卡宽内放不下 20px，按设计比例缩小；
+      // 数值卡保持 20px 大字。
+      #state {
+        font-size: 13px;
+        line-height: 1.2;
+      }
+
+      #delay {
+        color: var(--muted);
+        font-size: 11px;
+        letter-spacing: 0;
+        text-shadow: none;
+      }
+
+      .status-sub {
+        color: var(--muted);
+        font-size: 10px;
+        letter-spacing: 0.06em;
       }
     }
 
     .chatbox-panel {
-      flex: 1 1 auto;
+      flex: 0 0 auto;
       min-height: 0;
       display: flex;
       flex-direction: column;
@@ -640,6 +672,51 @@ body {
       }
     }
 
+    .reasoning-panel {
+      display: flex;
+      flex: 1 1 260px;
+      min-height: 150px;
+      flex-direction: column;
+      padding: 12px 14px;
+
+      .reasoning-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .reasoning-status {
+        color: var(--dim);
+        font-family: var(--font-mono);
+        font-size: 9px;
+        letter-spacing: 0.08em;
+        text-align: right;
+        text-transform: uppercase;
+      }
+
+      &[data-state='planning'] .reasoning-status {
+        color: var(--accent);
+      }
+
+      &[data-state='unavailable'] .reasoning-status {
+        color: var(--warn);
+      }
+
+      .reasoning-content {
+        flex: 1;
+        min-height: 0;
+        margin-top: 12px;
+        overflow-y: auto;
+        color: var(--ink);
+        font-family: var(--font-mono);
+        font-size: 12px;
+        line-height: 1.65;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+    }
+
     .flux-panel {
       display: flex;
       flex: none;
@@ -685,72 +762,24 @@ body {
       }
     }
 
-    .threat-panel,
     .neural-panel,
     .items-panel {
       flex: none;
       padding: 12px 14px;
     }
 
-    .threat-wave {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      margin-top: 10px;
-      color: var(--dim);
-      font-size: 10px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-
-      strong {
-        color: var(--accent);
-        font-family: var(--font-mono);
-        font-size: 15px;
+    @media (max-height: 760px) {
+      .chatbox-panel .strategy-input {
+        min-height: 72px;
       }
-    }
 
-    .threat-list {
-      margin-top: 6px;
-      list-style: none;
-
-      .threat-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 5px 0;
-        border-bottom: 1px solid rgba(120, 160, 175, 0.12);
-        color: var(--muted);
-        font-size: 11px;
-
-        img {
-          width: 26px;
-          height: 26px;
-          image-rendering: pixelated;
-        }
-
-        .threat-name {
-          flex: 1;
-          min-width: 0;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .threat-count {
-          color: var(--accent);
-          font-family: var(--font-mono);
-          font-size: 12px;
-        }
+      .reasoning-panel {
+        flex-basis: 130px;
+        min-height: 100px;
       }
-    }
 
-    .threat-idle {
-      margin-top: 8px;
-      color: var(--dim);
-      font-size: 11px;
-
-      &[hidden] {
-        display: none;
+      .flux-panel {
+        height: 150px;
       }
     }
 
@@ -882,7 +911,7 @@ body {
       }
     }
 
-    // 战术数据库：底部居中面板，含塔奇克马 / 敌性体两个 tab。
+    // 战术数据库：底部居中面板，含塔奇克马 / 敌人情报两个 tab。
     .database-panel {
       position: absolute;
       bottom: 12px;
@@ -1059,10 +1088,12 @@ body {
         background: rgba(8, 16, 22, 0.72);
         text-align: center;
 
+        // 非正方形敌人插画需要 contain 与平滑采样。
         img {
           width: 34px;
           height: 34px;
-          image-rendering: pixelated;
+          object-fit: contain;
+          image-rendering: auto;
         }
 
         .hostile-name {
@@ -1847,6 +1878,7 @@ body {
 /* One side controls a run, so the other side's controls are hidden outright:
    tower cards are informational in AI mode and actionable in human mode. */
 #inert.mode-human .chatbox-panel,
+#inert.mode-human .reasoning-panel,
 #inert.mode-human .flux-panel {
   display: none;
 }

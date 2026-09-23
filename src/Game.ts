@@ -17,6 +17,7 @@ import {getSessionToken, fetchSharedLeaderboard} from "./leaderboard/Leaderboard
 import {cashManager} from "./CashManager";
 import {Tower} from "./entities/towers/Tower";
 import type {RunStats} from "./InterfaceManager";
+import {t} from "./i18n";
 import {gameLoop, GameSpeed} from "./agent/GameLoop";
 import {GameActions} from "./agent/GameActions";
 import {InertBattlefield} from "./agent/InertBattlefield";
@@ -24,6 +25,7 @@ import {strategyStore} from "./agent/StrategyStore";
 import {AgentRuntime} from "./agent/AgentRuntime";
 import {formatSnapshot} from "./agent/snapshot";
 import {decisionLog} from "./DecisionLog";
+import {DecisionSummary} from "./DecisionSummary";
 import {queueStrategy, startRun} from "./StrategyQueue";
 import {humanPlanner} from "./WavesManager";
 import {playMode, switchPlayMode} from "./PlayMode";
@@ -33,6 +35,14 @@ import {tacticalItemsController} from "./items/TacticalItems";
 // Settlement stats gathered across the run (see the result screen).
 let runStartedAt: number | null = null;
 let decisionsMade = 0;
+function createDecisionSummary(): DecisionSummary | null {
+    if (typeof document === 'undefined') return null;
+    const panel = document.getElementById('decision-summary-panel');
+    const status = document.getElementById('decision-summary-status');
+    const content = document.getElementById('decision-summary');
+    return panel && status && content ? new DecisionSummary(panel, status, content) : null;
+}
+const decisionSummary = createDecisionSummary();
 
 class Game {
     private updateInterval: number = -1;
@@ -48,9 +58,6 @@ class Game {
         map.on('added', () => {
             enemyManager.updatePaths()
         });
-        // THREAT INFORMATION panel: read-only view of live hostiles, polled by the
-        // UI on its own timer — the game loop and the agent boundary stay untouched.
-        interfaceManager.bindThreatSource(() => enemyManager.all());
         // Human-mode runs are not leaderboard entries: the board compares AI
         // strategies, so a hand-played wave would not be comparable (see §9).
         waveManager.onWaveReached = wave => this.recordReachedWave(wave);
@@ -61,6 +68,7 @@ class Game {
         // plans the upcoming wave with exactly this version (issue #17).
         gameLoop.onChange(state => {
             if (state === 'planning') {
+                if (playMode === 'ai') decisionSummary?.setThinking(t('reasoning.status.planning'));
                 const before = strategyStore.active().version;
                 const active = strategyStore.lock();
                 const username = getSessionUsername();
@@ -78,6 +86,7 @@ class Game {
         if (wave > this.lastSoundWave) {
             this.lastSoundWave = wave;
             audioManager.playWaveReached();
+            audioManager.setWave(wave + 1);
         }
         const username = getSessionUsername();
         if (username) submitRunScore(username, wave, playMode);
@@ -202,7 +211,14 @@ const agentRuntime = new AgentRuntime({
         decisionLog.add(entry);
         decisionsMade += 1;
     },
-    onError: message => decisionLog.error(message),
+    onSummary: summary => {
+        if (summary) decisionSummary?.setSummary(summary, t('reasoning.status.ready'));
+        else decisionSummary?.setUnavailable(t('reasoning.status.unavailable'));
+    },
+    onError: message => {
+        decisionSummary?.setUnavailable(t('reasoning.status.unavailable'));
+        decisionLog.error(message);
+    },
 });
 
 // The AI plays through the same action port as the human console; the loop calls
@@ -218,6 +234,7 @@ export const game = new Game();
 
 export function startHumanRun(username: string): void {
     if (!gameLoop.isIdle()) return;
+    audioManager.setWave(waveManager.waveCounter);
     audioManager.startMusic();
     runSync.prepareRun(username, 'human');
     gameLoop.start();

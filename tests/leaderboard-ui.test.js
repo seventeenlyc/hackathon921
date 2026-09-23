@@ -51,7 +51,12 @@ assert.match(index, /id="controls-collapse"/, 'the page must expose an accessibl
 assert.match(index, /tabindex="0"/, 'the battlefield must be keyboard focusable');
 assert.match(index, /id="towers-wrapper"/, 'the page must expose the human deployable tower mount');
 assert.match(index, /class="tactical-header"/, 'the page must expose the workstation header strip');
-assert.match(index, /id="threat-list"/, 'the page must expose the threat information readout');
+assert.doesNotMatch(index, /class="control-card threat-panel"|id="threat-list"|id="threat-wave"/,
+    'the right rail must not expose the duplicate live enemy panel');
+assert.match(index, /id="db-tab-hostile"[^>]*data-i18n="database\.tabHostile">敌人情报<\/button>/,
+    'the bottom enemy tab must retain its i18n binding and new label');
+assert.match(index, /id="db-view-hostile"[\s\S]*?id="hostile-heading"[^>]*data-i18n="database\.tabHostile">敌人情报<\/h2>/,
+    'the enemy catalogue must remain available and accessible under the renamed tab');
 assert.match(styles, /#inert > \.leaderboard-panel[\s\S]*position:\s*fixed[\s\S]*right:\s*12px;/,
     'the leaderboard fallback must pin to the top-right like the right rail');
 assert.match(styles, /\.leaderboard-panel[\s\S]*pointer-events:\s*auto;/,
@@ -156,7 +161,10 @@ function loadUI(document, currentPlayMode, remoteData = null) {
             submitScore: () => ({ entries: [], rank: null }),
             entriesForBoard: entries => entries,
         },
-        './SessionIdentity': { getSessionUsername: () => 'Alice', setSessionUsername: () => true },
+        './SessionIdentity': {
+            getSessionUsername: () => 'Alice', getSessionAvatar: () => 'aramaki', getLocalSessionId: () => 'local-1',
+            setSessionUsername: () => true, setSessionAvatar: () => true,
+        },
         './AvatarCatalog': avatarCatalog,
         './avatarAssets': {
             AVATAR_SRC: Object.fromEntries(avatarCatalog.AVATARS.map(a => [a.id, 'fake://' + a.id])),
@@ -232,10 +240,10 @@ function loadUI(document, currentPlayMode, remoteData = null) {
     const doc = new FakeDocument();
     const remoteData = mode => ({
         entries: [
-            { rank: 1, username: 'Alice', wave: 20, achievedAt: 100, mode: 'human' },
-            { rank: 2, username: 'Alice', wave: 10, achievedAt: 50, mode: 'ai' },
+            { uid: 7, rank: 1, username: 'Alice', avatarId: 'aramaki', wave: 20, achievedAt: 100, mode: 'human' },
+            { uid: 7, rank: 2, username: 'Alice', avatarId: 'aramaki', wave: 10, achievedAt: 50, mode: 'ai' },
         ],
-        me: { username: 'Alice', rank: 1, wave: 20, mode: 'human' },
+        me: { uid: 7, username: 'Alice', avatarId: 'aramaki', rank: 1, wave: 20, mode: 'human' },
     });
     const { LeaderboardPanel } = loadUI(doc, 'ai', remoteData);
     const panel = new LeaderboardPanel();

@@ -24,7 +24,10 @@ export class LaserTower extends Tower {
         secondary: '#95a5a6'
     };
 
-    private angle: number = 0;
+    protected get muzzleOffset(): {x: number; y: number} {
+        const scale = this.width / 163;
+        return {x: 57.5 * scale, y: 39.5 * scale};
+    }
 
     constructor(x: number, y: number, width: number) {
         super(x, y, width);
@@ -37,16 +40,8 @@ export class LaserTower extends Tower {
         }
     }
 
-    update() {
-        super.update();
-
-        if (this.target) {
-            this.angle = Math.atan2(this.target.y - this.center.y, this.target.x - this.center.x);
-        }
-    }
-
     draw(ctx: CanvasRenderingContext2D): void {
-        this.drawTexture(ctx, this.angle);
+        this.drawTexture(ctx, this.turretRotation);
         super.draw(ctx);
     }
 

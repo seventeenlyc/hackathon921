@@ -16,6 +16,7 @@ export type PromptWriteResult =
     | { recorded: false; reason: string };
 
 export interface BestRunPrompts {
+    uid: number;
     username: string;
     runId: string | null;
     wave: number | null;
