@@ -84,8 +84,6 @@ for (const key of [
     'map.intrusion',
     'map.liveBar',
     'map.waveTag',
-    'threat.title',
-    'threat.idle',
     'neural.title',
     'items.title',
     'database.tabHostile',
@@ -110,6 +108,12 @@ for (const key of [
     'gate.avatar.boma',
 ]) {
     assert.ok(entries.has(key), `missing required i18n key: ${key}`);
+}
+assert.deepStrictEqual(entries.get('database.tabHostile'),
+    {zh: '敌人情报', en: 'ENEMY INTELLIGENCE'},
+    'the enemy tab label must be correct in both languages');
+for (const key of ['threat.title', 'threat.wave', 'threat.idle']) {
+    assert.ok(!entries.has(key), `retired right-rail translation should be removed: ${key}`);
 }
 
 // 666601c established the command-terminal copy; the layout mockup must not replace it.

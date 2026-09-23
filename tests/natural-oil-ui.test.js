@@ -31,7 +31,7 @@ class FakeElement {
         this.textContent = '';
         this.disabled = false;
         this.hidden = false;
-        this.classList = {add() {}, remove() {}};
+        this.classList = {add() {}, remove() {}, toggle() {}};
     }
     appendChild(child) { this.children.push(child); return child; }
     append(...children) { children.forEach(child => this.appendChild(child)); }
@@ -106,7 +106,11 @@ function mountedInterface() {
     const interfaceManager = loadSource('src/InterfaceManager.ts', dependencies, {document}).interfaceManager;
     return {button: document.getElementById('natural-oil'),
         status: document.getElementById('natural-oil-status'), cashManager,
-        naturalOilController, gameLoop, interfaceManager};
+        naturalOilController, gameLoop, interfaceManager,
+        tachikomaTab: document.getElementById('db-tab-tachikoma'),
+        hostileTab: document.getElementById('db-tab-hostile'),
+        tachikomaView: document.getElementById('db-view-tachikoma'),
+        hostileView: document.getElementById('db-view-hostile')};
 }
 
 const itemsHeading = index.indexOf('id="items-heading"');
@@ -124,8 +128,18 @@ assert.match(styles, /\.natural-oil-icon[\s\S]*background:/,
     'the item needs a CSS color-block icon');
 assert.match(gameSource, /for \(let step = 0; step < gameLoop\.speed; \+\+step\) \{[\s\S]*naturalOilController\.update\(1000 \/ fps, gameLoop\.state === 'running'\)/,
     'oil time must advance once per simulation step inside the speed loop');
+assert.doesNotMatch(gameSource, /bindThreatSource/,
+    'removing the redundant panel must also stop its live enemy polling');
 
 const ui = mountedInterface();
+ui.hostileTab.click();
+assert.strictEqual(ui.hostileView.hidden, false, 'enemy catalogue opens from its tab');
+assert.strictEqual(ui.tachikomaView.hidden, true, 'tower catalogue hides while enemy tab is selected');
+assert.strictEqual(ui.hostileTab['aria-selected'], 'true');
+ui.tachikomaTab.click();
+assert.strictEqual(ui.hostileView.hidden, true, 'enemy catalogue hides when returning to towers');
+assert.strictEqual(ui.tachikomaView.hidden, false, 'tower catalogue returns');
+assert.strictEqual(ui.hostileTab['aria-selected'], 'false');
 assert.strictEqual(ui.button.disabled, true, 'item is disabled before RUNNING');
 ui.button.click();
 assert.strictEqual(ui.cashManager.getBalance(), 2200, 'idle click cannot charge');

@@ -168,19 +168,16 @@ const STRINGS: { [key: string]: Entry } = {
     'history.version': {zh: '命令版本 {version}', en: 'Order Version {version}'},
     'history.fromWave': {zh: 'WAVE {wave} 起执行', en: 'Effective from WAVE {wave}'},
 
-    // 战术工作站位壳层（issue #66）：Header / 地图框 / 三栏面板 / 数据库 / 威胁情报。
+    // 战术工作站位壳层（issue #66）：Header / 地图框 / 三栏面板 / 数据库。
     'map.live': {zh: 'LIVE', en: 'LIVE'},
     'map.sector': {zh: '作战扇区 09-A', en: 'SECTOR 09-A'},
     'map.layer': {zh: '网络层 DEEP_3', en: 'NETWORK LAYER: DEEP_3'},
     'map.intrusion': {zh: '入侵检测 — 自律清除程序接入中', en: 'INTRUSION DETECTED — AUTONOMOUS SUPPRESSION NETWORK'},
     'map.liveBar': {zh: '战术地图 // 实况', en: 'TACTICAL MAP // LIVE'},
     'map.waveTag': {zh: '波次 {wave}', en: 'WAVE {wave}'},
-    'threat.title': {zh: '敌性体情报', en: 'THREAT INFORMATION'},
-    'threat.wave': {zh: '当前波次', en: 'CURRENT WAVE'},
-    'threat.idle': {zh: '待机 — 未捕获敌性体信号', en: 'STANDBY — NO HOSTILE SIGNALS'},
     'neural.title': {zh: '神经链接', en: 'NEURAL LINK'},
     'items.title': {zh: '支援道具', en: 'BATTLE ITEMS'},
-    'database.tabHostile': {zh: '敌性体', en: 'HOSTILE'},
+    'database.tabHostile': {zh: '敌人情报', en: 'ENEMY INTELLIGENCE'},
     'enemy.simple.name': {zh: '傀儡型', en: 'PUPPET'},
     'enemy.simple.desc': {zh: '数量最多的基础敌性体，成群涌向核心。', en: 'The most common hostile; swarms the core in numbers.'},
     'enemy.fast.name': {zh: '猎袭型', en: 'HUNTER'},
