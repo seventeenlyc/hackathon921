@@ -26,22 +26,27 @@ function loadScaling() {
 }
 const scaling = loadScaling();
 
-// 波 1：ratio 1.1，前 200 波缓冲 0.4 → 50 × 1.1 × 0.4 = 22
-assert.ok(Math.abs(scaling.enemyLifeAtWave(50, 1) - 22) < 1e-9, 'wave 1 life must apply ratio and relief');
-assert.ok(Math.abs(scaling.enemyLifeAtWave(2000, 1) - 880) < 1e-9, 'boss wave 1 life must be 2000 × 1.1 × 0.4');
-// 波 200：仍带 0.4 缓冲
-assert.strictEqual(scaling.enemyLifeAtWave(50, 200), 50 * 21 * 0.4, 'wave 200 keeps the relief factor');
+// 波 1：ratio 1.1，原有 0.4 系数提升 30% 为 0.52 → 50 × 1.1 × 0.52 = 28.6
+assert.ok(Math.abs(scaling.enemyLifeAtWave(50, 1) - 28.6) < 1e-9, 'wave 1 life must apply ratio and boosted relief');
+assert.ok(Math.abs(scaling.enemyLifeAtWave(2000, 1) - 1144) < 1e-9, 'boss wave 1 life must be 2000 × 1.1 × 0.52');
+// 波 200：仍使用提升后的 0.52 系数
+assert.strictEqual(scaling.enemyLifeAtWave(50, 200), 50 * 21 * 0.52, 'wave 200 keeps the boosted relief factor');
 // 波 201：缓冲取消
 assert.strictEqual(scaling.enemyLifeAtWave(50, 201), 50 * (1 + 201 / 10), 'wave 201 drops the relief factor');
-// 精英 Boss：201 波起生命冻结在等效第 152 波，且始终保留 0.4 缓冲
-assert.strictEqual(scaling.enemyLifeAtWave(2000, 300, true), scaling.enemyLifeAtWave(2000, 152, false),
-    'boss life after wave 201 must freeze at the wave-152 value');
-assert.strictEqual(scaling.enemySpeedAtWave(2.5, 300, 1, true), 1, 'boss speed stays at its wave-152 effective value');
-// 速度：fast cap 1.7，波 30 时乘数 2 已被封顶为 1.7 → 4 × 1.7 × 0.4 = 2.72
-assert.ok(Math.abs(scaling.enemySpeedAtWave(4, 30, 1.7) - 2.72) < 1e-9, 'fast speed at wave 30 = 4 × 1.7 × 0.4');
+// 精英 Boss：1–200 波提升 30%，201 波起仍使用原有第 152 波基准
+assert.strictEqual(scaling.enemyLifeAtWave(2000, 152, true), 2000 * 16.2 * 0.52,
+    'boss life through wave 200 receives the 30% boost');
+assert.strictEqual(scaling.enemyLifeAtWave(2000, 200, true), 2000 * 21 * 0.52,
+    'boss life hints keep growing through wave 200 like the game');
+assert.strictEqual(scaling.enemyLifeAtWave(2000, 300, true), 2000 * 16.2 * 0.4,
+    'boss life after wave 201 must freeze at the original wave-152 value');
+assert.strictEqual(scaling.enemySpeedAtWave(2.5, 152, 1, true), 1.3, 'boss speed through wave 200 receives the 30% boost');
+assert.strictEqual(scaling.enemySpeedAtWave(2.5, 300, 1, true), 1, 'boss speed after wave 201 stays at its original wave-152 value');
+// 速度：fast cap 1.7，波 30 时乘数 2 已被封顶为 1.7 → 4 × 1.7 × 0.52 = 3.536
+assert.ok(Math.abs(scaling.enemySpeedAtWave(4, 30, 1.7) - 3.536) < 1e-9, 'fast speed at wave 30 = 4 × 1.7 × 0.52');
 // 速度上限钳制：波 100 时 fast 的乘数封顶 1.7
-assert.strictEqual(scaling.enemySpeedAtWave(4, 100, 1.7), 4 * 1.7 * 0.4, 'speed multiplier must clamp at the cap');
-assert.strictEqual(scaling.enemySpeedAtWave(2.5, 100, 1), 1, 'uncapped enemy speed stays at its base');
+assert.strictEqual(scaling.enemySpeedAtWave(4, 100, 1.7), 4 * 1.7 * 0.52, 'speed multiplier must clamp at the cap');
+assert.strictEqual(scaling.enemySpeedAtWave(2.5, 100, 1), 2.5 * 0.52, 'uncapped enemy speed also receives the 30% boost');
 
 // --- WavesManager 与共享系数同源（不允许出现游离的字面量系数）---
 assert.ok(!/Math\.min\(1 \+ this\.waveCounter \/ 30/.test(wavesSource),
