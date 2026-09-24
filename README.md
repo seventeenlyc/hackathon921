@@ -11,6 +11,10 @@
   <img src="https://img.shields.io/badge/LICENSE-MIT-green?style=for-the-badge" alt="License" />
 </p>
 
+<p align="center">
+  <img src="docs/img/poster.png" alt="保护笑脸男 — 塔奇克马防御协议 官方海报" width="700" />
+</p>
+
 ---
 
 ## 🔗 在线体验入口
@@ -107,8 +111,11 @@ npx tsc --noEmit
 
 ---
 
-## 👥 鸣谢与致敬 (Credits & Attribution)
+## 👥 参赛团队与致敬 (Team & Attribution)
 
+- **参赛战队**：公安九课（Section 9）
+- **参赛赛道**：NEW LIFE | AI游戏与交互世界
+- **战队成员**：左海粟、邓海华、崔宏阳、张文畅
 - **底座灵感与致谢**：游戏底座与极简像素塔防引擎 Fork 自 [CorentinTh/inert](https://github.com/CorentinTh/inert)，感谢原作者 Corentin Thomasset 的精妙设计！
 - **世界观致敬**：致敬士郎正宗与神山健治经典名作《攻壳机动队：S.A.C.》系列中的公安九课、塔奇克马与笑脸男。
 - **开源许可证**：本项目遵循 [MIT License](LICENSE)，保留原开源作者署名与版权声明。
