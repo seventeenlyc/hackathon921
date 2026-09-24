@@ -13,6 +13,8 @@ import {gameLoop, Planner} from "./agent/GameLoop";
 import {earlyWaveReliefFactor, waveLifeRatio, waveSpeedMultiplier} from "./tools/enemyScaling";
 import {spawnCountForWave} from "./agent/SpawnRoutes";
 
+const BOSS_REFERENCE_WAVE = 152;
+
 interface WaveGroup {
     enemyClass: { new(base: Base): Enemy },
     enemySpecsMultiplier?: { [k: string]: any }
@@ -182,7 +184,7 @@ class WavesManager {
     private generateWave(): Wave {
         const wave = [];
         const ratio = waveLifeRatio(this.waveCounter);
-        const bossRatio = this.waveCounter >= 201 ? waveLifeRatio(152) : ratio;
+        const bossRatio = this.waveCounter >= 201 ? waveLifeRatio(BOSS_REFERENCE_WAVE) : ratio;
 
         if (this.waveCounter >= 201) {
             wave.push({
@@ -190,7 +192,7 @@ class WavesManager {
                 enemySpecsMultiplier: {
                     life: bossRatio,
                 },
-                quantity: 10 + this.waveCounter,
+                quantity: BOSS_REFERENCE_WAVE / 10,
                 delay: Math.max(500 - this.waveCounter, 100)
             });
 
