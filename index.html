@@ -82,7 +82,7 @@
         <div class="header-side header-left">
           <span class="eyebrow" data-i18n="shell.eyebrow">公安九课 // 战术网络</span>
           <span class="header-sub" data-i18n="header.subtitle">公安九课 · 塔奇克马防御协议</span>
-          <span id="version" class="header-ver">v0.2.23</span>
+          <span id="version" class="header-ver">v0.2.24</span>
         </div>
         <h1 class="header-title" data-i18n="app.name">保护笑脸男</h1>
         <div class="header-side header-right">
@@ -227,6 +227,26 @@
           </div>
           <section class="tower-panel db-view active" id="db-view-tachikoma">
             <div id="towers-wrapper" class="tower-palette" data-i18n-aria-label="aria.deployableUnits" aria-label="可部署塔奇克马机体"></div>
+            <p id="tower-upgrade-hint" class="tower-upgrade-hint" data-i18n="tower.upgrade.hint">点击战场中的己方机体查看实时参数</p>
+            <section id="tower-upgrade-panel" class="tower-upgrade-panel" aria-labelledby="tower-upgrade-heading" aria-live="polite" hidden>
+              <div class="tower-upgrade-unit">
+                <span class="tower-upgrade-eyebrow" data-i18n="tower.upgrade.heading">机体强化</span>
+                <div class="tower-upgrade-title">
+                  <h3 id="tower-upgrade-heading"><span id="tower-upgrade-name"></span></h3>
+                  <span class="tower-upgrade-level"><span data-i18n="tower.upgrade.level">等级</span> <strong id="tower-upgrade-level"></strong></span>
+                </div>
+              </div>
+              <dl class="tower-upgrade-stats">
+                <div><dt data-i18n="tower.stat.dmg">伤害</dt><dd id="tower-upgrade-damage">—</dd></div>
+                <div><dt data-i18n="tower.dps">持续火力</dt><dd id="tower-upgrade-dps">—</dd></div>
+                <div><dt data-i18n="tower.stat.range">射程</dt><dd id="tower-upgrade-range">—</dd></div>
+                <div><dt data-i18n="tower.upgrade.reload">装填</dt><dd id="tower-upgrade-reload">—</dd></div>
+              </dl>
+              <div class="tower-upgrade-actions">
+                <span class="tower-upgrade-cost"><span data-i18n="tower.upgrade.cost">强化费用</span><strong id="tower-upgrade-cost">MAX</strong></span>
+                <button id="tower-upgrade-button" type="button" data-i18n="tower.upgrade.button" disabled>强化机体</button>
+              </div>
+            </section>
           </section>
           <section class="hostile-panel db-view" id="db-view-hostile" aria-labelledby="hostile-heading" hidden>
             <h2 id="hostile-heading" class="visually-hidden" data-i18n="database.tabHostile">敌方情报</h2>

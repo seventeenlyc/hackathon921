@@ -28,6 +28,12 @@ export class SlowTower extends Tower {
         this.aimRadius = this.width * 2 + this.halfWidth;
     }
 
+    applyUpgrade(): boolean {
+        const upgraded = super.applyUpgrade();
+        if (upgraded) this.aimRadius *= 1.1;
+        return upgraded;
+    }
+
     shoot() {
     }
 

@@ -255,6 +255,9 @@ const actions = new GameActions(battlefield);
 // leaderboard suite while the real TowerPlacer receives the same validated
 // action port as the AI runtime.
 if (typeof towerPlacer.setActions === 'function') towerPlacer.setActions(actions);
+if (typeof towerPlacer.setSelectionListener === 'function') {
+    towerPlacer.setSelectionListener(tower => interfaceManager.setSelectedTower(tower));
+}
 
 const agentRuntime = new AgentRuntime({
     actions,

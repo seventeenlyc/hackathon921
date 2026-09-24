@@ -14,12 +14,14 @@
     "sourceMap": false
   },
   "include": [
+    "src/vite-env.d.ts",
     "src/PlayMode.ts",
     "src/agent/AgentRuntime.ts",
     "src/i18n.ts",
     "src/items/NaturalOil.ts",
     "src/items/TacticalItems.ts",
     "src/agent/GameActions.ts",
+    "src/agent/InertBattlefield.ts",
     "src/agent/GameLoop.ts",
     "src/agent/modelItemActivation.ts",
     "src/agent/SpawnRoutes.ts",
