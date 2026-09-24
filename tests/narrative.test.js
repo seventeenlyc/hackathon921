@@ -404,6 +404,18 @@ function fakePorts(overrides = {}) {
         assert.match(styles, /@media \(max-width: 640px\)[\s\S]*\.narrative-overlay/);
     });
 
+    await test('nested portrait images and SVGs fit inside the padded frame', async () => {
+        const less = require('less');
+        const {css} = await less.render(read('src/styles/styles.less'), {filename: 'src/styles/styles.less'});
+        for (const tag of ['img', 'svg']) {
+            const rule = css.split('}').find(block => block.split('{')[0].includes(`.narrative-portrait-art > ${tag}`));
+            assert.ok(rule, `${tag} inside portrait art needs its own sizing rule`);
+            const declarations = rule.split('{')[1];
+            for (const expected of ['display: block', 'width: 100%', 'height: 100%', 'object-fit: contain']) {
+                assert.ok(declarations.includes(expected), `${tag}: ${expected}`);
+            }
+        }
+    });
     await test('the front-end version is bumped in every tracked location', () => {
         const pkg = JSON.parse(read('package.json'));
         const lock = JSON.parse(read('package-lock.json'));
