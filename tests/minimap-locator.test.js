@@ -120,8 +120,17 @@ const stubCamera = {
 };
 const stubMap = {on: () => {}, grid: []};
 // document.createElement('canvas') stub: MiniMap builds an offscreen canvas in its ctor.
+let frameHidden = false;
+let frameWidth = frameRect.width;
 const miniDoc = {
-    getElementById: () => ({clientWidth: 1200, clientHeight: 800}),
+    getElementById: id => id === 'canvas'
+        ? {clientWidth: 1200, clientHeight: 800}
+        : id === 'map-frame'
+            ? {
+                getBoundingClientRect: () => ({...frameRect, width: frameWidth, right: frameRect.left + frameWidth}),
+                classList: {contains: name => name === 'is-hidden' && frameHidden},
+            }
+            : null,
     createElement: () => ({
         width: 0, height: 0,
         getContext: () => ({
@@ -142,8 +151,8 @@ const MiniMap2 = miniModule2.exports.MiniMap;
 const mm = new MiniMap2(stubMap, stubCamera, {width: 192, height: 96, margin: 24});
 
 const rect = mm.getRect();
-// bottom-right anchor: x = 1200 - 192 - 24 = 984, y = 800 - 96 - 24 = 680
-assert.deepStrictEqual(rect, {x: 984, y: 680, width: 192, height: 96}, 'minimap anchors to bottom-right');
+assert.deepStrictEqual(rect, {x: 676, y: 72, width: 192, height: 96},
+    'visible controls anchor minimap inside the unmasked battlefield frame');
 
 // a click inside the minimap rect is consumed and pans to the corresponding map point
 const inside = {x: rect.x + rect.width / 2, y: rect.y + rect.height / 2};
@@ -162,5 +171,15 @@ assert.ok(panCalls.length >= 2, 'pointer move while dragging pans');
 mm.onPointerUp();
 mm.onPointerMove(rect.x + 10, rect.y + 10);
 assert.strictEqual(panCalls.length, 2, 'pointer move after release does not pan');
+
+frameWidth = 374;
+assert.strictEqual(mm.getRect(), null, 'narrow frame with visible control rails cannot expose a clickable minimap');
+assert.strictEqual(mm.onPointerDown(rect.x + 10, rect.y + 10), false, 'an obscured minimap cannot steal panel clicks');
+
+frameHidden = true;
+assert.deepStrictEqual(mm.getRect(), {x: 984, y: 680, width: 192, height: 96},
+    'immersive view keeps the original canvas bottom-right anchor');
+assert.strictEqual(mm.onPointerDown(1080, 728), true, 'immersive minimap remains clickable');
+mm.onPointerUp();
 
 console.log('Minimap locator passed.');
