@@ -394,7 +394,13 @@ class InterfaceManager {
         this.towerUpgradeCost.textContent = maxed
             ? t('tower.upgrade.max')
             : String(tower!.upgradeCost);
-        this.towerUpgradeButton.textContent = t(maxed ? 'tower.upgrade.max' : 'tower.upgrade.button');
+        // A disabled button still has to say why: maxed out or short on funds,
+        // otherwise the player cannot tell a blocked upgrade from a broken one.
+        this.towerUpgradeButton.textContent = t(
+            maxed ? 'tower.upgrade.max'
+                : !affordable ? 'tower.upgrade.insufficient'
+                : 'tower.upgrade.button'
+        );
         this.towerUpgradeButton.disabled = !tower || maxed || !affordable || settled;
     }
 
