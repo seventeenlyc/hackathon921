@@ -88,7 +88,7 @@ class Map extends EventEmitter {
 
         ctx.fillStyle = '#1f2125'
         ctx.fillRect(0, 0, gridWidth, gridHeight);
-        ctx.strokeStyle = '#ffffff';
+        ctx.strokeStyle = "#25272b";
         ctx.lineWidth = 1;
         ctx.beginPath()
 
@@ -103,25 +103,10 @@ class Map extends EventEmitter {
         ctx.closePath()
         ctx.stroke();
 
-        ctx.strokeStyle = '#ffffff';
+        ctx.strokeStyle = '#4a4a4e';
         ctx.lineWidth = 3;
         drawRoundedSquare(ctx, 0, 0, gridWidth, gridHeight, 4);
         ctx.stroke();
-
-        // Rebuild each frame so cells return to white when enemies move or die.
-        const occupiedCells = new Set<number>();
-        ctx.strokeStyle = '#ff0000';
-        ctx.lineWidth = 1;
-        for (const enemy of enemyManager.all()) {
-            if (!enemy.alive || !Number.isFinite(enemy.x) || !Number.isFinite(enemy.y)) continue;
-            const i = Math.floor(enemy.x / Map.TILE_SIZE);
-            const j = Math.floor(enemy.y / Map.TILE_SIZE);
-            if (i < 0 || i >= Map.GRID_W || j < 0 || j >= Map.GRID_H) continue;
-            const cell = j * Map.GRID_W + i;
-            if (occupiedCells.has(cell)) continue;
-            occupiedCells.add(cell);
-            ctx.strokeRect(i * Map.TILE_SIZE, j * Map.TILE_SIZE, Map.TILE_SIZE, Map.TILE_SIZE);
-        }
     }
 
     draw(ctx: CanvasRenderingContext2D) {
