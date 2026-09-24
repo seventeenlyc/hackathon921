@@ -409,6 +409,8 @@ DeepSeek 走国内 CDN 线路，实测 TLS 握手 25–80ms、请求总计约 10
 
 排行榜后端服务已经部署；同一 Node 服务现也提供 `POST /api/agent/decide` 作为 LLM 代理（issue #22）。会话 token 用于准入，服务端持有模型密钥、系统指令和工具 schema；浏览器只提交玩家策略与战场快照，动作仍由游戏引擎验证。`GET /api/health` 的 `providerConfigured` 可供运维确认代理是否拿到密钥。
 
+**后端环境配置的唯一真值来源是 `/etc/pd/pd-leaderboard.env`（issue #135，2026-09-24 确认）**：systemd unit 不再内联 `Environment=`，只用 `EnvironmentFile=` 指向它。`bootstrap-server.sh` 对 env 文件做幂等合并——必需键缺失才补、provider 键传参才写不传则保留、非托管键（如 `PD_DEV_PASSWORD_FILE`）永不触碰——因此重跑 bootstrap 不再静默抹掉运维手加的配置。env 文件只放路径与端点/模型名，不放密钥本身（密钥仍在 `data/` 下 600 文件里）。具体合并逻辑、自检与取舍见 `deploy/README.md` §5、`deploy/render-unit.sh` 与 `tests/render-unit.test.js`。
+
 ### 剧情演出（2026-09-24 破例批准，issue #100）
 
 `AGENTS.md` 的阶段门槛（#6 通过前不新增底座以外系统）在 #6 仍未通过时被负责人明确批准对 **issue #100** 破例。范围严格限定如下，其余底座外系统仍受门槛约束：
