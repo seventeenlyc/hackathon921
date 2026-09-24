@@ -119,7 +119,15 @@ export class InertBattlefield implements Battlefield {
         if (!match) return false;
         const tower = map.grid[Number(match[1])] && map.grid[Number(match[1])][Number(match[2])];
         if (!(tower instanceof Tower)) return false;
-        return tower.applyUpgrade();
+        const upgradeCost = tower.upgradeCost;
+        if (upgradeCost === null || !cashManager.withdraw(upgradeCost)) return false;
+
+        if (tower.applyUpgrade()) return true;
+
+        // The action layer validates first; refund if the entity still rejects
+        // the mutation so a failed upgrade can never consume resources.
+        cashManager.add(upgradeCost);
+        return false;
     }
 
     useItem(item: string): { ok: true; queued?: true } | { ok: false; error: ActionError } {

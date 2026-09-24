@@ -186,6 +186,13 @@ const STRINGS: { [key: string]: Entry } = {
     'tower.cardAria': {zh: '{name}，部署需要 {cost} 战术资源', en: '{name}, deployment cost {cost} resources'},
     'tower.cardPlaceTitle': {zh: '{name} · {cost} 战术资源 · 点击部署', en: '{name} · {cost} resources · click to deploy'},
     'tower.cardDetailsTitle': {zh: '{name} · {cost} 战术资源 · 点击查看战术参数', en: '{name} · {cost} resources · click to view tactical specifications'},
+    'tower.upgrade.heading': {zh: '机体强化', en: 'UNIT ENHANCEMENT'},
+    'tower.upgrade.hint': {zh: '点击战场中的己方机体查看实时参数', en: 'Select a friendly unit on the battlefield to inspect live stats.'},
+    'tower.upgrade.level': {zh: '等级', en: 'LEVEL'},
+    'tower.upgrade.cost': {zh: '强化费用', en: 'UPGRADE COST'},
+    'tower.upgrade.button': {zh: '强化机体', en: 'UPGRADE UNIT'},
+    'tower.upgrade.max': {zh: '已达最高等级', en: 'MAX LEVEL'},
+    'tower.upgrade.reload': {zh: '装填', en: 'RELOAD'},
     'tower.dpsTitle': {zh: '每秒持续火力', en: 'Damage Per Second'},
     'tower.summary': {zh: '{name} × {count}', en: '{name} × {count}'},
 

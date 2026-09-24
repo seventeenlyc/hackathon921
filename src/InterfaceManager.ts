@@ -9,6 +9,7 @@ import {CanonTower} from "./entities/towers/CanonTower";
 import {GatlingTower} from "./entities/towers/GatlingTower";
 import {SniperTower} from "./entities/towers/SniperTower";
 import {Tower} from "./entities/towers/Tower";
+import {TowerInfo} from "./agent/types";
 import {Map} from "./Map";
 import {towerPlacer} from "./TowerPlacer";
 import {getControlLayer} from "./ControlLayer";
@@ -57,6 +58,17 @@ class InterfaceManager {
     private resumeButton = document.getElementById('resume') as HTMLButtonElement;
     private audioButton = document.getElementById('audio-toggle') as HTMLButtonElement | null;
     private hostileStatsWave = 1;
+    private selectedTower: TowerInfo | null = null;
+    private towerUpgradeHint = document.getElementById('tower-upgrade-hint') as HTMLElement;
+    private towerUpgradePanel = document.getElementById('tower-upgrade-panel') as HTMLElement;
+    private towerUpgradeName = document.getElementById('tower-upgrade-name') as HTMLElement;
+    private towerUpgradeLevel = document.getElementById('tower-upgrade-level') as HTMLElement;
+    private towerUpgradeDamage = document.getElementById('tower-upgrade-damage') as HTMLElement;
+    private towerUpgradeDps = document.getElementById('tower-upgrade-dps') as HTMLElement;
+    private towerUpgradeRange = document.getElementById('tower-upgrade-range') as HTMLElement;
+    private towerUpgradeReload = document.getElementById('tower-upgrade-reload') as HTMLElement;
+    private towerUpgradeCost = document.getElementById('tower-upgrade-cost') as HTMLElement;
+    private towerUpgradeButton = document.getElementById('tower-upgrade-button') as HTMLButtonElement;
     private tripoButton = document.getElementById('item-tripo') as HTMLButtonElement | null;
     private seeedButton = document.getElementById('item-seeed') as HTMLButtonElement | null;
     private evomapButton = document.getElementById('item-evomap') as HTMLButtonElement | null;
@@ -83,6 +95,8 @@ class InterfaceManager {
             if (!muted && !gameLoop.isIdle()) audioManager.startMusic();
             this.updateAudioLabel();
         });
+        this.towerUpgradeButton.addEventListener('click', () => towerPlacer.upgradeSelected());
+        cashManager.onBalanceChange(() => this.updateTowerUpgradeAvailability());
         const langButton = document.getElementById('lang') as HTMLButtonElement | null;
         langButton?.addEventListener('click', () => {
             toggleLang();
@@ -136,6 +150,7 @@ class InterfaceManager {
             this.updateTacticalItems();
             this.setupModeButton();
             this.updateHostileStats(this.hostileStatsWave);
+            this.refreshSelectedTowerPanel();
             if (this.lastWave > 0) {
                 const tag = t('map.waveTag', {wave: String(this.lastWave).padStart(3, '0')});
                 setText('map-wave', tag);
@@ -194,6 +209,7 @@ class InterfaceManager {
         const alert = document.getElementById('map-alert');
         if (alert) alert.hidden = state !== 'running';
         this.updateTacticalItems();
+        this.updateTowerUpgradeAvailability();
     }
 
     updateTacticalItems() {
@@ -335,8 +351,51 @@ class InterfaceManager {
         });
     }
 
-    setCash(cash: number) {
-        this.cashElement.textContent = String(cash);
+    /** Render live action data only; the panel never receives entity references. */
+    setSelectedTower(tower: TowerInfo | null) {
+        this.selectedTower = tower;
+        this.refreshSelectedTowerPanel();
+    }
+
+    private formatTowerValue(value: number): string {
+        return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(1)));
+    }
+
+    private refreshSelectedTowerPanel() {
+        const tower = this.selectedTower;
+        const selected = Boolean(tower) && playMode === 'human';
+        this.towerUpgradeHint.hidden = selected;
+        this.towerUpgradePanel.hidden = !selected;
+
+        if (!tower) {
+            this.updateTowerUpgradeAvailability();
+            return;
+        }
+
+        this.towerUpgradeName.textContent = t(`tower.${tower.type}.name`);
+        this.towerUpgradeLevel.textContent = String(tower.level);
+        this.towerUpgradeDamage.textContent = this.formatTowerValue(tower.damage);
+        this.towerUpgradeDps.textContent = this.formatTowerValue(tower.dps);
+        this.towerUpgradeRange.textContent = this.formatTowerValue(tower.aimRadius);
+        this.towerUpgradeReload.textContent = tower.reloadMs > 0
+            ? `${this.formatTowerValue(tower.reloadMs)} ms`
+            : t('tower.rateContinuous');
+        this.updateTowerUpgradeAvailability();
+    }
+
+    private updateTowerUpgradeAvailability() {
+        const tower = this.selectedTower;
+        const maxed = !tower || tower.upgradeCost === null;
+        const affordable = Boolean(
+            tower && tower.upgradeCost !== null && cashManager.canWithdraw(tower.upgradeCost)
+        );
+        const settled = this.gameOverElement.classList.contains('visible');
+
+        this.towerUpgradeCost.textContent = maxed
+            ? t('tower.upgrade.max')
+            : String(tower!.upgradeCost);
+        this.towerUpgradeButton.textContent = t(maxed ? 'tower.upgrade.max' : 'tower.upgrade.button');
+        this.towerUpgradeButton.disabled = !tower || maxed || !affordable || settled;
     }
 
     private setTowers() {
@@ -470,6 +529,7 @@ class InterfaceManager {
         }
 
         this.gameOverElement.classList.add('visible')
+        this.updateTowerUpgradeAvailability();
     }
 
     /** The leaderboard is the authority on rank, so it is filled in asynchronously. */

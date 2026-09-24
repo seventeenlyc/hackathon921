@@ -7,6 +7,7 @@ import {interfaceManager} from "./InterfaceManager";
 import {canvas} from "./Canvas";
 import {GameActions} from "./agent/GameActions";
 import {playMode} from "./PlayMode";
+import {TowerInfo} from "./agent/types";
 
 class TowerPlacer extends Renderable {
     public tower: Tower = new CanonTower(0, 0, Map.TILE_SIZE);
@@ -16,6 +17,8 @@ class TowerPlacer extends Renderable {
     private shouldBeDrawn = false;
     private actions: GameActions | null = null;
     private currentTowerClass: (new (...args: any[]) => Tower) | null = null;
+    private selectedTowerId: string | null = null;
+    private selectionListener: ((tower: TowerInfo | null) => void) | null = null;
 
     constructor() {
         super();
@@ -26,6 +29,7 @@ class TowerPlacer extends Renderable {
 
         controls.on('keydown:ESCAPE', () => {
             if (this.placing) this.cancel();
+            else this.setSelectedTower(null);
         });
     }
 
@@ -33,8 +37,39 @@ class TowerPlacer extends Renderable {
         this.actions = actions;
     }
 
+    setSelectionListener(listener: (tower: TowerInfo | null) => void) {
+        this.selectionListener = listener;
+        listener(this.getSelectedTower());
+    }
+
     private handleClick() {
-        if (!this.placing || !this.canBePlaced() || !this.actions) return;
+        if (!this.actions || playMode !== 'human') return;
+
+        const cell = this.getCellAtCursor();
+        if (!cell) {
+            if (!this.placing) this.setSelectedTower(null);
+            return;
+        }
+
+        this.i = cell.i;
+        this.j = cell.j;
+
+        if (this.placing && this.canBePlaced()) {
+            this.placeTowerAtCursor();
+            return;
+        }
+
+        const tower = this.actions.getState().towers.find(item => item.i === cell.i && item.j === cell.j);
+        if (tower) {
+            this.stopPlacement();
+            this.setSelectedTower(tower);
+        } else if (!this.placing) {
+            this.setSelectedTower(null);
+        }
+    }
+
+    private placeTowerAtCursor() {
+        if (!this.actions) return;
 
         const result = this.actions.buildTower(this.tower.towerType, this.i, this.j);
         interfaceManager.snackbar.toast(result.message);
@@ -44,6 +79,43 @@ class TowerPlacer extends Renderable {
                 this.tower = new this.currentTowerClass(0, 0, Map.TILE_SIZE);
             }
         }
+    }
+
+    private getCellAtCursor(): {i: number; j: number} | null {
+        if (!controls.mouseInCanvas || !canvas.transformMatrix) return null;
+        const mouse = canvas.transformMatrix.inverse().transformPoint(controls.mouse);
+        const i = Math.floor(mouse.x / Map.TILE_SIZE);
+        const j = Math.floor(mouse.y / Map.TILE_SIZE);
+        if (i < 0 || i >= map.grid.length || j < 0 || j >= map.grid[0].length) return null;
+        return {i, j};
+    }
+
+    private getSelectedTower(): TowerInfo | null {
+        if (!this.actions || !this.selectedTowerId) return null;
+        return this.actions.getState().towers.find(tower => tower.id === this.selectedTowerId) ?? null;
+    }
+
+    private setSelectedTower(tower: TowerInfo | null) {
+        this.selectedTowerId = tower?.id ?? null;
+        this.selectionListener?.(tower);
+    }
+
+    private stopPlacement() {
+        this.placing = false;
+        this.shouldBeDrawn = false;
+        this.currentTowerClass = null;
+    }
+
+    upgradeSelected() {
+        if (playMode !== 'human' || !this.actions || !this.selectedTowerId) return null;
+
+        const id = this.selectedTowerId;
+        const result = this.actions.upgradeTower(id);
+        interfaceManager.snackbar.toast(result.message);
+        this.setSelectedTower(
+            this.actions.getState().towers.find(tower => tower.id === id) ?? null
+        );
+        return result;
     }
 
     draw(ctx: CanvasRenderingContext2D): void {
@@ -89,6 +161,7 @@ class TowerPlacer extends Renderable {
     }
 
     place(TowerClass: new (...args: any[]) => Tower) {
+        this.setSelectedTower(null);
         this.shouldBeDrawn = false;
         this.placing = true;
         this.currentTowerClass = TowerClass;
@@ -96,9 +169,8 @@ class TowerPlacer extends Renderable {
     }
 
     cancel() {
-        this.placing = false;
-        this.shouldBeDrawn = false;
-        this.currentTowerClass = null;
+        this.stopPlacement();
+        this.setSelectedTower(null);
     }
 }
 

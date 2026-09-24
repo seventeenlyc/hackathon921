@@ -20,6 +20,13 @@ export function formatBalance(value: number, lang: 'zh' | 'en'): string {
 
 class CashManager {
     private balance: number = initialBalance;
+    private balanceListeners = new Set<(balance: number) => void>();
+
+    onBalanceChange(listener: (balance: number) => void): () => void {
+        this.balanceListeners.add(listener);
+        listener(this.balance);
+        return () => { this.balanceListeners.delete(listener); };
+    }
 
     constructor() {
         this.showBalance();
@@ -59,10 +66,12 @@ class CashManager {
 
     private showBalance() {
         const cash = document.getElementById('cash');
-        if (!cash) return;
-        // 超过 10 万的缩位值切换小一号字，保证完整显示。
-        cash.textContent = formatBalance(this.balance, getLang() === 'zh' ? 'zh' : 'en');
-        cash.classList.toggle('compact', this.balance >= 100000);
+        if (cash) {
+            // 超过 10 万的缩位值切换小一号字，保证完整显示。
+            cash.textContent = formatBalance(this.balance, getLang() === 'zh' ? 'zh' : 'en');
+            cash.classList.toggle('compact', this.balance >= 100000);
+        }
+        this.balanceListeners.forEach(listener => listener(this.balance));
     }
 }
 
