@@ -77,7 +77,7 @@ function loadWaveManager(randomValue = 0) {
     const wave201 = waveManager.generateWave();
     assert.equal(wave201.length, 1, 'wave 201 contains no ordinary or support enemies');
     assert.equal(wave201[0].enemyClass, classes.BossEnemy, 'wave 201 uses bosses as elite enemies');
-    assert.equal(wave201[0].quantity, 211, 'elite count matches the regular armored group count');
+    assert.equal(wave201[0].quantity, 152 / 10, 'wave 201 keeps the wave 152 boss quantity');
 }
 
 {
@@ -95,7 +95,7 @@ function loadWaveManager(randomValue = 0) {
         const bossGroup = waveManager.generateWave()[0];
         const boss = waveManager.enemyFactory(bossGroup.enemyClass, bossGroup.enemySpecsMultiplier, {});
         assert.deepEqual(stats(boss), wave152Stats, `wave ${wave} bosses keep wave 152 attributes`);
-        assert.equal(bossGroup.quantity, 10 + wave, `wave ${wave} boss quantity continues increasing`);
+        assert.equal(bossGroup.quantity, wave152BossGroup.quantity, `wave ${wave} boss quantity matches wave 152`);
     }
 }
 
