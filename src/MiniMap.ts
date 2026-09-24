@@ -39,7 +39,7 @@ interface MinimapOptions {
 }
 
 /**
- * A fixed bottom-right locator: a downsampled overview of the whole map plus a
+ * A small battlefield locator: a downsampled overview of the whole map plus a
  * rectangle marking where the live viewport is. Click/drag the minimap to pan
  * the camera (Jira-style minimap navigation).
  *
@@ -68,8 +68,24 @@ export class MiniMap {
         this.map.on('added', () => { this.dirty = true; });
     }
 
-    /** Screen-space rectangle occupied by the minimap. the bottom-right anchor. */
-    getRect(): {x: number, y: number, width: number, height: number} {
+    /** Screen-space rectangle occupied by the minimap, or null while the controls obscure the narrow battlefield. */
+    getRect(): {x: number, y: number, width: number, height: number} | null {
+        const frame = document.getElementById('map-frame');
+        if (frame && !frame.classList.contains('is-hidden')) {
+            const bounds = frame.getBoundingClientRect();
+            const inset = 8;
+            if (bounds.width < this.opts.width * 2 + inset * 2 || bounds.height < this.opts.height + inset * 2) {
+                return null;
+            }
+            // The frame's opaque outer shadow hides canvas pixels outside the
+            // battlefield. Keep the locator inside it while controls are shown.
+            return {
+                x: bounds.right - this.opts.width - inset,
+                y: bounds.top + inset,
+                width: this.opts.width,
+                height: this.opts.height,
+            };
+        }
         const canvasEl = document.getElementById('canvas') as HTMLCanvasElement;
         const w = canvasEl?.clientWidth ?? window.innerWidth;
         const h = canvasEl?.clientHeight ?? window.innerHeight;
@@ -82,11 +98,12 @@ export class MiniMap {
     }
 
     draw(ctx: CanvasRenderingContext2D): void {
+        const rect = this.getRect();
+        if (!rect) return;
         if (this.dirty) {
             this.renderTerrainCache();
             this.dirty = false;
         }
-        const rect = this.getRect();
         ctx.save();
         // panel
         ctx.fillStyle = 'rgba(20, 22, 26, 0.82)';
@@ -164,7 +181,7 @@ export class MiniMap {
      */
     onPointerDown(screenX: number, screenY: number): boolean {
         const rect = this.getRect();
-        if (screenX < rect.x || screenX > rect.x + rect.width ||
+        if (!rect || screenX < rect.x || screenX > rect.x + rect.width ||
             screenY < rect.y || screenY > rect.y + rect.height) {
             return false;
         }
@@ -176,6 +193,10 @@ export class MiniMap {
     onPointerMove(screenX: number, screenY: number): void {
         if (!this.dragging) return;
         const rect = this.getRect();
+        if (!rect) {
+            this.dragging = false;
+            return;
+        }
         this.panTo(screenX, screenY, rect);
     }
 
