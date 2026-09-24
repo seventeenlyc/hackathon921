@@ -2399,6 +2399,16 @@ body {
       .narrative-portrait-art {
         padding: 12px;
         color: var(--accent);
+
+        // Size the nested artwork too: sizing its wrapper leaves raster images
+        // at their intrinsic dimensions, overflowing the portrait into dialogue.
+        > img,
+        > svg {
+          display: block;
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
       }
     }
 
