@@ -1,37 +1,40 @@
 /**
  * Operator profile avatars for the login gate.
  *
+ * Neutral geometric icons — no copyrighted imagery. The IDs are stable so the
+ * leaderboard and server validation can treat them as an enumerated set.
+ *
  * Deliberately pure (no image imports): headless tests transpile this module
  * directly. The PNG URL mapping lives in avatarAssets.ts.
  */
 
 export type AvatarId =
-    | 'aramaki'
-    | 'kusanagi'
-    | 'batou'
-    | 'togusa'
-    | 'ishikawa'
-    | 'saito'
-    | 'paz'
-    | 'boma';
+    | 'sentinel'
+    | 'vector'
+    | 'nexus'
+    | 'orbit'
+    | 'prism'
+    | 'cipher'
+    | 'atlas'
+    | 'helix';
 
 export interface AvatarEntry {
     id: AvatarId;
-    /** i18n key of the displayed zh name (e.g. 课长). */
+    /** i18n key of the displayed name. */
     nameKey: string;
-    /** Romaji label rendered under the zh name (e.g. ARAMAKI). */
+    /** Romaji label rendered under the name (same in both languages). */
     romaji: string;
 }
 
 export const AVATARS: readonly AvatarEntry[] = [
-    {id: 'aramaki', nameKey: 'gate.avatar.aramaki', romaji: 'ARAMAKI'},
-    {id: 'kusanagi', nameKey: 'gate.avatar.kusanagi', romaji: 'KUSANAGI'},
-    {id: 'batou', nameKey: 'gate.avatar.batou', romaji: 'BATOU'},
-    {id: 'togusa', nameKey: 'gate.avatar.togusa', romaji: 'TOGUSA'},
-    {id: 'ishikawa', nameKey: 'gate.avatar.ishikawa', romaji: 'ISHIKAWA'},
-    {id: 'saito', nameKey: 'gate.avatar.saito', romaji: 'SAITO'},
-    {id: 'paz', nameKey: 'gate.avatar.paz', romaji: 'PAZ'},
-    {id: 'boma', nameKey: 'gate.avatar.boma', romaji: 'BOMA'},
+    {id: 'sentinel', nameKey: 'gate.avatar.sentinel', romaji: 'SENTINEL'},
+    {id: 'vector', nameKey: 'gate.avatar.vector', romaji: 'VECTOR'},
+    {id: 'nexus', nameKey: 'gate.avatar.nexus', romaji: 'NEXUS'},
+    {id: 'orbit', nameKey: 'gate.avatar.orbit', romaji: 'ORBIT'},
+    {id: 'prism', nameKey: 'gate.avatar.prism', romaji: 'PRISM'},
+    {id: 'cipher', nameKey: 'gate.avatar.cipher', romaji: 'CIPHER'},
+    {id: 'atlas', nameKey: 'gate.avatar.atlas', romaji: 'ATLAS'},
+    {id: 'helix', nameKey: 'gate.avatar.helix', romaji: 'HELIX'},
 ];
 
 export function isKnownAvatarId(id: string): id is AvatarId {
@@ -42,45 +45,45 @@ export function randomAvatarId(): AvatarId {
     return AVATARS[Math.floor(Math.random() * AVATARS.length)].id;
 }
 
-export const RANDOM_USERNAMES_ZH: readonly string[] = [
-    '草薙素子',
-    '巴特',
-    '荒卷大辅',
-    '陀古萨',
-    '石川',
-    '斉藤',
-    '帕兹',
-    '波马',
-    '笑脸男',
-    '塔奇克马-01',
-    '塔奇克马-02',
-    '塔奇克马-07',
-    '公安九课参谋',
-    '电子幽灵',
-    '网络潜行者',
-    '义体游侠',
-    '战术指挥官',
-    '迷宫架构师',
-];
-
-export const RANDOM_USERNAMES_EN: readonly string[] = [
-    'Major_Kusanagi',
-    'Batou_09',
-    'Chief_Aramaki',
-    'Togusa',
-    'Ishikawa',
-    'Saito',
-    'Tachikoma_01',
-    'Tachikoma_07',
-    'LaughingMan',
-    'Cyber_Ghost',
-    'Section9_Agent',
-    'Net_Phantom',
-    'Wire_Runner',
-    'Logic_Core',
-];
-
 export function randomUsername(lang?: string): string {
     const list = lang === 'en' ? RANDOM_USERNAMES_EN : RANDOM_USERNAMES_ZH;
     return list[Math.floor(Math.random() * list.length)];
 }
+
+export const RANDOM_USERNAMES_ZH: readonly string[] = [
+    '哨兵',
+    '矢量',
+    '枢纽',
+    '轨道',
+    '棱镜',
+    '密文',
+    '擎天',
+    '螺旋',
+    '守卫者',
+    '指挥官',
+    '战术官',
+    '防御核心',
+    '网络行者',
+    '电子幽灵',
+    '算法之心',
+    '逻辑核心',
+];
+
+export const RANDOM_USERNAMES_EN: readonly string[] = [
+    'Sentinel',
+    'Vector',
+    'Nexus',
+    'Orbit',
+    'Prism',
+    'Cipher',
+    'Atlas',
+    'Helix',
+    'Commander',
+    'Tactician',
+    'Defender',
+    'NetRunner',
+    'CyberGhost',
+    'LogicCore',
+    'WireRunner',
+    'CoreGuard',
+];

@@ -35,9 +35,9 @@ function extractBlock(source, openPattern) {
 }
 
 // --- markup: two tab views and their tabs -----------------------------------
-assert.ok(index.includes('id="db-view-tachikoma"'), 'friendly view missing');
+assert.ok(index.includes('id="db-view-towers"'), 'friendly view missing');
 assert.ok(index.includes('id="db-view-hostile"'), 'hostile view missing');
-assert.ok(index.includes('id="db-tab-tachikoma"'), 'friendly tab missing');
+assert.ok(index.includes('id="db-tab-towers"'), 'friendly tab missing');
 assert.ok(index.includes('id="db-tab-hostile"'), 'hostile tab missing');
 assert.match(
     index,
@@ -47,8 +47,8 @@ assert.match(
 
 // --- tab switching keeps toggling `hidden` -----------------------------------
 assert.ok(
-    interfaceSource.includes('viewTachikoma.hidden = !tachikomaActive;') &&
-    interfaceSource.includes('viewHostile.hidden = tachikomaActive;'),
+    interfaceSource.includes('viewTowers.hidden = !towersActive;') &&
+    interfaceSource.includes('viewHostile.hidden = towersActive;'),
     'tab switch must keep using the hidden attribute (the CSS guard below relies on it)',
 );
 

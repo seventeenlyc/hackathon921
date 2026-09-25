@@ -32,7 +32,7 @@ assert.match(uiSource, /onLangChange\(\(\) => this\.render\(\)\)/,
     'the gate must re-render its copy when the language changes');
 assert.doesNotMatch(uiSource, /gate\.welcome|gate\.prompt|gate\.brand\b|gate\.brandSub|gate\.title\b|gate\.titleSub|gate\.identEn|gate\.identZh|gate\.profileSub|gate\.codenameSub|directive\.|flux\.title|ghost\.title|database\.title|database\.tabTachikoma/,
     'retired i18n keys must not be referenced anymore');
-for (const copy of ['PROTECT AOI', 'OPERATOR IDENTIFICATION', 'RANDOM PROFILE', 'TACHIKOMA LINK // STANDBY']) {
+for (const copy of ['OPERATOR IDENTIFICATION', 'RANDOM PROFILE', 'COMMAND LINK // STANDBY']) {
     assert.ok(i18nSource.includes(copy), `i18n table must carry the gate copy: ${copy}`);
 }
 assert.match(styles, /#inert[\s\S]*\.leaderboard-panel/,
@@ -174,7 +174,7 @@ function loadUI(document, currentPlayMode, remoteData = null) {
             entriesForBoard: entries => entries,
         },
         './SessionIdentity': {
-            getSessionUsername: () => 'Alice', getSessionAvatar: () => 'aramaki', getLocalSessionId: () => 'local-1',
+            getSessionUsername: () => 'Alice', getSessionAvatar: () => 'sentinel', getLocalSessionId: () => 'local-1',
             setSessionUsername: () => true, setSessionAvatar: () => true,
         },
         './AvatarCatalog': avatarCatalog,
@@ -259,10 +259,10 @@ function loadUI(document, currentPlayMode, remoteData = null) {
     const doc = new FakeDocument();
     const remoteData = mode => ({
         entries: [
-            { uid: 7, rank: 1, username: 'Alice', avatarId: 'aramaki', wave: 20, achievedAt: 100, mode: 'human' },
+            { uid: 7, rank: 1, username: 'Alice', avatarId: 'sentinel', wave: 20, achievedAt: 100, mode: 'human' },
             { uid: 7, rank: 2, username: 'Alice', avatarId: null, wave: 10, achievedAt: 50, mode: 'ai' },
         ],
-        me: { uid: 7, username: 'Alice', avatarId: 'aramaki', rank: 1, wave: 20, mode: 'human' },
+        me: { uid: 7, username: 'Alice', avatarId: 'sentinel', rank: 1, wave: 20, mode: 'human' },
     });
     const { LeaderboardPanel } = loadUI(doc, 'ai', remoteData);
     const panel = new LeaderboardPanel();
@@ -289,7 +289,7 @@ function loadUI(document, currentPlayMode, remoteData = null) {
     assert.ok(!humanAvatar.el.className.includes('is-empty'), '有 avatarId 的记录不得使用占位');
     const img = humanAvatar.el.children.find(c => c.tagName === 'IMG');
     assert.ok(img, '有 avatarId 的记录必须渲染 <img> 头像');
-    assert.strictEqual(img.src, 'fake://aramaki', '头像 src 必须来自 AVATAR_SRC 常量表');
+    assert.strictEqual(img.src, 'fake://sentinel', '头像 src 必须来自 AVATAR_SRC 常量表');
     assert.ok(humanAvatar.idx < humanItem.children.findIndex(c => c.className === 'name'),
         '头像必须位于用户名左侧');
 

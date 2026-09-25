@@ -10,7 +10,7 @@ export const MAX_WAVE = 100000;
 export const MAX_STRATEGY_LENGTH = 5000;
 
 const AVATAR_IDS = new Set([
-    'aramaki', 'kusanagi', 'batou', 'togusa', 'ishikawa', 'saito', 'paz', 'boma',
+    'sentinel', 'vector', 'nexus', 'orbit', 'prism', 'cipher', 'atlas', 'helix',
 ]);
 
 /** Validate the selected avatar against the same fixed catalogue used by the login gate. */

@@ -16,7 +16,7 @@ function freshStore(): { store: any; db: any } {
         const key = name.toLowerCase();
         let id = ids.get(key);
         if (!id) {
-            id = store.createUser(name, 'aramaki', T0);
+            id = store.createUser(name, 'sentinel', T0);
             ids.set(key, id);
         }
         return id;

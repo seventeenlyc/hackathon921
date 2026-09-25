@@ -30,7 +30,7 @@ test('端到端：会话 → 开局 → 上报波次 → 共享排行榜可见',
         const sessionRes = await fetch(`${base}/api/session`, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ username: 'Alice', avatarId: 'aramaki' }),
+            body: JSON.stringify({ username: 'Alice', avatarId: 'sentinel' }),
         });
         assert.equal(sessionRes.status, 200);
         const session = await sessionRes.json();
@@ -85,7 +85,7 @@ test('端到端：超大请求体被当作坏请求拒绝，不会拖垮进程',
         const res = await fetch(`${base}/api/session`, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ username: 'Alice', avatarId: 'aramaki', padding: huge }),
+            body: JSON.stringify({ username: 'Alice', avatarId: 'sentinel', padding: huge }),
         });
         // body 超限 → 解析为 null → 昵称缺失 → 400，而不是 500 或进程崩溃。
         assert.equal(res.status, 400);
@@ -108,7 +108,7 @@ test('端到端：5000 个中文字符的 Prompt 可通过专用请求体上限�
         const sessionRes = await fetch(`${base}/api/session`, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ username: '玩家', avatarId: 'aramaki' }),
+            body: JSON.stringify({ username: '玩家', avatarId: 'sentinel' }),
         });
         const session = await sessionRes.json();
         const runRes = await fetch(`${base}/api/runs`, {

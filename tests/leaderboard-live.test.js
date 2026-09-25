@@ -210,10 +210,8 @@ async function test(name, fn) {
 
     await test('the current player score is submitted at each reached wave and after username entry', () => {
         const submissions = [];
-        const musicWaves = [];
-        let missionDucks = 0;
         let username = 'Alice';
-        const waveManager = { waveCounter: 1, looping: true, setPlanner() {}, setNarrative() {}, setInterWaveDelay() {}, start() { this.onWaveReached(this.waveCounter); } };
+        const waveManager = { waveCounter: 1, looping: true, setPlanner() {}, setInterWaveDelay() {}, start() { this.onWaveReached(this.waveCounter); } };
         const game = loadSource('Game.ts', {
             './Canvas': { canvas: {}, ctx: {} },
             './config.json': { fps: 60 },
@@ -246,7 +244,7 @@ async function test(name, fn) {
             './DecisionSummary': { DecisionSummary: class {} },
             './i18n': { t: key => key, onLangChange() {} },
             './leaderboard/RunSync': { runSync: { enqueuePrompt() {}, retryPending() {} } },
-            './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, setPaused() {}, duckForMissionComplete() { missionDucks++; }, beginRun: wave => musicWaves.push(wave), setWave: wave => musicWaves.push(wave) } },
+            './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, setPaused() {}, beginRun: () => {} } },
             './narrative/NarrativeDirector': { NarrativeDirector: class { constructor() {} beforeWave() {} } },
             './narrative/NarrativeScript': { NARRATIVE_SCENES: [] },
             './narrative/NarrativeOverlay': { narrativeOverlay: { play: async () => {} } },
@@ -271,18 +269,17 @@ async function test(name, fn) {
         // wave 2. Wave 3 is skipped while no username is set, then Bob's manual
         // recordReachedWave() picks the current counter back up.
         assert.deepStrictEqual(submissions, [['Alice', 2, 'ai'], ['Bob', 3, 'ai']]);
-        assert.deepStrictEqual(musicWaves, [2, 3], 'music changes when each wave starts, not while the previous wave is ending');
-        game.recordReachedWave(200);
-        game.recordReachedWave(200);
-        assert.strictEqual(missionDucks, 1, 'wave 200 allows one quiet mission-complete beat before wave 201');
+        // The licensed demo BGM and its per-wave `setWave` / mission-duck hooks
+        // were removed in the 2026-09-25 de-branding; the leaderboard submission
+        // behavior above is the only thing this test now pins.
     });
 
     await test('human mode records wave and submits with mode human', () => {
         const submissions = [];
         const ranksRequested = [];
-        const musicWaves = [];
+        const beginRunWaves = [];
         let username = 'Dave';
-        const waveManager = { waveCounter: 1, looping: true, setPlanner() {}, setNarrative() {}, setInterWaveDelay() {}, start() {} };
+        const waveManager = { waveCounter: 1, looping: true, setPlanner() {}, setInterWaveDelay() {}, start() {} };
         const gameModule = loadSource('Game.ts', {
             './Canvas': { canvas: {}, ctx: {} },
             './config.json': { fps: 60 },
@@ -315,7 +312,7 @@ async function test(name, fn) {
             './DecisionSummary': { DecisionSummary: class {} },
             './i18n': { t: key => key, onLangChange() {} },
             './leaderboard/RunSync': { runSync: { prepareRun() {}, enqueuePrompt() {}, retryPending() {} } },
-            './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, setPaused() {}, beginRun: wave => musicWaves.push(wave), setWave: wave => musicWaves.push(wave) } },
+            './AudioManager': { audioManager: { playWaveReached() {}, playGameOver() {}, setPaused() {}, beginRun: wave => beginRunWaves.push(wave) } },
             './narrative/NarrativeDirector': { NarrativeDirector: class { constructor() {} beforeWave() {} } },
             './narrative/NarrativeScript': { NARRATIVE_SCENES: [] },
             './narrative/NarrativeOverlay': { narrativeOverlay: { play: async () => {} } },
@@ -329,12 +326,11 @@ async function test(name, fn) {
         });
         const game = gameModule.game;
         gameModule.startHumanRun('Dave');
-        assert.deepStrictEqual(musicWaves, [1]);
+        assert.deepStrictEqual(beginRunWaves, [1], 'beginRun is called once when the human run starts');
         waveManager.waveCounter = 5;
         waveManager.onWaveStarted(5);
         game.recordReachedWave(5);
         assert.deepStrictEqual(submissions, [['Dave', 5, 'human']]);
-        assert.deepStrictEqual(musicWaves, [1, 5]);
         game.gameOver();
         assert.deepStrictEqual(ranksRequested, [['Dave', 'human']]);
     });

@@ -59,19 +59,18 @@ for (const relativePath of textureFiles) {
 
 // Keep source-design → runtime-role mappings and distinctness pinned (issue #67).
 const sprites = [
-  // Source: 01–05 from the individually extracted tower art, in catalogue order.
-  ['towers', 'canon', 'CanonTower', 'canonTower', 171, 163],
-  ['towers', 'gatling', 'GatlingTower', 'gatlingTower', 175, 164],
-  ['towers', 'slow', 'SlowTower', 'slowTower', 169, 162],
-  ['towers', 'sniper', 'SniperTower', 'sniperTower', 228, 159],
-  ['towers', 'laser', 'LaserTower', 'laserTower', 163, 161],
-  // Source: 06 傀儡义体, 07 高速无人机, 08 装甲执行机,
-  // 09 网络支援节点, 10 情报消去者_BOSS.
-  ['enemies', 'simple', 'SimpleEnemy', 'simpleEnemy', 68, 108],
-  ['enemies', 'fast', 'FastEnemy', 'fastEnemy', 118, 80],
-  ['enemies', 'armored', 'ArmoredEnemy', 'armoredEnemy', 140, 102],
-  ['enemies', 'healer', 'HealerEnemy', 'healerEnemy', 104, 114],
-  ['enemies', 'boss', 'BossEnemy', 'bossEnemy', 251, 197]
+  // Source: tower art in catalogue order.
+  ['towers', 'canon', 'CanonTower', 'canonTower', 1203, 1213],
+  ['towers', 'gatling', 'GatlingTower', 'gatlingTower', 1203, 1213],
+  ['towers', 'slow', 'SlowTower', 'slowTower', 1203, 1213],
+  ['towers', 'sniper', 'SniperTower', 'sniperTower', 1203, 1213],
+  ['towers', 'laser', 'LaserTower', 'laserTower', 1203, 1213],
+  // Source: enemy art in catalogue order.
+  ['enemies', 'simple', 'SimpleEnemy', 'simpleEnemy', 1203, 1213],
+  ['enemies', 'fast', 'FastEnemy', 'fastEnemy', 1203, 1213],
+  ['enemies', 'armored', 'ArmoredEnemy', 'armoredEnemy', 1203, 1213],
+  ['enemies', 'healer', 'HealerEnemy', 'healerEnemy', 1203, 1213],
+  ['enemies', 'boss', 'BossEnemy', 'bossEnemy', 1203, 1213]
 ];
 const texturePathsSource = fs.readFileSync(path.join(projectRoot, 'src/tools/texturePaths.ts'), 'utf8');
 const hashes = new Set();

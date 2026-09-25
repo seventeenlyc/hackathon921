@@ -29,7 +29,7 @@ function makeDeps(over: Partial<ApiDeps> = {}): ApiDeps {
     db.exec('PRAGMA foreign_keys = ON;');
     const store = new LeaderboardStore(db);
     store.migrate();
-    store.createUser('Alice', 'aramaki', T0);
+    store.createUser('Alice', 'sentinel', T0);
     return {
         store,
         secret: SECRET,

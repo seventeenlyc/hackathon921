@@ -57,7 +57,7 @@ test('reloading the identity module forgets the nickname and clears the legacy c
     const document = { cookie: 'pd_username=Alice' };
     const first = loadSession(document);
     first.setSessionUsername('Alice');
-    first.setSessionAvatar('batou');
+    first.setSessionAvatar('vector');
     const firstLocalId = first.getLocalSessionId();
     first.clearLegacyUsernameCookie();
     assert.match(document.cookie, /^pd_username=; Max-Age=0; Path=\/$/);

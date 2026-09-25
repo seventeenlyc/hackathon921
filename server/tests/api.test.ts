@@ -28,7 +28,7 @@ function request(over: Partial<ApiRequest>): ApiRequest {
 
 /** 走一遍 session → runs，返回可用于后续请求的 token 与 runId。 */
 function openRun(deps: ApiDeps, username: string, mode?: string): { token: string; runId: string } {
-    const session = handleApi(deps, request({ method: 'POST', pathname: '/api/session', body: { username, avatarId: 'aramaki' } }));
+    const session = handleApi(deps, request({ method: 'POST', pathname: '/api/session', body: { username, avatarId: 'sentinel' } }));
     assert.equal(session.status, 200);
     const token = session.body.token as string;
 
@@ -59,7 +59,7 @@ test('GET /api/health 在配了 provider key 时 providerConfigured 为 true', (
 });
 
 test('POST /api/session 用合法昵称换取 token', () => {
-    const res = handleApi(makeDeps(), request({ method: 'POST', pathname: '/api/session', body: { username: '  Alice ', avatarId: 'aramaki' } }));
+    const res = handleApi(makeDeps(), request({ method: 'POST', pathname: '/api/session', body: { username: '  Alice ', avatarId: 'sentinel' } }));
     assert.equal(res.status, 200);
     assert.equal(res.body.username, 'Alice');
     assert.equal(typeof res.body.token, 'string');
@@ -71,7 +71,7 @@ test('相同昵称和头像每次确认都会创建独立 UID，排行榜按 UID
     const deps = makeDeps();
     const createProfile = () => handleApi(deps, request({
         method: 'POST', pathname: '/api/session',
-        body: { username: 'Alice', avatarId: 'aramaki' },
+        body: { username: 'Alice', avatarId: 'sentinel' },
     }));
     const first = createProfile();
     const second = createProfile();
@@ -89,8 +89,8 @@ test('相同昵称和头像每次确认都会创建独立 UID，排行榜按 UID
     const board = handleApi(deps, request({ pathname: '/api/leaderboard' }));
     assert.equal(board.body.entries.length, 2);
     assert.deepEqual(board.body.entries.map((entry: any) => [entry.username, entry.avatarId, entry.wave]), [
-        ['Alice', 'aramaki', 8],
-        ['Alice', 'aramaki', 6],
+        ['Alice', 'sentinel', 8],
+        ['Alice', 'sentinel', 6],
     ]);
     assert.notEqual(board.body.entries[0].uid, board.body.entries[1].uid);
 });
@@ -98,7 +98,7 @@ test('相同昵称和头像每次确认都会创建独立 UID，排行榜按 UID
 test('开发密码只在服务端验证；解锁后同一 UID 无法创建计榜对局', () => {
     const deps: ApiDeps = { ...makeDeps(), devPassword: 'demo-test-only' };
     const session = handleApi(deps, request({
-        method: 'POST', pathname: '/api/session', body: { username: 'Tester', avatarId: 'aramaki' },
+        method: 'POST', pathname: '/api/session', body: { username: 'Tester', avatarId: 'sentinel' },
     }));
     const token = session.body.token as string;
     const unlock = (password: unknown, auth: string | null = token) => handleApi(deps, request({
@@ -117,7 +117,7 @@ test('开发密码只在服务端验证；解锁后同一 UID 无法创建计榜
 test('开发模式未配置密码时关闭，已开局的会话不能再切为开发模式', () => {
     const deps = makeDeps();
     const session = handleApi(deps, request({
-        method: 'POST', pathname: '/api/session', body: { username: 'Tester', avatarId: 'aramaki' },
+        method: 'POST', pathname: '/api/session', body: { username: 'Tester', avatarId: 'sentinel' },
     }));
     const token = session.body.token as string;
     const unlock = () => handleApi(deps, request({
@@ -137,11 +137,11 @@ test('开发模式未配置密码时关闭，已开局的会话不能再切为�
 test('store.enableDevSession 持久化并使 createRun 抛出 DEV_SESSION_UNRANKED', () => {
     const deps = makeDeps();
     const session = handleApi(deps, request({
-        method: 'POST', pathname: '/api/session', body: { username: 'Tester', avatarId: 'aramaki' },
+        method: 'POST', pathname: '/api/session', body: { username: 'Tester', avatarId: 'sentinel' },
     }));
     const token = session.body.token as string;
     // 从 token 反推 uid 不便，这里直接用 store 的 createUser 取一个 uid 来验证持久层。
-    const uid = deps.store.createUser('DevOnly', 'aramaki', T0);
+    const uid = deps.store.createUser('DevOnly', 'sentinel', T0);
     assert.equal(deps.store.isDevSession(uid), false);
     assert.equal(deps.store.enableDevSession(uid), true);
     assert.equal(deps.store.enableDevSession(uid), true, '重复解锁保持幂等');
@@ -152,7 +152,7 @@ test('store.enableDevSession 持久化并使 createRun 抛出 DEV_SESSION_UNRANK
     assert.equal(deps.store.top(10, 'ai').find((e: any) => e.uid === uid), undefined);
     assert.equal(deps.store.top(10, 'total').find((e: any) => e.uid === uid), undefined);
     // 已有 run 的 UID 不能再切开发模式。
-    const rankedUid = deps.store.createUser('Ranked', 'aramaki', T0);
+    const rankedUid = deps.store.createUser('Ranked', 'sentinel', T0);
     deps.store.createRun('run-ranked', rankedUid, T0, 'ai');
     assert.equal(deps.store.enableDevSession(rankedUid), false, '已开局不能再切开发模式');
     assert.equal(deps.store.isDevSession(rankedUid), false);
@@ -161,7 +161,7 @@ test('store.enableDevSession 持久化并使 createRun 抛出 DEV_SESSION_UNRANK
 test('开发密码长度边界：128 合法，129 与空串被拒', () => {
     const deps: ApiDeps = { ...makeDeps(), devPassword: 'demo-test-only' };
     const session = handleApi(deps, request({
-        method: 'POST', pathname: '/api/session', body: { username: 'Tester', avatarId: 'aramaki' },
+        method: 'POST', pathname: '/api/session', body: { username: 'Tester', avatarId: 'sentinel' },
     }));
     const token = session.body.token as string;
     const unlock = (password: unknown) => handleApi(deps, request({
@@ -200,7 +200,7 @@ test('POST /api/runs 需要有效会话', () => {
 
 test('POST /api/runs 与 GET /api/leaderboard 校验模式并拒绝非法值', () => {
     const deps = makeDeps();
-    const session = handleApi(deps, request({ method: 'POST', pathname: '/api/session', body: { username: 'Alice', avatarId: 'aramaki' } }));
+    const session = handleApi(deps, request({ method: 'POST', pathname: '/api/session', body: { username: 'Alice', avatarId: 'sentinel' } }));
     const token = session.body.token as string;
 
     const badRun = handleApi(
@@ -238,7 +238,7 @@ test('排行榜按模式隔离查询，缺省为 AI，总榜合并且 me 选择�
             [2, 'Alice', 10, 'ai'],
         ]
     );
-    assert.deepEqual(defaultBoard.body.me, { uid: defaultBoard.body.me.uid, username: 'Alice', avatarId: 'aramaki', rank: 2, wave: 10, mode: 'ai' });
+    assert.deepEqual(defaultBoard.body.me, { uid: defaultBoard.body.me.uid, username: 'Alice', avatarId: 'sentinel', rank: 2, wave: 10, mode: 'ai' });
     assert.ok(Number.isSafeInteger(defaultBoard.body.me.uid));
 
     // human 榜：只有 Alice 的 human 成绩
@@ -250,7 +250,7 @@ test('排行榜按模式隔离查询，缺省为 AI，总榜合并且 me 选择�
             [1, 'Alice', 25, 'human'],
         ]
     );
-    assert.deepEqual(humanBoard.body.me, { uid: defaultBoard.body.me.uid, username: 'Alice', avatarId: 'aramaki', rank: 1, wave: 25, mode: 'human' });
+    assert.deepEqual(humanBoard.body.me, { uid: defaultBoard.body.me.uid, username: 'Alice', avatarId: 'sentinel', rank: 1, wave: 25, mode: 'human' });
 
     // total 榜：包含两种模式记录，Alice 的总榜 me 选更优的 human/25
     const totalBoard = handleApi(deps, request({ pathname: '/api/leaderboard', searchParams: { mode: 'total' }, token: aliceAi.token }));
@@ -263,7 +263,7 @@ test('排行榜按模式隔离查询，缺省为 AI，总榜合并且 me 选择�
             [3, 'Alice', 10, 'ai'],
         ]
     );
-    assert.deepEqual(totalBoard.body.me, { uid: defaultBoard.body.me.uid, username: 'Alice', avatarId: 'aramaki', rank: 1, wave: 25, mode: 'human' });
+    assert.deepEqual(totalBoard.body.me, { uid: defaultBoard.body.me.uid, username: 'Alice', avatarId: 'sentinel', rank: 1, wave: 25, mode: 'human' });
 });
 
 test('波次上报：正向路径返回 accepted 与最佳波次', () => {

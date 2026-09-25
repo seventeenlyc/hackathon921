@@ -379,7 +379,7 @@ function makeStore(text = 'hold the base') {
 
         assert.deepStrictEqual(actions.buildCalls, []);
         assert.strictEqual(errors.length, 1);
-        assert.ok(errors[0].includes('Tactical network unreachable'));
+        assert.ok(errors[0].includes('Command network unreachable'));
     });
 
     await test('fail-closed: a non-OK HTTP status reports without acting', async () => {
