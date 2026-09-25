@@ -46,7 +46,7 @@ export class UsernameGate {
         this.onDone(name);
     }
 
-    show() { document.body.appendChild(this.overlay); this.input.focus(); }
+    show() { document.getElementById('inert')!.appendChild(this.overlay); this.input.focus(); }
     hide() { if (this.overlay.parentNode) this.overlay.remove(); }
     get visible(): boolean { return !!this.overlay.parentNode; }
 }
@@ -72,7 +72,7 @@ class LeaderboardPanel {
         this.root.appendChild(title);
         this.root.appendChild(this.listEl);
         this.root.appendChild(this.footerEl);
-        document.body.appendChild(this.root);
+        document.getElementById('inert')!.appendChild(this.root);
         this.render();
     }
 
@@ -90,8 +90,6 @@ class LeaderboardPanel {
             li.className = 'empty';
             li.textContent = 'No scores yet - play a run!';
             this.listEl.appendChild(li);
-            this.footerEl.textContent = '';
-            return;
         }
         const ownLower = this.username ? this.username.toLowerCase() : null;
         top.forEach((e, i) => {
