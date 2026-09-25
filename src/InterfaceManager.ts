@@ -21,7 +21,6 @@ import {enemyLifeAtWave, enemySpeedAtWave} from './tools/enemyScaling';
 import {isEnemyTypeId} from './tools/enemyCatalog';
 import {texturePaths} from './tools/texturePaths';
 import {DevPanel} from './DevPanel';
-import {storyReader} from './narrative/StoryReader';
 
 /** Summary shown on the settlement screen after the base falls. */
 export interface RunStats {
@@ -90,9 +89,7 @@ class InterfaceManager {
             this.updateSpeedLabel();
         };
         this.audioButton?.addEventListener('click', () => {
-            const muted = !audioManager.isMuted();
-            audioManager.setMuted(muted);
-            if (!muted && !gameLoop.isIdle()) audioManager.startMusic();
+            audioManager.setMuted(!audioManager.isMuted());
             this.updateAudioLabel();
         });
         this.towerUpgradeButton.addEventListener('click', () => towerPlacer.upgradeSelected());
@@ -102,9 +99,6 @@ class InterfaceManager {
             toggleLang();
             applyStaticTranslations();
         });
-        // 背景故事（issue #99）：纯阅读视图，不冻结演算，也不改动任何对局状态。
-        const storyButton = document.getElementById('story-open') as HTMLButtonElement | null;
-        storyButton?.addEventListener('click', () => storyReader.open(storyButton));
 
         gameLoop.onChange(state => {
             this.setState(state);
@@ -202,7 +196,7 @@ class InterfaceManager {
         // `idle` is the not-started state shown before the player presses Start.
         this.stateElement.textContent = t(`state.${state}`);
         this.pauseButton.hidden = state === 'paused';
-        this.pauseButton.disabled = state === 'idle' || state === 'planning' || state === 'narrative';
+        this.pauseButton.disabled = state === 'idle' || state === 'planning';
         this.resumeButton.hidden = state !== 'paused';
         // The intrusion banner reads as an amber warning while a wave is live;
         // red stays reserved for the settlement screen (issue #66 palette).
@@ -273,21 +267,21 @@ class InterfaceManager {
 
     /** TACTICAL DATABASE tab switch: friendly units vs hostile attributes. */
     private setupDatabaseTabs() {
-        const tabTachikoma = document.getElementById('db-tab-tachikoma') as HTMLButtonElement | null;
+        const tabTowers = document.getElementById('db-tab-towers') as HTMLButtonElement | null;
         const tabHostile = document.getElementById('db-tab-hostile') as HTMLButtonElement | null;
-        const viewTachikoma = document.getElementById('db-view-tachikoma');
+        const viewTowers = document.getElementById('db-view-towers');
         const viewHostile = document.getElementById('db-view-hostile');
-        if (!tabTachikoma || !tabHostile || !viewTachikoma || !viewHostile) return;
-        const show = (view: 'tachikoma' | 'hostile') => {
-            const tachikomaActive = view === 'tachikoma';
-            tabTachikoma.classList.toggle('active', tachikomaActive);
-            tabHostile.classList.toggle('active', !tachikomaActive);
-            tabTachikoma.setAttribute('aria-selected', String(tachikomaActive));
-            tabHostile.setAttribute('aria-selected', String(!tachikomaActive));
-            viewTachikoma.hidden = !tachikomaActive;
-            viewHostile.hidden = tachikomaActive;
+        if (!tabTowers || !tabHostile || !viewTowers || !viewHostile) return;
+        const show = (view: 'towers' | 'hostile') => {
+            const towersActive = view === 'towers';
+            tabTowers.classList.toggle('active', towersActive);
+            tabHostile.classList.toggle('active', !towersActive);
+            tabTowers.setAttribute('aria-selected', String(towersActive));
+            tabHostile.setAttribute('aria-selected', String(!towersActive));
+            viewTowers.hidden = !towersActive;
+            viewHostile.hidden = towersActive;
         };
-        tabTachikoma.addEventListener('click', () => show('tachikoma'));
+        tabTowers.addEventListener('click', () => show('towers'));
         tabHostile.addEventListener('click', () => show('hostile'));
     }
 

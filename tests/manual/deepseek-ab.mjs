@@ -68,7 +68,7 @@ async function session() {
     const res = await fetch(`${BASE}/api/session`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ username: 'ab-probe', avatarId: 'aramaki' }),
+        body: JSON.stringify({ username: 'ab-probe', avatarId: 'sentinel' }),
     });
     if (!res.ok) throw new Error(`session ${res.status}: ${await res.text()}`);
     const body = await res.json();

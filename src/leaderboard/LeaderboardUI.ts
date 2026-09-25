@@ -16,7 +16,6 @@ import {runSync} from './RunSync';
 import {PromptHistoryDialog} from './PromptHistoryDialog';
 import {getLang, onLangChange, t, toggleLang} from '../i18n';
 import {playMode} from '../PlayMode';
-import {storyReader} from '../narrative/StoryReader';
 
 const TOP_N = 10;
 
@@ -68,9 +67,6 @@ export class UsernameGate {
         });
         const langButton = this.overlay.querySelector('.gate-lang') as HTMLButtonElement;
         langButton.addEventListener('click', () => toggleLang());
-        // 背景故事（issue #99）：登录浮窗是首次进入所见的第一屏，也必须能打开阅读。
-        const storyButton = this.overlay.querySelector('.gate-story') as HTMLButtonElement | null;
-        storyButton?.addEventListener('click', () => storyReader.open(storyButton));
         this.input.value = value;
         this.selectAvatar(this.selectedAvatar);
         this.updateCounter();
@@ -80,7 +76,7 @@ export class UsernameGate {
     private buildTemplate(): string {
         const cards = AVATARS.map((avatar) => {
             const name = t(avatar.nameKey);
-            // 罗马音与当前语言名称相同时（如英文下的 BATOU/BATOU）不再重复展示。
+            // 罗马音与当前语言名称相同时（如英文下的 SENTINEL/SENTINEL）不再重复展示。
             const romaji = avatar.romaji === name
                 ? ''
                 : '<span class="gate-avatar-romaji">' + avatar.romaji + '</span>';
@@ -97,7 +93,6 @@ export class UsernameGate {
             + '<header class="gate-topbar">'
             + '<span class="gate-brand">' + t('shell.eyebrow') + '</span>'
             + '<span class="gate-topbar-right">'
-            + '<button type="button" class="gate-story">' + t('story.open') + '</button>'
             + '<button type="button" class="gate-lang">' + t('gate.langToggle') + '</button>'
             + '<span class="gate-online">' + t('gate.systemOnline') + '</span>'
             + '</span>'

@@ -126,7 +126,7 @@ async function ensureSessionResult(username: string, requestedAvatarId?: string 
     if (!clean) return { ok: false, status: 400, retryable: false, reason: 'INVALID_USERNAME' };
     const avatarId = isKnownAvatarId(requestedAvatarId || '')
         ? requestedAvatarId as AvatarId
-        : getSessionAvatar() || 'aramaki';
+        : getSessionAvatar() || 'sentinel';
     if (session && session.username.toLowerCase() === clean.toLowerCase() && session.avatarId === avatarId) {
         return { ok: true, value: session.token };
     }

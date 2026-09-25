@@ -2,15 +2,15 @@
 <html lang="zh">
   <head>
     <meta charset="UTF-8" />
-    <title data-i18n="app.title">保护笑脸男 — 塔奇克马防御协议</title>
+    <title data-i18n="app.title">Prompt Defense — AI 塔防</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta itemprop="name" content="保护笑脸男 — 塔奇克马防御协议" />
-    <meta property="og:title" content="保护笑脸男 — 塔奇克马防御协议" />
-    <meta name="twitter:title" content="保护笑脸男 — 塔奇克马防御协议" />
-    <meta name="description" content="用自然语言指挥塔奇克马，保护笑脸男，让真相活着离开公安九课。" />
-    <meta itemprop="description" content="用自然语言指挥塔奇克马，保护笑脸男，让真相活着离开公安九课。" />
-    <meta property="og:description" content="用自然语言指挥塔奇克马，保护笑脸男，让真相活着离开公安九课。" />
-    <meta name="twitter:description" content="用自然语言指挥塔奇克马，保护笑脸男，让真相活着离开公安九课。" />
+    <meta itemprop="name" content="Prompt Defense — AI Tower Defense" />
+    <meta property="og:title" content="Prompt Defense — AI Tower Defense" />
+    <meta name="twitter:title" content="Prompt Defense — AI Tower Defense" />
+    <meta name="description" content="用自然语言指挥 AI 防御单位，守护核心，应对无尽波次。" />
+    <meta itemprop="description" content="用自然语言指挥 AI 防御单位，守护核心，应对无尽波次。" />
+    <meta property="og:description" content="用自然语言指挥 AI 防御单位，守护核心，应对无尽波次。" />
+    <meta name="twitter:description" content="用自然语言指挥 AI 防御单位，守护核心，应对无尽波次。" />
     <meta itemprop="image" content="/img/banner.png" />
     <meta property="og:image" content="/img/banner.png" />
     <meta name="twitter:image" content="/img/banner.png" />
@@ -67,28 +67,27 @@
   <body>
     <div id="loading-screen" role="status" aria-live="polite">
       <div class="boot-terminal">
-        <div class="boot-eyebrow">公安九课 // TACTICAL NETWORK</div>
-        <h1>保护笑脸男</h1>
-        <p class="boot-message">正在建立战术链路，请稍候…</p>
+        <div class="boot-eyebrow">PROMPT DEFENSE // COMMAND CONSOLE</div>
+        <h1>Prompt Defense</h1>
+        <p class="boot-message">正在建立指挥链路，请稍候…</p>
         <div class="boot-track" aria-hidden="true"></div>
         <div class="boot-meta"><span>SECURE CHANNEL</span><span>INITIALIZING</span></div>
         <a class="boot-retry" href="">等待过久？点击重新加载</a>
       </div>
     </div>
     <div id="inert">
-      <canvas id="canvas" tabindex="0" data-i18n-aria-label="aria.battlefield" aria-label="塔奇克马战术防御区域。双击打开作战终端。"></canvas>
+      <canvas id="canvas" tabindex="0" data-i18n-aria-label="aria.battlefield" aria-label="战术防御区域。双击打开作战终端。"></canvas>
 
       <header class="tactical-header">
         <div class="header-side header-left">
-          <span class="eyebrow" data-i18n="shell.eyebrow">公安九课 // 战术网络</span>
-          <span class="header-sub" data-i18n="header.subtitle">公安九课 · 塔奇克马防御协议</span>
-          <span id="version" class="header-ver">v0.2.24</span>
+          <span class="eyebrow" data-i18n="shell.eyebrow">指挥控制台</span>
+          <span class="header-sub" data-i18n="header.subtitle">Prompt 驱动 · AI 塔防</span>
+          <span id="version" class="header-ver">v0.2.25</span>
         </div>
-        <h1 class="header-title" data-i18n="app.name">保护笑脸男</h1>
+        <h1 class="header-title" data-i18n="app.name">Prompt Defense</h1>
         <div class="header-side header-right">
           <span class="live-indicator"><span class="live-dot" aria-hidden="true"></span><span data-i18n="map.live">LIVE</span></span>
           <span id="header-clock" class="header-clock">--:--:--</span>
-          <button id="story-open" class="story-open" type="button" data-i18n="story.open" data-i18n-title="story.openTitle" data-i18n-aria-label="story.openTitle" title="阅读《保护笑脸男》背景故事" aria-label="阅读《保护笑脸男》背景故事">背景故事</button>
           <button id="controls-panel-toggle" class="controls-panel-toggle" type="button" aria-pressed="true" data-i18n="controls.panelToggle">控制面板</button>
           <button id="dev-wrench" class="dev-wrench" type="button" data-i18n-aria-label="dev.wrenchLabel" aria-label="开发模式入口" data-i18n-title="dev.wrenchTitle" title="开发模式（不计榜）" aria-expanded="false">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M22 7.5a5 5 0 0 1-7.4 4.38L9 17.5a2.5 2.5 0 1 1-3.5-3.5l5.62-5.6A5 5 0 1 1 22 7.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
@@ -98,8 +97,8 @@
       </header>
 
       <div id="map-frame" class="map-frame" aria-hidden="true">
-        <div class="map-corner-label"><span data-i18n="map.sector">作战扇区 09-A</span><span class="map-sep">//</span><span data-i18n="map.layer">网络层 DEEP_3</span></div>
-        <div id="map-alert" class="map-alert" hidden><span class="map-alert-mark" aria-hidden="true">▲</span><span data-i18n="map.intrusion">入侵检测 — 自律清除程序接入中</span></div>
+        <div class="map-corner-label"><span data-i18n="map.sector">防御扇区 A</span><span class="map-sep">//</span><span data-i18n="map.layer">网格层 GRID_3</span></div>
+        <div id="map-alert" class="map-alert" hidden><span class="map-alert-mark" aria-hidden="true">▲</span><span data-i18n="map.intrusion">入侵检测 — 防御网络接入中</span></div>
         <div class="map-livebar"><span data-i18n="map.liveBar">战术地图 // 实况</span><span id="map-wave" class="map-wave-tag"></span></div>
       </div>
 
@@ -124,14 +123,14 @@
           <section class="control-card chatbox-panel" aria-labelledby="chatbox-heading">
             <div class="panel-heading">
               <div>
-                <div class="eyebrow" data-i18n="console.eyebrow">塔奇克马指挥网络</div>
+                <div class="eyebrow" data-i18n="console.eyebrow">指挥网络</div>
                 <h2 id="chatbox-heading" data-i18n="console.heading">战术命令终端</h2>
               </div>
             </div>
             <div class="strategy">
               <label class="strategy-label" for="strategy-input"><span data-i18n="strategy.label">作战命令</span></label>
               <div class="strategy-inputwrap">
-                <textarea id="strategy-input" class="strategy-input" rows="5" spellcheck="false" data-i18n-placeholder="strategy.placeholder" placeholder="向塔奇克马下达自然语言作战命令…"></textarea>
+                <textarea id="strategy-input" class="strategy-input" rows="5" spellcheck="false" data-i18n-placeholder="strategy.placeholder" placeholder="用自然语言向防御单位下达作战指令…"></textarea>
                 <span id="strategy-count" class="strategy-count"></span>
               </div>
               <div id="strategy-status" class="strategy-status" aria-live="polite"></div>
@@ -144,16 +143,16 @@
 
           <section id="decision-summary-panel" class="control-card reasoning-panel" data-state="idle" aria-labelledby="reasoning-heading">
             <div class="reasoning-header">
-              <h2 id="reasoning-heading" class="panel-title" data-i18n="reasoning.title">塔奇克马判断</h2>
+              <h2 id="reasoning-heading" class="panel-title" data-i18n="reasoning.title">AI 决策终端</h2>
               <span id="decision-summary-status" class="reasoning-status" data-i18n="reasoning.status.waiting">等待分析</span>
             </div>
-            <p id="decision-summary" class="reasoning-content" aria-live="polite" data-i18n="reasoning.empty">等待塔奇克马对下一波做出决策…</p>
+            <p id="decision-summary" class="reasoning-content" aria-live="polite" data-i18n="reasoning.empty">等待 AI 对下一波做出决策…</p>
           </section>
 
           <section class="control-card flux-panel" aria-labelledby="flux-heading">
             <h2 id="flux-heading" class="panel-title" data-i18n="decisions.label">执行日志</h2>
             <ul id="decision-log" class="decision-log"></ul>
-            <div id="decision-empty" class="decision-empty" data-i18n="decisions.empty">等待塔奇克马自主判断。</div>
+            <div id="decision-empty" class="decision-empty" data-i18n="decisions.empty">等待 AI 自主判断。</div>
           </section>
         </div>
 
@@ -161,7 +160,7 @@
           <div id="leaderboard-slot" class="leaderboard-slot"></div>
 
           <section class="control-card neural-panel" aria-labelledby="neural-heading" data-i18n-aria-label="aria.gameControls" aria-label="作战控制">
-            <h2 id="neural-heading" class="panel-title" data-i18n="neural.title">神经链接</h2>
+            <h2 id="neural-heading" class="panel-title" data-i18n="neural.title">指挥链路</h2>
             <div class="state-controls mode-control">
               <button id="mode" type="button">切换指挥模式</button>
             </div>
@@ -221,16 +220,16 @@
           <div class="database-header">
             <div class="database-title" data-i18n="database.title">战力数据库</div>
             <div class="database-tabs">
-              <button id="db-tab-tachikoma" class="db-tab active" type="button" aria-selected="true" data-i18n="towers.heading">我方兵力</button>
+              <button id="db-tab-towers" class="db-tab active" type="button" aria-selected="true" data-i18n="towers.heading">我方塔位</button>
               <button id="db-tab-hostile" class="db-tab" type="button" aria-selected="false" data-i18n="database.tabHostile">敌方情报</button>
             </div>
           </div>
-          <section class="tower-panel db-view active" id="db-view-tachikoma">
-            <div id="towers-wrapper" class="tower-palette" data-i18n-aria-label="aria.deployableUnits" aria-label="可部署塔奇克马机体"></div>
-            <p id="tower-upgrade-hint" class="tower-upgrade-hint" data-i18n="tower.upgrade.hint">点击战场中的己方机体查看实时参数</p>
+          <section class="tower-panel db-view active" id="db-view-towers">
+            <div id="towers-wrapper" class="tower-palette" data-i18n-aria-label="aria.deployableUnits" aria-label="可部署防御塔"></div>
+            <p id="tower-upgrade-hint" class="tower-upgrade-hint" data-i18n="tower.upgrade.hint">点击战场中的己方塔位查看实时参数</p>
             <section id="tower-upgrade-panel" class="tower-upgrade-panel" aria-labelledby="tower-upgrade-heading" aria-live="polite" hidden>
               <div class="tower-upgrade-unit">
-                <span class="tower-upgrade-eyebrow" data-i18n="tower.upgrade.heading">机体强化</span>
+                <span class="tower-upgrade-eyebrow" data-i18n="tower.upgrade.heading">塔位强化</span>
                 <div class="tower-upgrade-title">
                   <h3 id="tower-upgrade-heading"><span id="tower-upgrade-name"></span></h3>
                   <span class="tower-upgrade-level"><span data-i18n="tower.upgrade.level">等级</span> <strong id="tower-upgrade-level"></strong></span>
@@ -244,7 +243,7 @@
               </dl>
               <div class="tower-upgrade-actions">
                 <span class="tower-upgrade-cost"><span data-i18n="tower.upgrade.cost">强化费用</span><strong id="tower-upgrade-cost">MAX</strong></span>
-                <button id="tower-upgrade-button" type="button" data-i18n="tower.upgrade.button" disabled>强化机体</button>
+                <button id="tower-upgrade-button" type="button" data-i18n="tower.upgrade.button" disabled>强化塔位</button>
               </div>
             </section>
           </section>
@@ -252,10 +251,10 @@
             <h2 id="hostile-heading" class="visually-hidden" data-i18n="database.tabHostile">敌方情报</h2>
             <div id="hostile-wave-tag" class="hostile-wave-tag"></div>
             <div class="hostile-grid">
-              <div class="hostile-card" data-life="50" data-speed="2.5" data-cash="5" data-speed-cap="1"><span class="hostile-card-head"><img data-enemy-img="simple" alt=""/><span class="hostile-name-block"><span class="hostile-name" data-i18n="enemy.simple.name">傀儡型</span><span class="hostile-code">PUPPET</span></span></span><span class="hostile-stats"></span><span class="hostile-desc" data-i18n="enemy.simple.desc">数量最多的基础敌性体，成群涌向核心。</span></div>
-              <div class="hostile-card" data-life="200" data-speed="4" data-cash="20" data-speed-cap="1.7"><span class="hostile-card-head"><img data-enemy-img="fast" alt=""/><span class="hostile-name-block"><span class="hostile-name" data-i18n="enemy.fast.name">猎袭型</span><span class="hostile-code">HUNTER</span></span></span><span class="hostile-stats"></span><span class="hostile-desc" data-i18n="enemy.fast.desc">高速突进型，行动最快，需要提前拦截。</span></div>
-              <div class="hostile-card" data-life="200" data-speed="2.5" data-cash="10" data-speed-cap="1.5"><span class="hostile-card-head"><img data-enemy-img="armored" alt=""/><span class="hostile-name-block"><span class="hostile-name" data-i18n="enemy.armored.name">装甲执行体</span><span class="hostile-code">ENFORCER</span></span></span><span class="hostile-stats"></span><span class="hostile-desc" data-i18n="enemy.armored.desc">重装甲执行单位，需要集中火力击穿。</span></div>
-              <div class="hostile-card" data-life="200" data-speed="2.5" data-cash="10" data-speed-cap="1.5"><span class="hostile-card-head"><img data-enemy-img="healer" alt=""/><span class="hostile-name-block"><span class="hostile-name" data-i18n="enemy.healer.name">中继型</span><span class="hostile-code">RELAY</span></span></span><span class="hostile-stats"></span><span class="hostile-desc" data-i18n="enemy.healer.desc">修复周围敌性体，应当优先排除。</span></div>
+              <div class="hostile-card" data-life="50" data-speed="2.5" data-cash="5" data-speed-cap="1"><span class="hostile-card-head"><img data-enemy-img="simple" alt=""/><span class="hostile-name-block"><span class="hostile-name" data-i18n="enemy.simple.name">基础型</span><span class="hostile-code">GRUNT</span></span></span><span class="hostile-stats"></span><span class="hostile-desc" data-i18n="enemy.simple.desc">数量最多的基础敌性单位，成群涌向核心。</span></div>
+              <div class="hostile-card" data-life="200" data-speed="4" data-cash="20" data-speed-cap="1.7"><span class="hostile-card-head"><img data-enemy-img="fast" alt=""/><span class="hostile-name-block"><span class="hostile-name" data-i18n="enemy.fast.name">突袭型</span><span class="hostile-code">RUNNER</span></span></span><span class="hostile-stats"></span><span class="hostile-desc" data-i18n="enemy.fast.desc">高速突进型，行动最快，需要提前拦截。</span></div>
+              <div class="hostile-card" data-life="200" data-speed="2.5" data-cash="10" data-speed-cap="1.5"><span class="hostile-card-head"><img data-enemy-img="armored" alt=""/><span class="hostile-name-block"><span class="hostile-name" data-i18n="enemy.armored.name">装甲型</span><span class="hostile-code">ARMORED</span></span></span><span class="hostile-stats"></span><span class="hostile-desc" data-i18n="enemy.armored.desc">重装甲单位，需要集中火力击穿。</span></div>
+              <div class="hostile-card" data-life="200" data-speed="2.5" data-cash="10" data-speed-cap="1.5"><span class="hostile-card-head"><img data-enemy-img="healer" alt=""/><span class="hostile-name-block"><span class="hostile-name" data-i18n="enemy.healer.name">修复型</span><span class="hostile-code">REPAIRER</span></span></span><span class="hostile-stats"></span><span class="hostile-desc" data-i18n="enemy.healer.desc">修复周围敌方单位，应当优先排除。</span></div>
               <div class="hostile-card" data-life="2000" data-speed="2.5" data-cash="100" data-speed-cap="1" data-boss="1"><span class="hostile-card-head"><img data-enemy-img="boss" alt=""/><span class="hostile-name-block"><span class="hostile-name" data-i18n="enemy.boss.name">压制体</span><span class="hostile-code">SUPPRESSOR</span></span></span><span class="hostile-stats"></span><span class="hostile-desc" data-i18n="enemy.boss.desc">高耐久压制单位，突破后威胁最大。</span></div>
             </div>
           </section>
@@ -263,67 +262,12 @@
       </div>
       <div id="controls-hint" class="controls-hint" role="status" aria-live="polite" data-i18n="controls.hint">双击战场重新打开作战终端。</div>
       <div id="snackbar"></div>
-      <div id="story-overlay" class="story-overlay" role="dialog" aria-modal="true" aria-labelledby="story-title" hidden>
-        <div class="story-card">
-          <header class="story-head">
-            <span id="story-eyebrow" class="story-eyebrow" data-i18n="story.eyebrow">公安九课 // 档案</span>
-            <h2 id="story-title" class="story-title" data-i18n="story.title">背景故事</h2>
-            <button id="story-close" class="story-close" type="button" data-i18n="story.close" data-i18n-aria-label="story.closeAria" aria-label="关闭背景故事">返回</button>
-          </header>
-          <p id="story-lang-note" class="story-lang-note" data-i18n="story.langNote" hidden>本页为中文原文；英文版译文尚未定稿，暂不提供。</p>
-          <div id="story-body" class="story-body" tabindex="0" role="document"></div>
-          <p id="story-spoiler-note" class="story-spoiler-note" data-i18n="story.spoilerNote">以上为可公开阅读的背景设定与游戏改编前提。后续波次事件与结局涉及剧透，未在此展示。</p>
-        </div>
-      </div>
-      <div id="narrative-overlay" class="narrative-overlay" role="dialog" aria-modal="true" aria-label="剧情演出" hidden>
-        <div id="narrative-view" class="narrative-card">
-          <div class="narrative-head">
-            <span id="narrative-code" class="narrative-code"></span>
-            <span id="narrative-title" class="narrative-title"></span>
-            <span id="narrative-counter" class="narrative-counter" aria-hidden="true"></span>
-            <button id="narrative-close" class="narrative-close" type="button" data-i18n-aria-label="narrative.close" aria-label="关闭剧情">×</button>
-          </div>
-          <div class="narrative-stage">
-            <div class="narrative-portrait" aria-hidden="true">
-              <img id="narrative-avatar" class="narrative-avatar" alt="" hidden />
-              <span id="narrative-portrait-terminal" class="narrative-portrait-art" hidden>
-                <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-                  <rect x="8" y="12" width="48" height="34" rx="4" fill="none" stroke="currentColor" stroke-width="3"/>
-                  <path d="M16 24l8 6-8 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M30 36h16" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-                  <path d="M24 52h16" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-                </svg>
-              </span>
-              <span id="narrative-portrait-tachikoma" class="narrative-portrait-art" hidden>
-                <img src="./src/assets/narrative/tachikoma.png" alt="" />
-              </span>
-            </div>
-            <div class="narrative-body">
-              <div id="narrative-speaker" class="narrative-speaker"></div>
-              <p id="narrative-line" class="narrative-line" aria-live="polite"></p>
-            </div>
-          </div>
-          <div class="narrative-actions">
-            <button id="narrative-skip" class="narrative-skip" type="button" data-i18n="narrative.skip">跳过</button>
-            <div class="narrative-actions-right">
-              <button id="narrative-back" class="narrative-back" type="button" data-i18n="narrative.back" disabled>上一句</button>
-              <button id="narrative-next" class="narrative-next" type="button" data-i18n="narrative.next">继续</button>
-            </div>
-          </div>
-        </div>
-        <div id="narrative-archive-view" class="narrative-card narrative-archive" hidden>
-          <div class="archive-eyebrow" data-i18n="narrative.archiveEyebrow">检测到不可能状态</div>
-          <div class="archive-title" data-i18n="narrative.archiveTitle">THE ENDLESS</div>
-          <p class="archive-note" data-i18n="narrative.archiveNote">找到秘密档案。影像资料尚未确认出镜与素材授权，此处暂不展示。</p>
-          <button id="narrative-continue" class="narrative-next" type="button" data-i18n="narrative.continueEndless">继续无尽挑战</button>
-        </div>
-      </div>
       <div id="game-over">
         <div class="description" data-i18n="result.gameOver">防御终止</div>
         <div class="result">
           <div class="result-primary"><span class="result-primary-label" data-i18n="result.wave">防御波次</span><span class="result-primary-value" id="result-wave">0</span></div>
           <div class="result-grid">
-            <div class="result-cell"><span class="result-label" data-i18n="result.towers">部署机体</span><strong id="result-towers">0</strong></div>
+            <div class="result-cell"><span class="result-label" data-i18n="result.towers">部署塔位</span><strong id="result-towers">0</strong></div>
             <div class="result-cell"><span class="result-label" data-i18n="result.decisions">自主判断次数</span><strong id="result-decisions">0</strong></div>
             <div class="result-cell"><span class="result-label" data-i18n="result.cash">剩余战术资源</span><strong id="result-cash">0</strong></div>
             <div class="result-cell"><span class="result-label" data-i18n="result.duration">行动时长</span><strong id="result-duration">0:00</strong></div>

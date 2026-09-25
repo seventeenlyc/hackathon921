@@ -85,16 +85,16 @@ test('randomUsername returns valid username matching character and length limits
 test('session avatar starts empty, accepts valid ids and rejects unknown ones', () => {
     const identity = loadIdentity();
     assert.strictEqual(identity.getSessionAvatar(), null);
-    assert.strictEqual(identity.setSessionAvatar('aramaki'), true);
-    assert.strictEqual(identity.getSessionAvatar(), 'aramaki');
+    assert.strictEqual(identity.setSessionAvatar('sentinel'), true);
+    assert.strictEqual(identity.getSessionAvatar(), 'sentinel');
     assert.strictEqual(identity.setSessionAvatar('nonsense'), false);
-    assert.strictEqual(identity.getSessionAvatar(), 'aramaki', 'rejected id must not clobber current value');
+    assert.strictEqual(identity.getSessionAvatar(), 'sentinel', 'rejected id must not clobber current value');
 });
 
 test('session avatar resets with a fresh page session like the nickname', () => {
     const first = loadIdentity();
-    first.setSessionAvatar('boma');
-    assert.strictEqual(first.getSessionAvatar(), 'boma');
+    first.setSessionAvatar('helix');
+    assert.strictEqual(first.getSessionAvatar(), 'helix');
     const second = loadIdentity();
     assert.strictEqual(second.getSessionAvatar(), null);
 });

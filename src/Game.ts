@@ -33,10 +33,6 @@ import {playMode, switchPlayMode} from "./PlayMode";
 import {naturalOilController} from "./items/NaturalOil";
 import {tacticalItemsController} from "./items/TacticalItems";
 import {devController} from "./dev";
-import {NarrativeDirector} from "./narrative/NarrativeDirector";
-import {NARRATIVE_SCENES} from "./narrative/NarrativeScript";
-import {narrativeOverlay} from "./narrative/NarrativeOverlay";
-import {storyReader} from "./narrative/StoryReader";
 
 // Settlement stats gathered across the run (see the result screen).
 let runStartedAt: number | null = null;
@@ -74,7 +70,6 @@ class Game {
         // strategies, so a hand-played wave would not be comparable (see §9).
         waveManager.onWaveReached = wave => this.recordReachedWave(wave);
         waveManager.onWaveStarted = wave => {
-            audioManager.setWave(wave);
             for (const item of battlefield.takePendingModelItems()) {
                 const result = actions.useItem(item);
                 decisionLog.add({
@@ -135,7 +130,6 @@ class Game {
             this.lastSoundWave = wave;
             if (!this.gameOverScheduled) {
                 audioManager.playWaveReached();
-                if (wave === 200) audioManager.duckForMissionComplete();
             }
         }
         const username = getSessionUsername();
@@ -284,23 +278,6 @@ const agentRuntime = new AgentRuntime({
 // all and the wave manager uses a fixed pause instead.
 waveManager.setPlanner(playMode === 'ai' ? agentRuntime : humanPlanner);
 
-// Story scenes (issue #100). Trigger rules live in the director; the overlay is
-// the view. Both play modes share the same beats, and the scene runs inside
-// `holdForNarrative`, so reading it freezes the simulation without touching the
-// Prompt/planning path.
-const narrativeDirector = new NarrativeDirector(
-    NARRATIVE_SCENES,
-    {
-        hold: hold => gameLoop.holdForNarrative(hold),
-        sleep: ms => gameLoop.sleep(ms),
-        hasLivingEnemies: () => enemyManager.all().some(enemy => enemy.alive),
-        baseAlive: () => map.homeBase.getLife() > 0,
-        stillRunning: () => waveManager.looping,
-    },
-    narrativeOverlay,
-);
-waveManager.setNarrative(narrativeDirector);
-
 /** Old inert `delayBetweenWaves`: human mode needs a real break between waves. */
 const HUMAN_INTER_WAVE_MS = 7000;
 waveManager.setInterWaveDelay(playMode === 'human' ? HUMAN_INTER_WAVE_MS : 0);
@@ -340,33 +317,6 @@ export function startHumanRun(username: string): void {
     // Debug view (issue #4): what the AI actually observed this round.
     state: () => actions.getState(),
     stateText: () => formatSnapshot(actions.getState()),
-    // QA preview for the story scenes (issue #100): list the beats and play one
-    // immediately instead of playing up to wave 51/201/256. Uses the same
-    // overlay and freeze as the real trigger; before a run starts it just shows
-    // the scene without touching the IDLE state.
-    narrative: {
-        scenes: () => NARRATIVE_SCENES.map(scene => ({
-            id: scene.id,
-            beforeWave: scene.beforeWave,
-            codeName: scene.codeName,
-        })),
-        play: (id: string) => {
-            const scene = NARRATIVE_SCENES.find(candidate => candidate.id === id)
-                ?? NARRATIVE_SCENES.find(candidate => candidate.codeName === id);
-            if (!scene) return false;
-            if (gameLoop.isIdle()) {
-                void narrativeOverlay.play(scene);
-            } else {
-                void gameLoop.holdForNarrative(() => narrativeOverlay.play(scene));
-            }
-            return true;
-        },
-    },
-    // QA surface for the background-story reader (issue #99). Opening or
-    // closing it is a pure view action: no simulation, wave or Prompt state.
-    story: {
-        open: () => storyReader.open(),
-        close: () => storyReader.close(),
-        isOpen: () => storyReader.isOpen,
-    },
+    // QA surface for the background-story reader (issue #99) was removed with
+    // the story feature during the 2026-09-25 de-branding.
 };

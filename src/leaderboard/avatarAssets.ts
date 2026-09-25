@@ -6,24 +6,27 @@
  * turning into a silent 404 at runtime (same rationale as tools/texturePaths.ts).
  * Kept apart from AvatarCatalog so the catalogue stays a pure module that
  * headless tests can load without an image loader.
+ *
+ * The icons are neutral geometric badges generated for this project (no
+ * third-party artwork).
  */
-import aramaki from '../assets/avatars/01_aramaki.png';
-import kusanagi from '../assets/avatars/02_kusanagi.png';
-import batou from '../assets/avatars/03_batou.png';
-import togusa from '../assets/avatars/04_togusa.png';
-import ishikawa from '../assets/avatars/05_ishikawa.png';
-import saito from '../assets/avatars/06_saito.png';
-import paz from '../assets/avatars/07_paz.png';
-import boma from '../assets/avatars/08_boma.png';
+import sentinel from '../assets/avatars/01_sentinel.png';
+import vector from '../assets/avatars/02_vector.png';
+import nexus from '../assets/avatars/03_nexus.png';
+import orbit from '../assets/avatars/04_orbit.png';
+import prism from '../assets/avatars/05_prism.png';
+import cipher from '../assets/avatars/06_cipher.png';
+import atlas from '../assets/avatars/07_atlas.png';
+import helix from '../assets/avatars/08_helix.png';
 import type {AvatarId} from './AvatarCatalog';
 
 export const AVATAR_SRC: Record<AvatarId, string> = {
-    aramaki,
-    kusanagi,
-    batou,
-    togusa,
-    ishikawa,
-    saito,
-    paz,
-    boma,
+    sentinel,
+    vector,
+    nexus,
+    orbit,
+    prism,
+    cipher,
+    atlas,
+    helix,
 };

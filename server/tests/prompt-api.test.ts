@@ -25,7 +25,7 @@ function request(over: Partial<ApiRequest>): ApiRequest {
 }
 
 function openRun(deps: ApiDeps, username: string): { token: string; runId: string } {
-    const session = handleApi(deps, request({ method: 'POST', pathname: '/api/session', body: { username, avatarId: 'aramaki' } }));
+    const session = handleApi(deps, request({ method: 'POST', pathname: '/api/session', body: { username, avatarId: 'sentinel' } }));
     assert.equal(session.status, 200);
     const token = session.body.token as string;
     const run = handleApi(deps, request({ method: 'POST', pathname: '/api/runs', token }));
@@ -129,7 +129,7 @@ test('prompt write maps authentication, ownership, validation, conflict and expi
 
 test('public prompt history returns an empty result for users without a score and rejects bad path encoding', () => {
     const deps = makeDeps();
-    const session = handleApi(deps, request({ method: 'POST', pathname: '/api/session', body: { username: 'Nobody', avatarId: 'aramaki' } }));
+    const session = handleApi(deps, request({ method: 'POST', pathname: '/api/session', body: { username: 'Nobody', avatarId: 'sentinel' } }));
     const uid = verifyToken(deps.secret, session.body.token, deps.now());
     const empty = handleApi(deps, request({ pathname: `/api/leaderboard/${uid}/prompts` }));
     assert.deepEqual(empty, { status: 200, body: { uid, username: 'Nobody', runId: null, wave: null, prompts: [] } });
