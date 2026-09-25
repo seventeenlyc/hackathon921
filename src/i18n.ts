@@ -170,6 +170,7 @@ const STRINGS: { [key: string]: Entry } = {
     'tower.upgrade.level': {zh: '等级', en: 'LEVEL'},
     'tower.upgrade.cost': {zh: '强化费用', en: 'UPGRADE COST'},
     'tower.upgrade.button': {zh: '强化塔位', en: 'UPGRADE TOWER'},
+    'tower.upgrade.insufficient': {zh: '资源不足', en: 'NO FUNDS'},
     'tower.upgrade.max': {zh: '已达最高等级', en: 'MAX LEVEL'},
     'tower.upgrade.reload': {zh: '装填', en: 'RELOAD'},
     'tower.dpsTitle': {zh: '每秒持续火力', en: 'Damage Per Second'},

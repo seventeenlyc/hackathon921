@@ -76,8 +76,8 @@ SSL_KEY=/绝对路径/privkey.pem \
   ./bootstrap-server.sh "$(cat deploy_key.pub)"
 ```
 
-要换成其它 OpenAI 兼容端点时，把端点与模型一起传（不是密钥，会写进 unit；**重跑 bootstrap
-时必须再传一次**，否则 unit 回到默认的 `api.deepseek.com` / `deepseek-chat`）：
+要换成其它 OpenAI 兼容端点时，把端点与模型一起传（不是密钥，会写进 env 文件；首次写入后
+重跑 bootstrap **不必再传**，env 文件会幂等保留，见 §5「环境配置真值来源」）：
 
 ```sh
 DEEPSEEK_BASE_URL=https://<host>/openai/v1 \
@@ -88,7 +88,7 @@ SSL_CERT=/绝对路径/fullchain.pem SSL_KEY=/绝对路径/privkey.pem \
 
 脚本会：创建无 sudo 的系统用户 → 安装公钥 → 建应用目录 → 放一个占位页面 →
 检查 Node 与后端数据目录/签名密钥（provider 密钥缺失时只提示，见 §5）→
-写入 provider 端点/模型（可选，见 §5）→
+幂等渲染 env 文件与 unit（provider 端点/模型可选，见 §5）→
 渲染并安装 nginx 配置 → `nginx -t` → reload。
 
 **`nginx -t` 失败时脚本会自动回滚自己的配置文件并退出**，不会让一个坏配置把
@@ -113,7 +113,10 @@ SSL_CERT=/绝对路径/fullchain.pem SSL_KEY=/绝对路径/privkey.pem \
   缺失时后端照常启动，只是该端点返回 503 `PROVIDER_NOT_CONFIGURED`，排行榜不受影响。
   脚本不生成它（无法本地生成），只在缺失时提示、在存在时校正属主与权限 —— 放置步骤见
   下方「放置 LLM provider 密钥」。
-- **systemd unit** `/etc/systemd/system/pd-leaderboard.service`：
+- **systemd unit** `/etc/systemd/system/pd-leaderboard.service` —— **纯静态模板**：
+  所有环境配置以 `/etc/pd/pd-leaderboard.env` 为唯一真值来源（issue #135），unit 只用
+  `EnvironmentFile=` 指向它，自身不再内联任何 `Environment=`。这样重跑 bootstrap 时
+  env 文件幂等合并、不会静默抹掉已写下的值（详见下方「环境配置真值来源」）。
 
   ```ini
   [Unit]
@@ -125,11 +128,7 @@ SSL_CERT=/绝对路径/fullchain.pem SSL_KEY=/绝对路径/privkey.pem \
   User=pd-leaderboard
   Group=pd-leaderboard
   WorkingDirectory=/srv/apps/prompt-defense.crowntime.cn/current-server
-  Environment=PD_DB_PATH=/srv/apps/prompt-defense.crowntime.cn/data/leaderboard.sqlite3
-  Environment=PD_SESSION_SECRET_FILE=/srv/apps/prompt-defense.crowntime.cn/data/session_secret
-  Environment=DEEPSEEK_API_KEY_FILE=/srv/apps/prompt-defense.crowntime.cn/data/deepseek_key
-  Environment=PD_CURRENT_LINK=/srv/apps/prompt-defense.crowntime.cn/current-server
-  Environment=PD_PORT=8781
+  EnvironmentFile=/etc/pd/pd-leaderboard.env
   # node 路径不是固定值：脚本用 command -v node 解析后写入（本机为 /usr/local/bin/node）。
   ExecStart=/usr/local/bin/node /srv/apps/prompt-defense.crowntime.cn/current-server/main.js
   Restart=always
@@ -142,6 +141,30 @@ SSL_CERT=/绝对路径/fullchain.pem SSL_KEY=/绝对路径/privkey.pem \
   [Install]
   WantedBy=multi-user.target
   ```
+
+  env 文件（`600 root:root`，由 systemd 以 root 读取）的**必需键**（缺失时 bootstrap 补齐）：
+
+  ```ini
+  PD_DB_PATH=/srv/apps/prompt-defense.crowntime.cn/data/leaderboard.sqlite3
+  PD_SESSION_SECRET_FILE=/srv/apps/prompt-defense.crowntime.cn/data/session_secret
+  DEEPSEEK_API_KEY_FILE=/srv/apps/prompt-defense.crowntime.cn/data/deepseek_key
+  PD_CURRENT_LINK=/srv/apps/prompt-defense.crowntime.cn/current-server
+  PD_PORT=8781
+  ```
+
+  **可选键**（bootstrap 不带参数重跑时原样保留，绝不抹掉）：
+
+  ```ini
+  # provider 端点/模型（留空回落代码默认 api.deepseek.com / deepseek-chat）
+  DEEPSEEK_BASE_URL=https://<host>/openai/v1
+  DEEPSEEK_MODEL=<model-name>
+  # 开发模式密码文件（人工 QA 入口，见 docs/ops/dev-mode-password.md）
+  PD_DEV_PASSWORD_FILE=/etc/pd/dev-password
+  ```
+
+  env 文件只放**路径**与端点/模型名，绝不放密钥本身（密钥仍在 `data/` 下 600 的文件里）。
+  路径不是密钥，但收紧到 `600 root:root` 比 644 更稳；systemd 以 root 读取
+  `EnvironmentFile`，服务进程不需要直接读它。
 
 - **部署用户为何仍然不需要 sudo**：unit 用 `Restart=always`。部署只切换 `current-server`
   符号链接；服务进程在每个请求前比对一次版本文件，发现变化就退出，systemd 随即用新代码拉起。
@@ -175,26 +198,55 @@ journalctl -u pd-leaderboard -n 5 --no-pager                   # 期望出现「
 轮换：用同样方式覆盖该文件 → `systemctl restart pd-leaderboard`。密钥只应存在一份，
 换掉后确认旧副本（含其它路径下的历史文件）都已清理。
 
+#### 环境配置真值来源（issue #135）
+
+**`/etc/pd/pd-leaderboard.env` 是后端环境配置的唯一真值来源。** unit 不再内联 `Environment=`，
+避免重跑 bootstrap 时被整份重写、把运维手加的配置静默抹掉（历史上因此丢过开发模式密码与
+provider 端点，服务以降级配置重启且无报错）。
+
+`bootstrap-server.sh` 对 env 文件做**幂等合并**（逻辑在 `deploy/render-unit.sh`，可被
+`tests/render-unit.test.js` 独立验证）：
+
+- **必需键**（`PD_DB_PATH` / `PD_SESSION_SECRET_FILE` / `DEEPSEEK_API_KEY_FILE` /
+  `PD_CURRENT_LINK` / `PD_PORT`）：缺失才补，已存在则**保留**（不覆盖运维手改）。
+- **provider 键**（`DEEPSEEK_BASE_URL` / `DEEPSEEK_MODEL`）：本次传参则写入/更新；未传参但
+  env 文件里已有则**保留**；未传参且没有则不写（回落代码默认）。**不带参数重跑不再抹掉。**
+- **非托管键**（`PD_DEV_PASSWORD_FILE` 及任何运维自加键）：**永不触碰**，原样保留。
+- 首次创建 env 文件时，从既有 unit 与 `*.service.d/` drop-in 迁移所有 `Environment=` 行，
+  确保不丢（因此从旧版 unit 升级到 env 文件方式时，开发模式密码等配置会自动迁进 env 文件）。
+- 渲染后自检：必需键缺失、或「重跑前已存在的可选键重跑后从 env 文件消失」均为致命错误
+  （fail closed，未安装/未重启）。
+
+#### 新增配置：放 env 文件还是 drop-in？
+
+后端环境配置的**唯一真值来源是 `/etc/pd/pd-leaderboard.env`**。新增一项环境变量时有两个选择：
+
+- **直接写进 env 文件**（推荐）：`PD_XXX=...` 加到 `/etc/pd/pd-leaderboard.env`，`systemctl restart pd-leaderboard`。
+  bootstrap 重跑时把它当作**非托管键**原样保留、永不触碰。这是唯一不会在下次 bootstrap 时丢失的方式。
+- **systemd drop-in** `*.service.d/<name>.conf`：也生效，但 bootstrap 不知道它存在。drop-in 一旦被删
+  （或被人手误清 `*.service.d/`），配置就静默消失——这正是开发模式密码曾经出问题的形态
+  （见 issue #135 临时缓解）。因此 drop-in 只应作为 env 文件不可用时的临时手段，配置应最终落进 env 文件。
+
+**不要往 `deploy/bootstrap-server.sh` 里加 `Environment=` 模板行来放新配置。** unit 模板刻意是
+纯静态、不内联任何 `Environment=`；新增模板行会回到「重跑整份重写、抹掉运维手加项」的旧问题。
+需要 bootstrap 自动管理的配置（如本次的 provider 端点/模型），才在 `render_service_config` 里
+把它提升为「必需键」或「provider 类托管键」并配自检，而不是写进 unit 模板。
+
 #### 换成其它 OpenAI 兼容端点（可选）
 
-provider 的**端点**与**模型名**不是密钥，因此走 unit 的 `Environment=`；密钥仍然只放在
-`data/deepseek_key` 里。两者留空时用代码内置默认值（`api.deepseek.com` / `deepseek-chat`）。
-
-```ini
-# /etc/systemd/system/pd-leaderboard.service —— 由 bootstrap 按传入的变量生成
-Environment=DEEPSEEK_BASE_URL=https://<host>/openai/v1
-Environment=DEEPSEEK_MODEL=<model-name>
-```
-
-`DEEPSEEK_BASE_URL` 填到 OpenAI 兼容前缀为止（`https://api.deepseek.com` 或
-`https://<host>/openai/v1`），`/chat/completions` 由服务端拼接，末尾多余的斜杠会被归一。
+provider 的**端点**与**模型名**不是密钥，走 env 文件的 `DEEPSEEK_BASE_URL` / `DEEPSEEK_MODEL`；
+密钥仍然只放在 `data/deepseek_key` 里。两者留空时用代码内置默认值
+（`api.deepseek.com` / `deepseek-chat`）。首次用 bootstrap 传参写入后，重跑 bootstrap **不必再传**
+（env 文件幂等保留，见上一节）。若要临时改回默认，手动从 env 文件删掉对应行再重跑。
 
 生效的是哪个 provider，看这两处就知道：
 
 ```sh
-systemctl show pd-leaderboard -p Environment --no-pager
+systemctl show pd-leaderboard -p Environment --no-pager   # 含 EnvironmentFile 注入的值
 journalctl -u pd-leaderboard -n 5 --no-pager   # LLM 代理已配置（<端点> / <模型>）
 ```
+
+env 文件本身（唯一真值来源）：`cat /etc/pd/pd-leaderboard.env`（root）。
 
 **换 provider 前先确认对方支持 function calling。** 前端只发策略与状态，动作靠 `tools`
 回传（`server/src/agent.ts`）。协议兼容不等于工具调用行为一致：实测有的 OpenAI 兼容端点

@@ -6,31 +6,41 @@
 
 ## 配置方式
 
-二选一（文件优先）：
+密码文件路径写进后端环境配置的真值来源 `/etc/pd/pd-leaderboard.env`（不是 unit 模板——
+见 `deploy/README.md` §5「环境配置真值来源」）。`PD_DEV_PASSWORD_FILE` 是 bootstrap 的**非托管键**：
+写进 env 文件后，重跑 `bootstrap-server.sh` 会原样保留、永不触碰。
 
 ### 1. 密码文件（推荐）
 
 只有服务运行用户可读的文件，写入纯文本密码（首尾空白会被 trim）：
 
 ```bash
-echo -n 'your-strong-passphrase-here' | sudo -u pd tee /etc/pd/dev-password
+echo -n 'your-strong-passphrase-here' | sudo -u pd-leaderboard tee /etc/pd/dev-password
 sudo chmod 600 /etc/pd/dev-password
-sudo chown pd:pd /etc/pd/dev-password
+sudo chown pd-leaderboard:pd-leaderboard /etc/pd/dev-password
 ```
 
-在 systemd unit 里：
+把路径写进 env 文件（root，bootstrap 不生成这个键，由人加）：
 
-```ini
-Environment="PD_DEV_PASSWORD_FILE=/etc/pd/dev-password"
+```bash
+# 追加到 /etc/pd/pd-leaderboard.env（600 root:root）
+PD_DEV_PASSWORD_FILE=/etc/pd/dev-password
+sudo systemctl restart pd-leaderboard
 ```
 
 ### 2. 环境变量（不推荐，会进 `systemctl show` 与 journal）
 
 ```ini
-Environment="PD_DEV_PASSWORD=your-strong-passphrase-here"
+# /etc/pd/pd-leaderboard.env
+PD_DEV_PASSWORD=your-strong-passphrase-here
 ```
 
 > 密钥类配置统一走文件（`PD_SESSION_SECRET_FILE`、`DEEPSEEK_API_KEY_FILE` 同理），避免写进 unit 文件。开发密码不是会话密钥，但同样按密钥对待。
+
+> **历史遗留**：旧版曾把 `Environment="PD_DEV_PASSWORD_FILE=..."` 写进 systemd unit 或
+> `*.service.d/` drop-in。env 文件方案上线后，bootstrap 会把旧 unit/drop-in 里的该行自动迁进
+> `/etc/pd/pd-leaderboard.env`。迁移后建议从 drop-in 删除该行（env 文件已持久、且 bootstrap 会保护它），
+> 避免两处同时定义时产生混淆。
 
 ## 校验
 

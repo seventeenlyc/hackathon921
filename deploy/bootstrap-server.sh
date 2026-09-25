@@ -12,9 +12,11 @@
 #   SSL_KEY=/绝对路径/privkey.pem \
 #     ./bootstrap-server.sh 'ssh-ed25519 AAAA... deploy@prompt-defense'
 #
-# 可选：覆盖 provider 的 OpenAI 兼容端点与模型名（不是密钥，会写进 unit；不传则用代码
-# 内置默认值 api.deepseek.com / deepseek-chat）。注意重跑 bootstrap 时必须再传一次，
-# 否则 unit 会回到默认端点。
+# 可选：覆盖 provider 的 OpenAI 兼容端点与模型名（不是密钥；不传则用代码内置默认值
+# api.deepseek.com / deepseek-chat）。环境配置以 /etc/pd/pd-leaderboard.env 为唯一真值
+# 来源（unit 用 EnvironmentFile= 指向它），重跑 bootstrap 幂等合并、不会抹掉已写下的值：
+# 传参则写入/更新，不传参但 env 文件里已有则保留，不传参且没有则不写（回落代码默认）。
+# 因此首次配置好后，重跑**不必**再传一次（issue #135）。
 #   DEEPSEEK_BASE_URL=https://<host>/openai/v1 DEEPSEEK_MODEL=<model> \
 #     ./bootstrap-server.sh 'ssh-ed25519 AAAA... deploy@prompt-defense'
 #
@@ -190,57 +192,34 @@ PLACEHOLDER_JS
     echo "已创建"
 fi
 
-# provider 端点与模型：非密钥，因此可以进 unit（密钥必须留在文件里）。拼成若干
-# Environment= 行；一个都不传时为空。
-# 注意：PROVIDER_ENV 在 heredoc 里必须独占一行 —— 命令替换会吃掉末尾换行，写成
-# `${PROVIDER_ENV}Environment=PD_CURRENT_LINK=...` 会让两行粘成一行，PD_CURRENT_LINK
-# 静默消失、版本自检重启失效。下面的渲染自检就是为了钉住这一点。
-provider_env_lines() {
-    if [ -n "${DEEPSEEK_BASE_URL:-}" ]; then
-        printf 'Environment=DEEPSEEK_BASE_URL=%s\n' "$DEEPSEEK_BASE_URL"
-    fi
-    if [ -n "${DEEPSEEK_MODEL:-}" ]; then
-        printf 'Environment=DEEPSEEK_MODEL=%s\n' "$DEEPSEEK_MODEL"
-    fi
-}
-PROVIDER_ENV="$(provider_env_lines)"
+# 环境配置以 /etc/pd/pd-leaderboard.env 为唯一真值来源（issue #135）：unit 只用
+# EnvironmentFile= 指向它，自身不再内联 Environment=。bootstrap 对 env 文件做幂等合并：
+#   - 必需键缺失才补，已存在则保留，不覆盖运维手改。
+#   - provider 键（DEEPSEEK_BASE_URL / DEEPSEEK_MODEL）：传参则写入/更新；未传但已有则保留；
+#     未传且没有则不写（回落代码默认）。这是 #135 的核心：不带参数重跑不再静默抹掉。
+#   - 非托管键（PD_DEV_PASSWORD_FILE 及任何运维自加键）：永不触碰。
+# 首次创建 env 文件时从既有 unit 与 drop-in 迁移所有 Environment= 行，确保不丢。
+# 渲染逻辑与自检抽到 deploy/render-unit.sh，可被 tests/render-unit.test.js 独立验证。
+ENV_FILE="/etc/pd/pd-leaderboard.env"
+UNIT_PATH="/etc/systemd/system/pd-leaderboard.service"
+# /etc/pd 可能已存在（开发模式密码文件 /etc/pd/dev-password 由人放置）；只在缺失时创建，
+# 不改既有目录的属主与权限，避免与既有 dev-password 共用目录时产生意外。
+if [ ! -d /etc/pd ]; then
+    install -d -m 755 -o root -g root /etc/pd
+fi
 
 step "安装后端 systemd 服务 pd-leaderboard.service"
 echo "provider 端点：${DEEPSEEK_BASE_URL:-<代码默认>}  模型：${DEEPSEEK_MODEL:-<代码默认>}"
-UNIT_PATH="/etc/systemd/system/pd-leaderboard.service"
-cat > "$UNIT_PATH" <<UNIT
-[Unit]
-Description=prompt-defense leaderboard API
-After=network.target
-
-[Service]
-Type=simple
-User=${LEADERBOARD_USER}
-Group=${LEADERBOARD_USER}
-WorkingDirectory=${APP_DIR}/current-server
-Environment=PD_DB_PATH=${APP_DIR}/data/leaderboard.sqlite3
-Environment=PD_SESSION_SECRET_FILE=${APP_DIR}/data/session_secret
-Environment=DEEPSEEK_API_KEY_FILE=${APP_DIR}/data/deepseek_key
-${PROVIDER_ENV}
-Environment=PD_CURRENT_LINK=${APP_DIR}/current-server
-Environment=PD_PORT=${PD_PORT}
-ExecStart=${NODE_BIN} ${APP_DIR}/current-server/main.js
-Restart=always
-RestartSec=2
-# §14 要求的进程内存上限。排行榜是轻量 I/O 服务，256M 有充足余量。
-MemoryMax=256M
-NoNewPrivileges=yes
-PrivateTmp=yes
-
-[Install]
-WantedBy=multi-user.target
-UNIT
+# shellcheck source=render-unit.sh
+. "${SCRIPT_DIR}/render-unit.sh"
+render_service_config "$ENV_FILE" "$UNIT_PATH" "$APP_DIR" "$NODE_BIN" "$LEADERBOARD_USER" "$PD_PORT" "${DEEPSEEK_BASE_URL:-}" "${DEEPSEEK_MODEL:-}" \
+    || die "渲染服务配置失败（未安装）"
+# env 文件是环境配置的唯一真值来源。它只放路径与端点/模型名（不是密钥本身），
+# 但收紧到 600 root:root 比 644 更稳；systemd 以 root 读取 EnvironmentFile，服务进程
+# 不需要直接读它。unit 仍是 644（不含任何密钥，仅 EnvironmentFile= 指针与 ExecStart）。
+chmod 600 "$ENV_FILE"
+chown root:root "$ENV_FILE"
 chmod 644 "$UNIT_PATH"
-# 渲染自检：拼串出错时宁可在这里失败，也不要把坏 unit 装上机（历史上踩过一次：
-# provider 变量与下一行粘在一起，PD_CURRENT_LINK 丢失导致部署不再触发重启）。
-for required in 'Environment=PD_CURRENT_LINK=' 'Environment=PD_DB_PATH=' 'Environment=DEEPSEEK_API_KEY_FILE=' 'ExecStart='; do
-    grep -q "^${required}" "$UNIT_PATH" || die "渲染出的 unit 缺少 ${required}（模板拼串有问题，未安装）"
-done
 systemctl daemon-reload
 systemctl enable pd-leaderboard.service >/dev/null
 systemctl restart pd-leaderboard.service
