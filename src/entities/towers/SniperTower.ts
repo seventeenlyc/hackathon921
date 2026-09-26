@@ -18,8 +18,8 @@ export class SniperTower extends Tower {
     target: Enemy | undefined;
 
     protected get muzzleOffset(): {x: number; y: number} {
-        const scale = this.width / 228;
-        return {x: 103 * scale, y: 10.5 * scale};
+        const scale = this.width / 1254;
+        return {x: 0, y: -470 * scale};
     }
 
     shoot(): void {

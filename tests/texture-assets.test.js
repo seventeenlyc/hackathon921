@@ -23,7 +23,8 @@ const textureFiles = [
   'src/assets/obstacles/obstacle_03.png',
   'src/assets/obstacles/obstacle_04.png',
   'src/assets/obstacles/obstacle_05.png',
-  'src/assets/obstacles/obstacle_06.png'
+  'src/assets/obstacles/obstacle_06.png',
+  'src/assets/obstacles/tianji-rock.png'
 ];
 
 for (const role of ['simple', 'fast', 'armored', 'healer', 'boss']) {
@@ -66,11 +67,11 @@ for (const relativePath of textureFiles) {
 // Keep source-design → runtime-role mappings and distinctness pinned (issue #67).
 const sprites = [
   // Source: tower art in catalogue order.
-  ['towers', 'canon', 'CanonTower', 'canonTower', 1203, 1213],
-  ['towers', 'gatling', 'GatlingTower', 'gatlingTower', 1203, 1213],
-  ['towers', 'slow', 'SlowTower', 'slowTower', 1203, 1213],
-  ['towers', 'sniper', 'SniperTower', 'sniperTower', 1203, 1213],
-  ['towers', 'laser', 'LaserTower', 'laserTower', 1203, 1213],
+  ['towers', 'canon', 'CanonTower', 'canonTower', 1254, 1254],
+  ['towers', 'gatling', 'GatlingTower', 'gatlingTower', 1254, 1254],
+  ['towers', 'slow', 'SlowTower', 'slowTower', 1254, 1254],
+  ['towers', 'sniper', 'SniperTower', 'sniperTower', 1254, 1254],
+  ['towers', 'laser', 'LaserTower', 'laserTower', 1254, 1254],
   // Source: enemy art in catalogue order.
   ['enemies', 'simple', 'SimpleEnemy', 'simpleEnemy', 1254, 1254],
   ['enemies', 'fast', 'FastEnemy', 'fastEnemy', 1254, 1254],

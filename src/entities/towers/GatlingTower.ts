@@ -17,8 +17,8 @@ export class GatlingTower extends CanonTower {
     };
 
     protected get muzzleOffset(): {x: number; y: number} {
-        const scale = this.width / 175;
-        return {x: 76.5 * scale, y: 35 * scale};
+        const scale = this.width / 1254;
+        return {x: 0, y: -370 * scale};
     }
 
 }

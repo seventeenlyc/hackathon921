@@ -119,4 +119,13 @@ assert.equal(drawCalls[0].y, 4 * TILE + TILE / 2, 'draw is centered vertically o
 assert.equal(drawCalls[0].width, TILE, 'draw fills the whole tile width');
 assert.equal(drawCalls[0].height, TILE, 'draw fills the whole tile height');
 
-console.log('Obstacle texture randomization passed.');
+// A theme can override only the artwork; random selection and blocking remain.
+dependencies['../../tools/texturePaths'].texturePaths.terrain.artwork = 'tianji-rock';
+drawCalls.length = 0;
+drawer.draw(fakeCtx);
+assert.equal(drawCalls[0].src, 'tianji-rock');
+assert.equal(drawer.texturePath, fakeTextures[5]);
+assert.equal(drawer.traversable, false);
+assert.equal(drawCalls[0].width, TILE);
+
+console.log('Obstacle texture randomization and theme rendering passed.');

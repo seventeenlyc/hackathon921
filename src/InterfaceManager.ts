@@ -487,8 +487,9 @@ class InterfaceManager {
 
             const ctx = canvas.getContext('2d')!;
             tower.setCoordinates(pad / 2, pad / 2);
-            tower.draw(ctx);
-            textureManager.onLoaded(tower.texturePath, () => tower.draw(ctx));
+            const drawPreview = () => textureManager.draw(ctx, tower.texturePath, tower.center.x, tower.center.y, tower.width, tower.width);
+            drawPreview();
+            textureManager.onLoaded(tower.texturePath, drawPreview);
 
             const selectTower = () => {
                 if (selectedCard === card) {

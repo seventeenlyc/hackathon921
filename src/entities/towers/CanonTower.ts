@@ -23,8 +23,8 @@ export class CanonTower extends Tower {
     };
 
     protected get muzzleOffset(): {x: number; y: number} {
-        const scale = this.width / 171;
-        return {x: 38.5 * scale, y: 36.5 * scale};
+        const scale = this.width / 1254;
+        return {x: 0, y: -347 * scale};
     }
 
     constructor(x: number, y: number, width: number) {

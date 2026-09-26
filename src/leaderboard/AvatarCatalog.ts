@@ -1,7 +1,7 @@
 /**
  * Operator profile avatars for the login gate.
  *
- * Neutral geometric icons — no copyrighted imagery. The IDs are stable so the
+ * Original Tian Ji Zhen portraits generated for this project. The IDs are stable so the
  * leaderboard and server validation can treat them as an enumerated set.
  *
  * Deliberately pure (no image imports): headless tests transpile this module
@@ -27,14 +27,14 @@ export interface AvatarEntry {
 }
 
 export const AVATARS: readonly AvatarEntry[] = [
-    {id: 'sentinel', nameKey: 'gate.avatar.sentinel', romaji: 'SENTINEL'},
-    {id: 'vector', nameKey: 'gate.avatar.vector', romaji: 'VECTOR'},
-    {id: 'nexus', nameKey: 'gate.avatar.nexus', romaji: 'NEXUS'},
-    {id: 'orbit', nameKey: 'gate.avatar.orbit', romaji: 'ORBIT'},
-    {id: 'prism', nameKey: 'gate.avatar.prism', romaji: 'PRISM'},
-    {id: 'cipher', nameKey: 'gate.avatar.cipher', romaji: 'CIPHER'},
-    {id: 'atlas', nameKey: 'gate.avatar.atlas', romaji: 'ATLAS'},
-    {id: 'helix', nameKey: 'gate.avatar.helix', romaji: 'HELIX'},
+    {id: 'sentinel', nameKey: 'gate.avatar.sentinel', romaji: 'GUANXING'},
+    {id: 'vector', nameKey: 'gate.avatar.vector', romaji: 'SIZHEN'},
+    {id: 'nexus', nameKey: 'gate.avatar.nexus', romaji: 'ZHUJIA'},
+    {id: 'orbit', nameKey: 'gate.avatar.orbit', romaji: 'FEIYU'},
+    {id: 'prism', nameKey: 'gate.avatar.prism', romaji: 'DANQING'},
+    {id: 'cipher', nameKey: 'gate.avatar.cipher', romaji: 'ZHAOYE'},
+    {id: 'atlas', nameKey: 'gate.avatar.atlas', romaji: 'ZIWEI'},
+    {id: 'helix', nameKey: 'gate.avatar.helix', romaji: 'LINGSHU'},
 ];
 
 export function isKnownAvatarId(id: string): id is AvatarId {

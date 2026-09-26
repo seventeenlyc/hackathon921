@@ -14,6 +14,6 @@ export class Rock extends GridRenderable {
     }
 
     draw(ctx: CanvasRenderingContext2D): void {
-        textureManager.draw(ctx, this.texturePath, this.center.x, this.center.y, this.width, this.width);
+        textureManager.draw(ctx, texturePaths.terrain.artwork ?? this.texturePath, this.center.x, this.center.y, this.width, this.width);
     }
 }

@@ -2,7 +2,7 @@
  * Source-level guards for the battlefield status panel.
  *
  * The three metric cards (tactical credit / wave / phase) follow the design
- * mock: cyan bordered card, small cyan label, large bright value, and a
+ * mock: bronze bordered card, small bronze label, large bright value, and a
  * bilingual state sub-line. Like i18n.test.js this reads the TypeScript and
  * Less sources directly, so it needs no build and no DOM.
  */
@@ -78,10 +78,10 @@ assert.ok(
     'InterfaceManager must not reference the retired stateSub table',
 );
 
-// --- styles: the design's cyan card treatment exists ---
+// --- styles: the design's bronze card treatment exists ---
 const metricBlock = stylesSource.match(/\.status-metric \{[\s\S]*?\n    \}/);
 assert.ok(metricBlock, '.status-metric block missing from styles.less');
-assert.ok(metricBlock[0].includes('rgba(53, 226, 255'), 'status cards must use the cyan accent border');
+assert.ok(metricBlock[0].includes('rgba(212, 179, 113'), 'status cards must use the bronze accent border');
 assert.ok(/\.status-label/.test(metricBlock[0]), 'status label must be styled');
 assert.ok(!metricBlock[0].includes('.status-sub'), 'status sub-line styles must be removed');
 assert.ok(/#delay/.test(metricBlock[0]), 'wave delay suffix must be styled dimmer than the value');
