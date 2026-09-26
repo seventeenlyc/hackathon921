@@ -24,7 +24,30 @@ import obstacle4 from '../assets/obstacles/obstacle_04.png';
 import obstacle5 from '../assets/obstacles/obstacle_05.png';
 import obstacle6 from '../assets/obstacles/obstacle_06.png';
 
+import simpleEnemyRight from '../assets/entities/enemies/simple-right.png';
+import simpleEnemyDown from '../assets/entities/enemies/simple-down.png';
+import simpleEnemyLeft from '../assets/entities/enemies/simple-left.png';
+import fastEnemyRight from '../assets/entities/enemies/fast-right.png';
+import fastEnemyDown from '../assets/entities/enemies/fast-down.png';
+import fastEnemyLeft from '../assets/entities/enemies/fast-left.png';
+import armoredEnemyRight from '../assets/entities/enemies/armored-right.png';
+import armoredEnemyDown from '../assets/entities/enemies/armored-down.png';
+import armoredEnemyLeft from '../assets/entities/enemies/armored-left.png';
+import healerEnemyRight from '../assets/entities/enemies/healer-right.png';
+import healerEnemyDown from '../assets/entities/enemies/healer-down.png';
+import healerEnemyLeft from '../assets/entities/enemies/healer-left.png';
+import bossEnemyRight from '../assets/entities/enemies/boss-right.png';
+import bossEnemyDown from '../assets/entities/enemies/boss-down.png';
+import bossEnemyLeft from '../assets/entities/enemies/boss-left.png';
+
 export const texturePaths = {
+    enemyDirections: {
+        simple: {up: simpleEnemy, right: simpleEnemyRight, down: simpleEnemyDown, left: simpleEnemyLeft},
+        fast: {up: fastEnemy, right: fastEnemyRight, down: fastEnemyDown, left: fastEnemyLeft},
+        armored: {up: armoredEnemy, right: armoredEnemyRight, down: armoredEnemyDown, left: armoredEnemyLeft},
+        healer: {up: healerEnemy, right: healerEnemyRight, down: healerEnemyDown, left: healerEnemyLeft},
+        boss: {up: bossEnemy, right: bossEnemyRight, down: bossEnemyDown, left: bossEnemyLeft},
+    },
     enemies: {
         simple: simpleEnemy,
         fast: fastEnemy,

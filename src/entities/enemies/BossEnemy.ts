@@ -6,6 +6,7 @@ import {texturePaths} from "../../tools/texturePaths";
 
 export class BossEnemy extends Enemy {
     texturePath = texturePaths.enemies.boss;
+    textureDirections = texturePaths.enemyDirections?.boss;
     life: number = 2000;
     speed: number = 2.5;
     cash: number = 100;
