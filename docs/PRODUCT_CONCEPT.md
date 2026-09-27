@@ -336,11 +336,11 @@ MVP 必须建立：
 
 | 原独立素材 | 运行时文件 | 原独立素材 | 运行时文件 |
 |---|---|---|---|
-| 01 基础炮台 | `towers/canon.png` | 06 傀儡义体 | `enemies/simple.png` |
-| 02 高速炮台 | `towers/gatling.png` | 07 高速无人机 | `enemies/fast.png` |
-| 03 减速炮台 | `towers/slow.png` | 08 装甲执行机 | `enemies/armored.png` |
-| 04 狙击炮台 | `towers/sniper.png` | 09 网络支援节点 | `enemies/healer.png` |
-| 05 激光炮台 | `towers/laser.png` | 10 情报消去者 BOSS | `enemies/boss.png` |
+| 01 基础炮台 | `towers/canon.webp` | 06 傀儡义体 | `enemies/simple.webp` |
+| 02 高速炮台 | `towers/gatling.webp` | 07 高速无人机 | `enemies/fast.webp` |
+| 03 减速炮台 | `towers/slow.webp` | 08 装甲执行机 | `enemies/armored.webp` |
+| 04 狙击炮台 | `towers/sniper.webp` | 09 网络支援节点 | `enemies/healer.webp` |
+| 05 激光炮台 | `towers/laser.webp` | 10 情报消去者 BOSS | `enemies/boss.webp` |
 
 **炮台转向（2026-09-23 确认）**：战场上的 Canon、Gatling、Sniper 与 Laser 贴图平滑追踪当前选定的范围内敌人；目标由确定性游戏引擎逐帧更新。Slower 的效果覆盖整个范围，因此保持全向、不转向。放置预览和机体卡片仍保持正向。敌人的四向俯视显示按下文 2026-09-27 的决定执行；移动与路径算法不受影响。普通敌人（`simple`）以 30×30 游戏单位的显示框绘制（单格为 40×40），等比缩放、血条置于图像下方格内；碰撞半径、移动速度及其他四类敌人的显示尺寸不变。
 
@@ -512,3 +512,5 @@ DeepSeek 走国内 CDN 线路，实测 TLS 握手 25–80ms、请求总计约 10
 - 带脚本、故意让 AI 失败的完整教程；
 - Wave 256「THE ENDLESS」照片彩蛋页（体验方向已确认，素材与授权、实现时间未定；见 §4）；
 - 四件道具的后期平衡与叙事权限设计（目前核心及基础界面已实现，最终规则未定；见 §5）。
+
+**天机阵素材压缩（2026-09-27）**：8 张头像与 28 张运行时贴图改为无损 WebP。所有图片仍为 1254×1254，逐张解码核对 RGBA 像素完全一致，透明通道、显示尺寸、朝向和游戏模拟保持不变。通过静态 import 加载，旧 PNG 可从 Git 历史恢复；体积与哈希核验记录见 `docs/texture-compression.json`。

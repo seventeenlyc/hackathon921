@@ -5,19 +5,19 @@
  * content-hashed URL, and a missing or renamed file fails the build instead of
  * turning into a silent 404 at runtime.
  */
-import armoredEnemy from '../assets/entities/enemies/armored.png';
-import bossEnemy from '../assets/entities/enemies/boss.png';
-import fastEnemy from '../assets/entities/enemies/fast.png';
-import healerEnemy from '../assets/entities/enemies/healer.png';
-import simpleEnemy from '../assets/entities/enemies/simple.png';
-import canonTower from '../assets/entities/towers/canon.png';
-import gatlingTower from '../assets/entities/towers/gatling.png';
-import laserTower from '../assets/entities/towers/laser.png';
-import slowTower from '../assets/entities/towers/slow.png';
-import sniperTower from '../assets/entities/towers/sniper.png';
-import homeBase from '../assets/entities/home/home.png';
-import enemyBase from '../assets/entities/home/enermy.png';
-import tianjiRock from '../assets/obstacles/tianji-rock.png';
+import armoredEnemy from '../assets/entities/enemies/armored.webp';
+import bossEnemy from '../assets/entities/enemies/boss.webp';
+import fastEnemy from '../assets/entities/enemies/fast.webp';
+import healerEnemy from '../assets/entities/enemies/healer.webp';
+import simpleEnemy from '../assets/entities/enemies/simple.webp';
+import canonTower from '../assets/entities/towers/canon.webp';
+import gatlingTower from '../assets/entities/towers/gatling.webp';
+import laserTower from '../assets/entities/towers/laser.webp';
+import slowTower from '../assets/entities/towers/slow.webp';
+import sniperTower from '../assets/entities/towers/sniper.webp';
+import homeBase from '../assets/entities/home/home.webp';
+import enemyBase from '../assets/entities/home/enermy.webp';
+import tianjiRock from '../assets/obstacles/tianji-rock.webp';
 import obstacle1 from '../assets/obstacles/obstacle_01.png';
 import obstacle2 from '../assets/obstacles/obstacle_02.png';
 import obstacle3 from '../assets/obstacles/obstacle_03.png';
@@ -25,21 +25,21 @@ import obstacle4 from '../assets/obstacles/obstacle_04.png';
 import obstacle5 from '../assets/obstacles/obstacle_05.png';
 import obstacle6 from '../assets/obstacles/obstacle_06.png';
 
-import simpleEnemyRight from '../assets/entities/enemies/simple-right.png';
-import simpleEnemyDown from '../assets/entities/enemies/simple-down.png';
-import simpleEnemyLeft from '../assets/entities/enemies/simple-left.png';
-import fastEnemyRight from '../assets/entities/enemies/fast-right.png';
-import fastEnemyDown from '../assets/entities/enemies/fast-down.png';
-import fastEnemyLeft from '../assets/entities/enemies/fast-left.png';
-import armoredEnemyRight from '../assets/entities/enemies/armored-right.png';
-import armoredEnemyDown from '../assets/entities/enemies/armored-down.png';
-import armoredEnemyLeft from '../assets/entities/enemies/armored-left.png';
-import healerEnemyRight from '../assets/entities/enemies/healer-right.png';
-import healerEnemyDown from '../assets/entities/enemies/healer-down.png';
-import healerEnemyLeft from '../assets/entities/enemies/healer-left.png';
-import bossEnemyRight from '../assets/entities/enemies/boss-right.png';
-import bossEnemyDown from '../assets/entities/enemies/boss-down.png';
-import bossEnemyLeft from '../assets/entities/enemies/boss-left.png';
+import simpleEnemyRight from '../assets/entities/enemies/simple-right.webp';
+import simpleEnemyDown from '../assets/entities/enemies/simple-down.webp';
+import simpleEnemyLeft from '../assets/entities/enemies/simple-left.webp';
+import fastEnemyRight from '../assets/entities/enemies/fast-right.webp';
+import fastEnemyDown from '../assets/entities/enemies/fast-down.webp';
+import fastEnemyLeft from '../assets/entities/enemies/fast-left.webp';
+import armoredEnemyRight from '../assets/entities/enemies/armored-right.webp';
+import armoredEnemyDown from '../assets/entities/enemies/armored-down.webp';
+import armoredEnemyLeft from '../assets/entities/enemies/armored-left.webp';
+import healerEnemyRight from '../assets/entities/enemies/healer-right.webp';
+import healerEnemyDown from '../assets/entities/enemies/healer-down.webp';
+import healerEnemyLeft from '../assets/entities/enemies/healer-left.webp';
+import bossEnemyRight from '../assets/entities/enemies/boss-right.webp';
+import bossEnemyDown from '../assets/entities/enemies/boss-down.webp';
+import bossEnemyLeft from '../assets/entities/enemies/boss-left.webp';
 
 export const texturePaths = {
     enemyDirections: {

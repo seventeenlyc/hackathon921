@@ -10,14 +10,14 @@
  * The images are original Tian Ji Zhen portraits generated for this project (no
  * third-party artwork).
  */
-import sentinel from '../assets/avatars/01_sentinel.png';
-import vector from '../assets/avatars/02_vector.png';
-import nexus from '../assets/avatars/03_nexus.png';
-import orbit from '../assets/avatars/04_orbit.png';
-import prism from '../assets/avatars/05_prism.png';
-import cipher from '../assets/avatars/06_cipher.png';
-import atlas from '../assets/avatars/07_atlas.png';
-import helix from '../assets/avatars/08_helix.png';
+import sentinel from '../assets/avatars/01_sentinel.webp';
+import vector from '../assets/avatars/02_vector.webp';
+import nexus from '../assets/avatars/03_nexus.webp';
+import orbit from '../assets/avatars/04_orbit.webp';
+import prism from '../assets/avatars/05_prism.webp';
+import cipher from '../assets/avatars/06_cipher.webp';
+import atlas from '../assets/avatars/07_atlas.webp';
+import helix from '../assets/avatars/08_helix.webp';
 import type {AvatarId} from './AvatarCatalog';
 
 export const AVATAR_SRC: Record<AvatarId, string> = {
