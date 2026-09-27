@@ -82,6 +82,23 @@ test('randomUsername returns valid username matching character and length limits
     }
 });
 
+test('leaderboard preserves chosen portraits and gives missing or invalid portraits stable varied fallbacks', () => {
+    for (const avatar of catalog.AVATARS) {
+        assert.strictEqual(catalog.leaderboardAvatarId(avatar.id, 'player-1'), avatar.id);
+    }
+    const results = new Set();
+    for (let i = 0; i < 100; i++) {
+        const identity = `player-${i}`;
+        const id = catalog.leaderboardAvatarId(null, identity);
+        assert.ok(catalog.isKnownAvatarId(id));
+        assert.strictEqual(catalog.leaderboardAvatarId(null, identity), id);
+        assert.strictEqual(catalog.leaderboardAvatarId('https://untrusted/image', identity), id);
+        results.add(id);
+    }
+    assert.strictEqual(results.size, catalog.AVATARS.length);
+    assert.ok(catalog.isKnownAvatarId(catalog.leaderboardAvatarId(null, '')));
+});
+
 test('session avatar starts empty, accepts valid ids and rejects unknown ones', () => {
     const identity = loadIdentity();
     assert.strictEqual(identity.getSessionAvatar(), null);

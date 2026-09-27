@@ -7,7 +7,7 @@ import {
 } from './LeaderboardStore';
 import type { LeaderboardEntry, PlayMode, LeaderboardMode } from './LeaderboardStore';
 import {getSessionUsername, getSessionAvatar, getLocalSessionId, setSessionUsername, setSessionAvatar} from './SessionIdentity';
-import {AVATARS, isKnownAvatarId, randomAvatarId, randomUsername} from './AvatarCatalog';
+import {AVATARS, isKnownAvatarId, leaderboardAvatarId, randomAvatarId, randomUsername} from './AvatarCatalog';
 import type {AvatarId} from './AvatarCatalog';
 import {AVATAR_SRC} from './avatarAssets';
 import { fetchSharedLeaderboard } from './LeaderboardClient';
@@ -310,14 +310,10 @@ export class LeaderboardPanel {
 
             const avatarSpan = document.createElement('span');
             avatarSpan.className = 'avatar';
-            if (e.avatarId && isKnownAvatarId(e.avatarId)) {
-                const img = document.createElement('img');
-                img.src = AVATAR_SRC[e.avatarId];
-                img.alt = '';
-                avatarSpan.appendChild(img);
-            } else {
-                avatarSpan.classList.add('is-empty');
-            }
+            const img = document.createElement('img');
+            img.src = AVATAR_SRC[leaderboardAvatarId(e.avatarId, e.userId || e.username)];
+            img.alt = '';
+            avatarSpan.appendChild(img);
 
             li.appendChild(rankSpan);
             li.appendChild(modeSpan);
