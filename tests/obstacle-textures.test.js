@@ -8,22 +8,20 @@ const projectRoot = path.resolve(__dirname, '..');
 const OBSTACLE_COUNT = 6;
 const obstacleFiles = Array.from(
     {length: OBSTACLE_COUNT},
-    (_, k) => `src/assets/obstacles/obstacle_0${k + 1}.png`
+    (_, k) => `src/assets/obstacles/obstacle_0${k + 1}.webp`
 );
 
-// ---- The six source PNGs must be valid, non-degenerate and pairwise distinct,
+// ---- The six source WebPs must be valid, non-degenerate and pairwise distinct,
 // otherwise two array slots can silently point at the same artwork.
 function readPngSize(relativePath) {
     const buffer = fs.readFileSync(path.join(projectRoot, relativePath));
-    assert.ok(buffer.length >= 24 && buffer.subarray(12, 16).toString('ascii') === 'IHDR',
-        `${relativePath} is not a valid PNG`);
-    return {width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20)};
+    return require('./helpers/raster-size').readRasterSize(buffer);
 }
 
 const hashes = new Set();
 for (const relativePath of obstacleFiles) {
     const {width, height} = readPngSize(relativePath);
-    assert.ok(width > 0 && height > 0, `${relativePath} has a degenerate PNG size`);
+    assert.ok(width > 0 && height > 0, `${relativePath} has a degenerate raster size`);
     const hash = crypto.createHash('sha256').update(fs.readFileSync(path.join(projectRoot, relativePath))).digest('hex');
     assert.ok(!hashes.has(hash), `Duplicate obstacle texture bytes: ${relativePath}`);
     hashes.add(hash);
@@ -35,7 +33,7 @@ assert.equal(hashes.size, OBSTACLE_COUNT, 'expected six distinct obstacle textur
 const texturePathsSource = fs.readFileSync(path.join(projectRoot, 'src/tools/texturePaths.ts'), 'utf8');
 for (let k = 1; k <= OBSTACLE_COUNT; ++k) {
     const name = `obstacle${k}`;
-    assert.ok(texturePathsSource.includes(`import ${name} from '../assets/obstacles/obstacle_0${k}.png'`),
+    assert.ok(texturePathsSource.includes(`import ${name} from '../assets/obstacles/obstacle_0${k}.webp'`),
         `${name} must be statically imported so Vite bundles it`);
     assert.ok(texturePathsSource.includes(`${name},`) || texturePathsSource.includes(`${name}]`),
         `${name} must be listed in terrain.obstacles`);

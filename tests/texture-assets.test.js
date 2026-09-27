@@ -18,12 +18,12 @@ const textureFiles = [
   'src/assets/entities/towers/laser.webp',
   'src/assets/entities/home/home.webp',
   'src/assets/entities/home/enermy.webp',
-  'src/assets/obstacles/obstacle_01.png',
-  'src/assets/obstacles/obstacle_02.png',
-  'src/assets/obstacles/obstacle_03.png',
-  'src/assets/obstacles/obstacle_04.png',
-  'src/assets/obstacles/obstacle_05.png',
-  'src/assets/obstacles/obstacle_06.png',
+  'src/assets/obstacles/obstacle_01.webp',
+  'src/assets/obstacles/obstacle_02.webp',
+  'src/assets/obstacles/obstacle_03.webp',
+  'src/assets/obstacles/obstacle_04.webp',
+  'src/assets/obstacles/obstacle_05.webp',
+  'src/assets/obstacles/obstacle_06.webp',
   'src/assets/obstacles/tianji-rock.webp'
 ];
 
@@ -61,17 +61,17 @@ for (const relativePath of textureFiles) {
 // Keep source-design → runtime-role mappings and distinctness pinned (issue #67).
 const sprites = [
   // Source: tower art in catalogue order.
-  ['towers', 'canon', 'CanonTower', 'canonTower', 1254, 1254],
-  ['towers', 'gatling', 'GatlingTower', 'gatlingTower', 1254, 1254],
-  ['towers', 'slow', 'SlowTower', 'slowTower', 1254, 1254],
-  ['towers', 'sniper', 'SniperTower', 'sniperTower', 1254, 1254],
-  ['towers', 'laser', 'LaserTower', 'laserTower', 1254, 1254],
+  ['towers', 'canon', 'CanonTower', 'canonTower', 256, 256],
+  ['towers', 'gatling', 'GatlingTower', 'gatlingTower', 256, 256],
+  ['towers', 'slow', 'SlowTower', 'slowTower', 256, 256],
+  ['towers', 'sniper', 'SniperTower', 'sniperTower', 256, 256],
+  ['towers', 'laser', 'LaserTower', 'laserTower', 256, 256],
   // Source: enemy art in catalogue order.
-  ['enemies', 'simple', 'SimpleEnemy', 'simpleEnemy', 1254, 1254],
-  ['enemies', 'fast', 'FastEnemy', 'fastEnemy', 1254, 1254],
-  ['enemies', 'armored', 'ArmoredEnemy', 'armoredEnemy', 1254, 1254],
-  ['enemies', 'healer', 'HealerEnemy', 'healerEnemy', 1254, 1254],
-  ['enemies', 'boss', 'BossEnemy', 'bossEnemy', 1254, 1254]
+  ['enemies', 'simple', 'SimpleEnemy', 'simpleEnemy', 256, 256],
+  ['enemies', 'fast', 'FastEnemy', 'fastEnemy', 256, 256],
+  ['enemies', 'armored', 'ArmoredEnemy', 'armoredEnemy', 256, 256],
+  ['enemies', 'healer', 'HealerEnemy', 'healerEnemy', 256, 256],
+  ['enemies', 'boss', 'BossEnemy', 'bossEnemy', 256, 256]
 ];
 const texturePathsSource = fs.readFileSync(path.join(projectRoot, 'src/tools/texturePaths.ts'), 'utf8');
 const hashes = new Set();
@@ -94,7 +94,7 @@ assert.equal(hashes.size, 10, 'expected ten distinct runtime sprites');
 for (const role of ['simple', 'fast', 'armored', 'healer', 'boss']) {
   for (const direction of ['right', 'down', 'left']) {
     const relativePath = `src/assets/entities/enemies/${role}-${direction}.webp`;
-    assert.deepEqual(readTextureSize(relativePath), {width: 1254, height: 1254});
+    assert.deepEqual(readTextureSize(relativePath), {width: 256, height: 256});
     const hash = crypto.createHash('sha256').update(fs.readFileSync(path.join(projectRoot, relativePath))).digest('hex');
     assert.ok(!hashes.has(hash), `Duplicate direction art: ${relativePath}`);
     hashes.add(hash);
@@ -124,8 +124,9 @@ function listFilesRecursively(directory) {
 const distFiles = listFilesRecursively(path.join(projectRoot, 'dist')).map(file => path.basename(file));
 // Keep the compression savings and the complete deployed runtime set reviewable.
 const compression = JSON.parse(fs.readFileSync(path.join(projectRoot, 'docs/texture-compression.json'), 'utf8'));
-assert.equal(compression.assets.length, 36);
-assert.ok(compression.bytes < compression.sourceBytes * 0.75, 'lossless runtime assets must save at least 25%');
+assert.equal(compression.assets.length, 42);
+assert.ok(compression.bytes <= 1000000, 'all runtime images must stay within a 1 MB budget');
+assert.ok(compression.bytes < compression.previousBytes * 0.05, 'save at least 95% against the previous image payload');
 let totalBytes = 0;
 for (const asset of compression.assets) {
   const bytes = fs.readFileSync(path.join(projectRoot, asset.path));
