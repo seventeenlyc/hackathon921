@@ -250,6 +250,7 @@ async function test(name, fn) {
             './narrative/NarrativeOverlay': { narrativeOverlay: { play: async () => {} } },
             './narrative/StoryReader': { storyReader: { open() {}, close() {}, isOpen: false } },
         }, {
+            document: { getElementById: id => id === 'minimap' ? {getContext: () => ({})} : null },
             window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {}, addEventListener() {} },
             setInterval: () => 1,
             requestAnimationFrame: () => 1,
@@ -318,6 +319,7 @@ async function test(name, fn) {
             './narrative/NarrativeOverlay': { narrativeOverlay: { play: async () => {} } },
             './narrative/StoryReader': { storyReader: { open() {}, close() {}, isOpen: false } },
         }, {
+            document: { getElementById: id => id === 'minimap' ? {getContext: () => ({})} : null },
             window: { setInterval: () => 1, clearInterval() {}, setTimeout: fn => fn(), clearTimeout() {}, addEventListener() {} },
             setInterval: () => 1,
             requestAnimationFrame: () => 1,

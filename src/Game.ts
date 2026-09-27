@@ -50,6 +50,8 @@ onLangChange(() => decisionSummary?.setUnavailable(t('reasoning.summaryUnavailab
 // The bottom-right minimap locator. Constructed once at module load; it caches
 // the static terrain overview and refreshes on `map.added`. Drawn in screen
 // space after the main `ctx.restore()`, so the camera transform never warps it.
+const minimapCanvas = document.getElementById('minimap') as HTMLCanvasElement;
+const minimapCtx = minimapCanvas.getContext('2d')!;
 const miniMap = new MiniMap(map, camera, {width: 192, height: 96, margin: 24});
 
 class Game {
@@ -113,6 +115,8 @@ class Game {
             return {x: e.clientX - b.left, y: e.clientY - b.top};
         };
         window.addEventListener('mousedown', event => {
+            // Only the exposed locator receives input; dialogs above it keep their clicks.
+            if (event.target !== minimapCanvas) return;
             const c = toCanvasCoords(event);
             if (miniMap.onPointerDown(c.x, c.y)) {
                 event.preventDefault();
@@ -178,8 +182,13 @@ class Game {
         if (playMode === 'human') towerPlacer.draw(ctx);
         ctx.restore();
 
-        // Drawn in screen space, independent of the camera transform.
-        miniMap.draw(ctx);
+        // Draw above the frame mask, while keeping the same screen-space hit coordinates.
+        const rect = miniMap.getRect();
+        minimapCtx.clearRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+        minimapCtx.save();
+        minimapCtx.translate(-rect.x, -rect.y);
+        miniMap.draw(minimapCtx);
+        minimapCtx.restore();
 
         if (this.looping) {
             requestAnimationFrame(this.drawLoop.bind(this))
