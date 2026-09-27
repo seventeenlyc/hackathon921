@@ -133,6 +133,40 @@ test('system prompt maps human directions to grid coordinates and enemy bases', 
     assert.match(AGENT_SYSTEM_PROMPT, /defer the rest to later waves/i);
 });
 
+test('provider messages explain tower stats and preserve their live snapshot values', () => {
+    const messages = composeAgentMessages('Build where sniper coverage is useful.', {
+        towerOptions: [{
+            type: 'sniper',
+            aimRadius: 250,
+            aimRadiusTiles: 6.25,
+            damage: 300,
+            reloadMs: 3000,
+            dps: 100,
+        }],
+        towers: [{
+            type: 'slow',
+            level: 2,
+            aimRadius: 110,
+            aimRadiusTiles: 2.75,
+            damage: 0,
+            reloadMs: 0,
+            dps: 0,
+            upgradeCost: 180,
+        }],
+    });
+
+    assert.match(messages[0].content, /`aimRadiusTiles` is the aiming radius expressed in grid cells/i);
+    assert.match(messages[0].content, /`damage` is average damage per attack/i);
+    assert.match(messages[0].content, /upgrades are capped at level 5/i);
+    assert.match(messages[0].content, /damage.*1\.5/i);
+    assert.match(messages[0].content, /positive `reloadMs`.*0\.9.*50 ms/i);
+    assert.match(messages[0].content, /slow increases its radius by 10% per upgrade/i);
+    assert.match(messages[0].content, /`upgradeCost`.*authoritative/i);
+    assert.ok(messages[1].content.includes('"aimRadiusTiles":6.25'));
+    assert.ok(messages[1].content.includes('"aimRadiusTiles":2.75'));
+    assert.ok(messages[1].content.includes('"damage":300'));
+});
+
 test('extractAgentActions 归一化已注册工具调用', () => {
     const payload = {
         choices: [{

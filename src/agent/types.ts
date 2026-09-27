@@ -52,6 +52,12 @@ export interface TowerOption {
     description: string;
     cost: number;
     aimRadius: number;
+    /** Aiming radius in grid cells (the raw aimRadius is in world pixels). */
+    aimRadiusTiles: number;
+    /** Average damage dealt per attack; range-valued damage is normalized to its midpoint. */
+    damage: number;
+    /** Time between attacks in milliseconds; 0 for towers that apply effects continuously. */
+    reloadMs: number;
     /** Normalized damage per second; 0 for pure utility towers such as the slower. */
     dps: number;
 }
@@ -64,6 +70,8 @@ export interface TowerInfo {
     level: number;
     upgradeCost: number | null;
     aimRadius: number;
+    /** Aiming radius in grid cells (the raw aimRadius is in world pixels). */
+    aimRadiusTiles: number;
     damage: number;
     reloadMs: number;
     dps: number;

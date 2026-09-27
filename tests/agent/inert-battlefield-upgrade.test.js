@@ -61,6 +61,23 @@ function test(name, run) {
 
 console.log('InertBattlefield upgrades');
 
+test('AI tower options expose aiming radius in cells, damage, and reload interval', () => {
+    resetBattlefield(1000);
+    const options = new GameActions(new InertBattlefield()).getState().towerOptions;
+    const sniper = options.find(option => option.type === 'sniper');
+    const laser = options.find(option => option.type === 'laser');
+
+    assert.deepStrictEqual(
+        {aimRadius: sniper.aimRadius, aimRadiusTiles: sniper.aimRadiusTiles, damage: sniper.damage, reloadMs: sniper.reloadMs},
+        {aimRadius: 250, aimRadiusTiles: 6.25, damage: 300, reloadMs: 3000}
+    );
+    assert.deepStrictEqual(
+        {aimRadius: laser.aimRadius, aimRadiusTiles: laser.aimRadiusTiles, damage: laser.damage, reloadMs: laser.reloadMs},
+        {aimRadius: 100, aimRadiusTiles: 2.5, damage: 35, reloadMs: 300}
+    );
+});
+
+
 test('successful upgrade charges once and immediately raises live combat stats', () => {
     resetBattlefield(1000);
     const battlefield = new InertBattlefield();
@@ -96,6 +113,8 @@ test('slow tower upgrades extend the live radius of its slowing effect', () => {
     assert.strictEqual(after.damage, 0);
     assert.strictEqual(after.reloadMs, 0);
     assert.ok(after.aimRadius > before.aimRadius, 'the live slow-effect radius must increase');
+    assert.strictEqual(before.aimRadiusTiles, 2.5);
+    assert.ok(Math.abs(after.aimRadiusTiles - 2.75) < 1e-9);
 });
 
 test('max-level upgrade leaves the live tower and balance unchanged', () => {

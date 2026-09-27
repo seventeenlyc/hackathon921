@@ -89,6 +89,9 @@ export class InertBattlefield implements Battlefield {
                 description: tower.description,
                 cost: tower.cost,
                 aimRadius: tower.aimRadius,
+                aimRadiusTiles: tower.aimRadius / Map.TILE_SIZE,
+                damage: numericDamage(tower),
+                reloadMs: tower.reloadDurationMs,
                 dps: dpsOf(tower),
             };
         });
@@ -212,6 +215,7 @@ export class InertBattlefield implements Battlefield {
             level: tower.level,
             upgradeCost: tower.upgradeCost,
             aimRadius: tower.aimRadius,
+            aimRadiusTiles: tower.aimRadius / Map.TILE_SIZE,
             damage: numericDamage(tower),
             reloadMs: tower.reloadDurationMs,
             dps: dpsOf(tower),
