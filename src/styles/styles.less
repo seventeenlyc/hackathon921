@@ -106,6 +106,16 @@ body {
     }
   }
 
+  // A separate surface keeps the locator above the battlefield's opaque mask.
+  & > #minimap {
+    position: fixed;
+    inset: auto 24px 24px auto;
+    z-index: 6;
+    width: 192px;
+    height: 96px;
+    cursor: crosshair;
+  }
+
   // 顶部 SHELL PROTOCOL 信息条。
   .tactical-header {
     position: absolute;

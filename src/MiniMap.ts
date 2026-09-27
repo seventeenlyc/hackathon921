@@ -68,24 +68,8 @@ export class MiniMap {
         this.map.on('added', () => { this.dirty = true; });
     }
 
-    /** Screen-space rectangle occupied by the minimap, or null while the controls obscure the narrow battlefield. */
-    getRect(): {x: number, y: number, width: number, height: number} | null {
-        const frame = document.getElementById('map-frame');
-        if (frame && !frame.classList.contains('is-hidden')) {
-            const bounds = frame.getBoundingClientRect();
-            const inset = 8;
-            if (bounds.width < this.opts.width * 2 + inset * 2 || bounds.height < this.opts.height + inset * 2) {
-                return null;
-            }
-            // The frame's opaque outer shadow hides canvas pixels outside the
-            // battlefield. Keep the locator inside it while controls are shown.
-            return {
-                x: bounds.right - this.opts.width - inset,
-                y: bounds.top + inset,
-                width: this.opts.width,
-                height: this.opts.height,
-            };
-        }
+    /** Page-space rectangle, independent of battlefield and control-panel visibility. */
+    getRect(): {x: number, y: number, width: number, height: number} {
         const canvasEl = document.getElementById('canvas') as HTMLCanvasElement;
         const w = canvasEl?.clientWidth ?? window.innerWidth;
         const h = canvasEl?.clientHeight ?? window.innerHeight;

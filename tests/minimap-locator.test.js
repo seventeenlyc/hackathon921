@@ -124,7 +124,7 @@ let frameHidden = false;
 let frameWidth = frameRect.width;
 const miniDoc = {
     getElementById: id => id === 'canvas'
-        ? {clientWidth: 1200, clientHeight: 800}
+        ? canvasElement
         : id === 'map-frame'
             ? {
                 getBoundingClientRect: () => ({...frameRect, width: frameWidth, right: frameRect.left + frameWidth}),
@@ -151,8 +151,8 @@ const MiniMap2 = miniModule2.exports.MiniMap;
 const mm = new MiniMap2(stubMap, stubCamera, {width: 192, height: 96, margin: 24});
 
 const rect = mm.getRect();
-assert.deepStrictEqual(rect, {x: 676, y: 72, width: 192, height: 96},
-    'visible controls anchor minimap inside the unmasked battlefield frame');
+assert.deepStrictEqual(rect, {x: 984, y: 680, width: 192, height: 96},
+    'visible controls anchor minimap at the page bottom-right');
 
 // a click inside the minimap rect is consumed and pans to the corresponding map point
 const inside = {x: rect.x + rect.width / 2, y: rect.y + rect.height / 2};
@@ -173,8 +173,15 @@ mm.onPointerMove(rect.x + 10, rect.y + 10);
 assert.strictEqual(panCalls.length, 2, 'pointer move after release does not pan');
 
 frameWidth = 374;
-assert.strictEqual(mm.getRect(), null, 'narrow frame with visible control rails cannot expose a clickable minimap');
-assert.strictEqual(mm.onPointerDown(rect.x + 10, rect.y + 10), false, 'an obscured minimap cannot steal panel clicks');
+assert.deepStrictEqual(mm.getRect(), rect, 'narrow battlefield does not hide the page minimap');
+canvasElement.clientWidth = 390;
+canvasElement.clientHeight = 844;
+assert.deepStrictEqual(mm.getRect(), {x: 174, y: 724, width: 192, height: 96}, 'resize retains page bottom-right margin');
+assert.strictEqual(mm.onPointerDown(rect.x + 10, rect.y + 10), false, 'old position no longer intercepts clicks after resize');
+assert.strictEqual(mm.onPointerDown(270, 772), true, 'new position remains clickable after resize');
+mm.onPointerUp();
+canvasElement.clientWidth = 1200;
+canvasElement.clientHeight = 800;
 
 frameHidden = true;
 assert.deepStrictEqual(mm.getRect(), {x: 984, y: 680, width: 192, height: 96},
