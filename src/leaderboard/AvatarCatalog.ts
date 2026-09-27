@@ -45,6 +45,16 @@ export function randomAvatarId(): AvatarId {
     return AVATARS[Math.floor(Math.random() * AVATARS.length)].id;
 }
 
+export function leaderboardAvatarId(avatarId: string | null, identity: string): AvatarId {
+    if (avatarId && isKnownAvatarId(avatarId)) return avatarId;
+    // Derive a varied fallback from identity so old entries do not flicker on refresh.
+    let hash = 2166136261;
+    for (let i = 0; i < identity.length; i++) {
+        hash = Math.imul(hash ^ identity.charCodeAt(i), 16777619);
+    }
+    return AVATARS[(hash >>> 0) % AVATARS.length].id;
+}
+
 export function randomUsername(lang?: string): string {
     const list = lang === 'en' ? RANDOM_USERNAMES_EN : RANDOM_USERNAMES_ZH;
     return list[Math.floor(Math.random() * list.length)];

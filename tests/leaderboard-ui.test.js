@@ -254,7 +254,7 @@ function loadUI(document, currentPlayMode, remoteData = null) {
 }
 
 // 3. 渲染同一玩家的 AI 与人类记录：两行、两个不同标志、仅 AI 包含 Prompt 历史按钮；
-//    每行用户名左侧必须有头像（有 avatarId 渲染图片，缺失渲染占位）。
+//    每行用户名左侧必须有头像，缺失头像使用稳定的主题图片。
 (async () => {
     const doc = new FakeDocument();
     const remoteData = mode => ({
@@ -293,7 +293,7 @@ function loadUI(document, currentPlayMode, remoteData = null) {
     assert.ok(humanAvatar.idx < humanItem.children.findIndex(c => c.className === 'name'),
         '头像必须位于用户名左侧');
 
-    // 第二条：ai，avatarId 缺失 → 占位头像
+    // 第二条：ai，avatarId 缺失 → 主题头像
     const aiItem = items[1];
     const aiFlag = aiItem.children.find(c => c.className && c.className.includes('mode'));
     assert.ok(aiFlag, 'AI 记录必须有模式标识');
@@ -302,8 +302,14 @@ function loadUI(document, currentPlayMode, remoteData = null) {
     assert.ok(aiButton, 'AI 记录必须包含 Prompt 历史按钮');
     const aiAvatar = avatarOf(aiItem);
     assert.ok(aiAvatar.el, 'AI 记录必须渲染头像槽位');
-    assert.ok(aiAvatar.el.className.includes('is-empty'), 'avatarId 缺失的记录必须使用占位头像');
-    assert.strictEqual(aiAvatar.el.children.length, 0, '占位头像不得包含 <img>');
+    assert.ok(!aiAvatar.el.className.includes('is-empty'), '缺失头像不再显示空白');
+    const fallbackImg = aiAvatar.el.children.find(c => c.tagName === 'IMG');
+    assert.ok(fallbackImg, '旧记录必须包含主题头像图片');
+    assert.strictEqual(fallbackImg.src, 'fake://' + avatarCatalog.leaderboardAvatarId(null, '7'));
+    await panel.refresh('ai');
+    assert.strictEqual(avatarOf(panel.listEl.children[1]).el.children[0].src, fallbackImg.src,
+        '刷新与切换榜单不得改变同一玩家的缺省头像');
+    assert.strictEqual(remoteData('total').entries[1].avatarId, null, '显示补全不回写旧记录');
 
     console.log('Validated leaderboard UI mount points and empty-state footer flow.');
 })().catch(err => {
