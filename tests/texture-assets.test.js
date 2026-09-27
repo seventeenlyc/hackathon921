@@ -6,30 +6,30 @@ const crypto = require('crypto');
 const projectRoot = path.resolve(__dirname, '..');
 
 const textureFiles = [
-  'src/assets/entities/enemies/simple.png',
-  'src/assets/entities/enemies/fast.png',
-  'src/assets/entities/enemies/armored.png',
-  'src/assets/entities/enemies/healer.png',
-  'src/assets/entities/enemies/boss.png',
-  'src/assets/entities/towers/canon.png',
-  'src/assets/entities/towers/gatling.png',
-  'src/assets/entities/towers/slow.png',
-  'src/assets/entities/towers/sniper.png',
-  'src/assets/entities/towers/laser.png',
-  'src/assets/entities/home/home.png',
-  'src/assets/entities/home/enermy.png',
+  'src/assets/entities/enemies/simple.webp',
+  'src/assets/entities/enemies/fast.webp',
+  'src/assets/entities/enemies/armored.webp',
+  'src/assets/entities/enemies/healer.webp',
+  'src/assets/entities/enemies/boss.webp',
+  'src/assets/entities/towers/canon.webp',
+  'src/assets/entities/towers/gatling.webp',
+  'src/assets/entities/towers/slow.webp',
+  'src/assets/entities/towers/sniper.webp',
+  'src/assets/entities/towers/laser.webp',
+  'src/assets/entities/home/home.webp',
+  'src/assets/entities/home/enermy.webp',
   'src/assets/obstacles/obstacle_01.png',
   'src/assets/obstacles/obstacle_02.png',
   'src/assets/obstacles/obstacle_03.png',
   'src/assets/obstacles/obstacle_04.png',
   'src/assets/obstacles/obstacle_05.png',
   'src/assets/obstacles/obstacle_06.png',
-  'src/assets/obstacles/tianji-rock.png'
+  'src/assets/obstacles/tianji-rock.webp'
 ];
 
 for (const role of ['simple', 'fast', 'armored', 'healer', 'boss']) {
   for (const direction of ['right', 'down', 'left']) {
-    textureFiles.push('src/assets/entities/enemies/' + role + '-' + direction + '.png');
+    textureFiles.push('src/assets/entities/enemies/' + role + '-' + direction + '.webp');
   }
 }
 
@@ -40,15 +40,9 @@ const renderers = [
   'src/entities/terrain/Rock.ts'
 ];
 
-// Read the IHDR chunk (PNG bytes 16..24) so a degenerate / zero-byte file is
-// caught here rather than turning into a silent missing-texture at runtime.
-function readPngSize(relativePath) {
-  const buffer = fs.readFileSync(path.join(projectRoot, relativePath));
-  assert.ok(buffer.length >= 24 && buffer.subarray(12, 16).toString('ascii') === 'IHDR',
-    `${relativePath} is not a valid PNG`);
-  const width = buffer.readUInt32BE(16);
-  const height = buffer.readUInt32BE(20);
-  return {width, height};
+const {readRasterSize} = require('./helpers/raster-size');
+function readTextureSize(relativePath) {
+  return readRasterSize(fs.readFileSync(path.join(projectRoot, relativePath)));
 }
 
 for (const relativePath of textureFiles) {
@@ -59,8 +53,8 @@ for (const relativePath of textureFiles) {
   if (relativePath.startsWith('src/assets/entities/towers/') ||
       relativePath.startsWith('src/assets/entities/enemies/') ||
       relativePath.startsWith('src/assets/obstacles/')) {
-    const {width, height} = readPngSize(relativePath);
-    assert.ok(width > 0 && height > 0, `${relativePath} has a degenerate PNG size`);
+    const {width, height} = readTextureSize(relativePath);
+    assert.ok(width > 0 && height > 0, `${relativePath} has a degenerate raster size`);
   }
 }
 
@@ -82,9 +76,9 @@ const sprites = [
 const texturePathsSource = fs.readFileSync(path.join(projectRoot, 'src/tools/texturePaths.ts'), 'utf8');
 const hashes = new Set();
 for (const [group, role, entity, imported, width, height] of sprites) {
-  const relativePath = `src/assets/entities/${group}/${role}.png`;
-  assert.deepEqual(readPngSize(relativePath), {width, height}, `Wrong art for ${group}.${role}`);
-  assert.ok(texturePathsSource.includes(`import ${imported} from '../assets/entities/${group}/${role}.png'`),
+  const relativePath = `src/assets/entities/${group}/${role}.webp`;
+  assert.deepEqual(readTextureSize(relativePath), {width, height}, `Wrong art for ${group}.${role}`);
+  assert.ok(texturePathsSource.includes(`import ${imported} from '../assets/entities/${group}/${role}.webp'`),
     `${group}.${role} must import its named runtime sprite`);
   assert.ok(texturePathsSource.includes(`${role}: ${imported}`),
     `${group}.${role} must bind its named runtime sprite`);
@@ -99,8 +93,8 @@ assert.equal(hashes.size, 10, 'expected ten distinct runtime sprites');
 
 for (const role of ['simple', 'fast', 'armored', 'healer', 'boss']) {
   for (const direction of ['right', 'down', 'left']) {
-    const relativePath = `src/assets/entities/enemies/${role}-${direction}.png`;
-    assert.deepEqual(readPngSize(relativePath), {width: 1254, height: 1254});
+    const relativePath = `src/assets/entities/enemies/${role}-${direction}.webp`;
+    assert.deepEqual(readTextureSize(relativePath), {width: 1254, height: 1254});
     const hash = crypto.createHash('sha256').update(fs.readFileSync(path.join(projectRoot, relativePath))).digest('hex');
     assert.ok(!hashes.has(hash), `Duplicate direction art: ${relativePath}`);
     hashes.add(hash);
@@ -128,14 +122,32 @@ function listFilesRecursively(directory) {
 }
 
 const distFiles = listFilesRecursively(path.join(projectRoot, 'dist')).map(file => path.basename(file));
+// Keep the compression savings and the complete deployed runtime set reviewable.
+const compression = JSON.parse(fs.readFileSync(path.join(projectRoot, 'docs/texture-compression.json'), 'utf8'));
+assert.equal(compression.assets.length, 36);
+assert.ok(compression.bytes < compression.sourceBytes * 0.75, 'lossless runtime assets must save at least 25%');
+let totalBytes = 0;
+for (const asset of compression.assets) {
+  const bytes = fs.readFileSync(path.join(projectRoot, asset.path));
+  assert.equal(bytes.length, asset.bytes, `Size changed: ${asset.path}`);
+  assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'), asset.sha256);
+  assert.deepEqual(readRasterSize(bytes), {width: asset.width, height: asset.height});
+  assert.ok(!fs.existsSync(path.join(projectRoot, asset.source)), 'do not ship duplicate source PNGs');
+  const base = path.basename(asset.path, '.webp');
+  assert.ok(distFiles.some(file => file.endsWith('.webp') && file.startsWith(base + '-')), `Missing built asset: ${asset.path}`);
+  assert.ok(!distFiles.some(file => file.endsWith('.png') && file.startsWith(base + '-')), `Duplicate PNG in build: ${asset.source}`);
+  totalBytes += bytes.length;
+}
+assert.equal(totalBytes, compression.bytes);
+
 for (const relativePath of textureFiles) {
   const fileName = path.basename(relativePath, path.extname(relativePath));
   assert.ok(
     distFiles.some(
       file =>
-        file.endsWith('.png') && (file === `${fileName}.png` || file.startsWith(`${fileName}-`))
+        file.endsWith(path.extname(relativePath)) && (file === `${fileName}${path.extname(relativePath)}` || file.startsWith(`${fileName}-`))
     ),
-    `Bundled build is missing texture: ${fileName}.png`
+    `Bundled build is missing texture: ${fileName}.webp`
   );
 }
 

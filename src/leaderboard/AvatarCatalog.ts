@@ -5,7 +5,7 @@
  * leaderboard and server validation can treat them as an enumerated set.
  *
  * Deliberately pure (no image imports): headless tests transpile this module
- * directly. The PNG URL mapping lives in avatarAssets.ts.
+ * directly. The WebP URL mapping lives in avatarAssets.ts.
  */
 
 export type AvatarId =
