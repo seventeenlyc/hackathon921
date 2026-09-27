@@ -76,11 +76,50 @@ async function test(name, fn) {
         m.beginRun(1);
         m.setRouteExpansion(false);
         assert.equal(first.playCount, 1);
+        const firstSrc = first.src;
         first.end();
         const next = c.at(-1);
-        assert.notEqual(next.src, first.src);
+        assert.notEqual(next.src, firstSrc);
+        const nextSrc = next.src;
         next.end();
-        assert.notEqual(c.at(-1).src, next.src);
+        assert.notEqual(c.at(-1).src, nextSrc);
+    });
+    await test('battle playlist reuses the permitted media element across repeated track endings', async () => {
+        const created = [];
+        let permitted = null;
+        const m = new AudioManager(src => {
+            const a = new FakeAudio(src);
+            a.play = () => {
+                a.playCount++;
+                return permitted === a ? Promise.resolve() : Promise.reject({name: 'NotAllowedError'});
+            };
+            created.push(a);
+            return a;
+        }, {random: () => 0});
+        m.beginRun(1);
+        m.setRouteExpansion(false);
+        await Promise.resolve();
+        permitted = created[0];
+        m.unlock();
+        for (let i = 0; i < 8; i++) {
+            const previousSrc = permitted.src;
+            permitted.currentTime = 180;
+            permitted.end();
+            await Promise.resolve();
+            assert.equal(created.length, 1, 'next track must retain media playback permission');
+            assert.notEqual(permitted.src, previousSrc);
+            assert.equal(permitted.currentTime, 0);
+            assert.equal(m.musicPlaying, true);
+        }
+        m.setMuted(true);
+        permitted.end();
+        const count = permitted.playCount;
+        m.setMuted(false);
+        assert.equal(permitted.playCount, count + 1);
+        m.playGameOver();
+        const total = created.length;
+        permitted.end();
+        assert.equal(created.length, total, 'ended run must not restart playlist');
     });
     await test('Route expansion transition cuts immediately and repeated wave notifications preserve position', () => {
         const { manager: m, created: c } = fixture();

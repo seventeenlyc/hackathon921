@@ -1,4 +1,5 @@
 export interface AudioLike {
+    src: string;
     loop: boolean;
     currentTime: number;
     volume: number;
@@ -143,14 +144,17 @@ export class AudioManager {
         if (phase !== this.musicPhase) this.changeMusic(phase);
     }
 
-    private changeMusic(phase: typeof this.musicPhase): void {
+    private changeMusic(phase: typeof this.musicPhase, continuePlaylist = false): void {
         const previous = this.music;
         this.music = null;
         this.musicPlaying = false;
         if (previous) {
             previous.onended = null;
             previous.onerror = null;
-            try { previous.pause(); previous.remove?.(); } catch { /* audio cannot block simulation */ }
+            try {
+                previous.pause();
+                if (!continuePlaylist) previous.remove?.();
+            } catch { /* audio cannot block simulation */ }
         }
         this.musicPhase = phase;
         if (phase === 'ended') return;
@@ -163,12 +167,19 @@ export class AudioManager {
             this.lastFight = name;
         }
         try {
-            const audio = this.factory(`/audio/background/${name}.mp3`);
+            const src = `/audio/background/${name}.mp3`;
+            // Keep the user-authorized media element when advancing the playlist.
+            // Some browsers require a new gesture for each newly created element.
+            const audio = continuePlaylist && previous ? previous : this.factory(src);
+            if (continuePlaylist && previous) {
+                audio.src = src;
+                audio.currentTime = 0;
+            }
             this.music = audio;
             audio.loop = phase !== 'fight';
             audio.volume = 0.24 * this.masterVolume;
             audio.onended = () => {
-                if (this.music === audio && this.musicPhase === 'fight') this.changeMusic('fight');
+                if (this.music === audio && this.musicPhase === 'fight') this.changeMusic('fight', true);
             };
             audio.onerror = () => { if (this.music === audio) this.musicPlaying = false; };
             this.syncMusic();
