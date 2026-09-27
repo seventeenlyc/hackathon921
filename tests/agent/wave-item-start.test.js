@@ -26,7 +26,7 @@ function loadWaveManager(dependencies) {
     return moduleObj.exports.waveManager;
 }
 
-async function main() {
+async function checkRoutes(expand) {
     const order = [];
     let waveManager;
     class Enemy {
@@ -42,7 +42,7 @@ async function main() {
         './entities/enemies/BossEnemy': {BossEnemy: Enemy},
         './Map': {map: {
             enemyBases: [{name: 'north'}, {name: 'south'}],
-            setSpawnCount() {},
+            setSpawnCount() { if (expand) this.enemyBases.push({name: 'east'}); },
         }},
         './tools/helphers': {rand: () => 0},
         './agent/SpawnRoutes': {spawnCountForWave: () => 1},
@@ -67,10 +67,13 @@ async function main() {
 
     waveManager.waveCounter = 1;
     waveManager.setPlanner({plan: async () => { order.push('plan'); }});
-    waveManager.onWaveStarted = wave => order.push(`started:${wave}`);
+    waveManager.onWaveStarted = (wave, expanded) => {
+        assert.strictEqual(expanded, expand, 'music trigger follows actual added routes');
+        order.push(`started:${wave}`);
+    };
     await waveManager.start();
 
-    assert.deepStrictEqual(order.slice(0, 5), [
+    assert.deepStrictEqual(order.filter(item => item !== 'spawn:east').slice(0, 5), [
         'planning',
         'plan',
         'spawn:north',
@@ -81,7 +84,7 @@ async function main() {
     console.log('Wave item start timing passed.');
 }
 
-main().catch(error => {
+Promise.resolve().then(() => checkRoutes(false)).then(() => checkRoutes(true)).catch(error => {
     console.error(error);
     process.exitCode = 1;
 });

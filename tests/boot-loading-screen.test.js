@@ -32,12 +32,16 @@ const compiled = ts.transpileModule(source, {
 for (const readyState of ['complete', 'loading']) for (const mode of ['ai', 'human']) {
     const events = [];
     let onDOMContentLoaded;
+    const gestures = {};
     const document = {
         readyState,
         documentElement: {classList: {add: className => events.push(className)}},
         addEventListener: (name, callback) => {
-            assert.equal(name, 'DOMContentLoaded');
-            onDOMContentLoaded = callback;
+            if (name === 'DOMContentLoaded') onDOMContentLoaded = callback;
+            else {
+                assert.ok(['pointerdown', 'keydown'].includes(name));
+                gestures[name] = callback;
+            }
         },
     };
     let gate;
@@ -53,7 +57,7 @@ for (const readyState of ['complete', 'loading']) for (const mode of ['ai', 'hum
         './leaderboard/SessionIdentity': {clearLegacyUsernameCookie() {}, getSessionAvatar() {}},
         './leaderboard/LeaderboardClient': {ensureSessionToken() { events.push('session'); }},
         './PlayMode': {playMode: mode},
-        './AudioManager': {audioManager: {startMusic() { events.push('music-start'); }}},
+        './AudioManager': {audioManager: {unlock() { events.push('music-start'); }}},
     };
     vm.runInNewContext(compiled, {
         exports: {}, document,
@@ -72,7 +76,11 @@ for (const readyState of ['complete', 'loading']) for (const mode of ['ai', 'hum
     gate.confirm('Alice');
     assert.deepEqual(events, ['gate-shown', 'app-ready', 'session', 'refresh',
         ...(mode === 'human' ? [['human-run', 'Alice']] : [])],
-    'confirming a nickname must not start music; human mode starts its actual run');
+    'confirming a nickname alone must not unlock audio; human mode starts its actual run');
+    gestures.keydown({repeat: true});
+    assert.notEqual(events.at(-1), 'music-start');
+    gestures.pointerdown();
+    assert.equal(events.at(-1), 'music-start');
 }
 console.log('  ok  nickname confirmation remains silent in both modes and DOM states');
 console.log('All boot loading screen tests passed.');

@@ -69,7 +69,8 @@ class Game {
         // Human-mode runs are not leaderboard entries: the board compares AI
         // strategies, so a hand-played wave would not be comparable (see §9).
         waveManager.onWaveReached = wave => this.recordReachedWave(wave);
-        waveManager.onWaveStarted = wave => {
+        waveManager.onWaveStarted = (wave, routesExpanded) => {
+            audioManager.setRouteExpansion(routesExpanded);
             for (const item of battlefield.takePendingModelItems()) {
                 const result = actions.useItem(item);
                 decisionLog.add({

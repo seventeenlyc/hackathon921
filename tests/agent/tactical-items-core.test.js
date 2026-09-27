@@ -448,7 +448,7 @@ assert.match(battlefieldSource, /return requestModelItem\(item, tacticalItemsCon
     'the concrete battlefield must delegate to the tested production request seam');
 assert.match(battlefieldSource, /takePendingModelItems\(\)/,
     'the concrete battlefield must expose pending requests for the wave-start engine hook');
-assert.match(gameSource, /waveManager\.onWaveStarted = wave =>/,
+assert.match(gameSource, /waveManager\.onWaveStarted = \(wave, routesExpanded\) =>/,
     'the game must execute pending requests from the engine wave-start event');
 assert.match(gameSource, /for \(const item of battlefield\.takePendingModelItems\(\)\)/,
     'the wave-start handler must drain each queued item exactly once');
