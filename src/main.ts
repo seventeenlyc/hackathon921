@@ -33,6 +33,7 @@ const revealGame = () => {
     document.addEventListener('pointerdown', () => audioManager.unlock());
     document.addEventListener('keydown', event => { if (!event.repeat) audioManager.unlock(); });
     gate.show();
+    audioManager.startSelection();
     // The game shell must never flash unstyled before its JS-imported Less and
     // username gate have initialized. The inline boot screen owns that interval.
     document.documentElement.classList.add('app-ready');

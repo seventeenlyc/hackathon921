@@ -43,23 +43,38 @@ async function test(name, fn) {
     }
 }
 (async () => {
-    await test('selection waits for interaction and loops without stacking', () => {
+    await test('selection starts on page reveal and loops without stacking', () => {
         const { manager: m, created: c } = fixture();
         assert.equal(c.length, 0);
-        m.unlock();
+        m.startSelection();
         assert.equal(c[0].src, '/audio/background/selected.mp3');
         assert.equal(c[0].loop, true);
         m.unlock();
         assert.equal(c[0].playCount, 1);
     });
+    await test('run start preserves selection until the first actual enemy spawn', () => {
+        const {manager: m, created: c} = fixture();
+        m.startSelection();
+        const selected = c[0];
+        selected.currentTime = 12;
+        m.beginRun(1);
+        assert.equal(c.length, 1);
+        assert.equal(selected.pauseCount, 0);
+        assert.equal(selected.currentTime, 12);
+        m.setRouteExpansion(false);
+        assert.equal(selected.pauseCount, 1);
+        assert.ok(c.at(-1).src.includes('fight'));
+    });
     await test('normal battle rotates distinct tracks without consecutive repeats', () => {
         const { manager: m, created: c } = fixture();
         m.unlock();
         m.beginRun(1);
+        m.setRouteExpansion(false);
         const first = c.at(-1);
         assert.ok(first.src.includes('fight'));
         assert.ok(c[0].pauseCount);
         m.beginRun(1);
+        m.setRouteExpansion(false);
         assert.equal(first.playCount, 1);
         first.end();
         const next = c.at(-1);
@@ -70,6 +85,7 @@ async function test(name, fn) {
     await test('Route expansion transition cuts immediately and repeated wave notifications preserve position', () => {
         const { manager: m, created: c } = fixture();
         m.beginRun(1);
+        m.setRouteExpansion(false);
         const fight = c.at(-1);
         m.setRouteExpansion(true);
         const boss = c.at(-1);
@@ -89,6 +105,7 @@ async function test(name, fn) {
     await test('pause mute and hidden tab resume one track at its existing position', () => {
         const { manager: m, created: c, visibility: v } = fixture();
         m.beginRun(1);
+        m.setRouteExpansion(false);
         const music = c[0];
         music.currentTime = 23;
         for (const method of ['setPaused', 'setMuted']) {
@@ -110,6 +127,7 @@ async function test(name, fn) {
     await test('wave cue does not stack; game over stops music and plays cue once', () => {
         const { manager: m, created: c } = fixture();
         m.beginRun(1);
+        m.setRouteExpansion(false);
         m.playWaveReached();
         const wave = c.at(-1);
         m.playWaveReached();
@@ -129,6 +147,7 @@ async function test(name, fn) {
     await test('volume clamps and scales music and cues', () => {
         const { manager: m, created: c } = fixture();
         m.beginRun(1);
+        m.setRouteExpansion(false);
         m.playWaveReached();
         m.setVolume(.5);
         assert.equal(c[0].volume, .24 * .5);
@@ -174,6 +193,7 @@ async function test(name, fn) {
         m.setMuted(true);
         m.unlock();
         m.beginRun(1);
+        m.setRouteExpansion(false);
         assert.ok(c.every(a => a.playCount === 0));
         m.setMuted(false);
         assert.equal(c.at(-1).playCount, 1);
@@ -181,6 +201,7 @@ async function test(name, fn) {
     await test('cue failure releases its latch and pause/mute/visibility suppress cues', async () => {
         const { manager: m, created: c, visibility: v } = fixture();
         m.beginRun(1);
+        m.setRouteExpansion(false);
         m.playWaveReached();
         const cue = c.at(-1);
         cue.onerror();
@@ -202,6 +223,7 @@ async function test(name, fn) {
         v.hidden = false;
         v.listener();
         m.beginRun(1);
+        m.setRouteExpansion(false);
         m.playGameOver();
         assert.equal(c.at(-1).src, '/audio/game-over.wav');
         assert.equal(c.at(-1).playCount, 1);

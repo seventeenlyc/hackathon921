@@ -6,6 +6,7 @@ export interface AudioLike {
     onerror: HTMLAudioElement['onerror'];
     play(): void | Promise<void>;
     pause(): void;
+    remove?(): void;
 }
 
 export type AudioFactory = (src: string) => AudioLike;
@@ -54,7 +55,7 @@ export class AudioManager {
         this.gameOverPlayed = false;
         this.paused = false;
         this.runActive = true;
-        this.changeMusic('fight');
+        if (this.musicPhase === 'ended') this.musicPhase = 'selection';
     }
 
     /** PAUSED freezes audio, but PLANNING is still part of the live run. */
@@ -122,6 +123,13 @@ export class AudioManager {
         if (this.gameOver) this.gameOver.volume = 0.2 * this.masterVolume;
     }
 
+    /** Attempt autoplay when the selection page opens, before any player interaction. */
+    startSelection(): void {
+        if (this.musicPhase !== 'selection') return;
+        if (!this.music) this.changeMusic('selection');
+        else this.syncMusic();
+    }
+
     /** Retry blocked autoplay only on a player gesture; never restart a playing track. */
     unlock(): void {
         if (!this.music && this.musicPhase === 'selection') this.changeMusic('selection');
@@ -142,7 +150,7 @@ export class AudioManager {
         if (previous) {
             previous.onended = null;
             previous.onerror = null;
-            try { previous.pause(); } catch { /* audio cannot block simulation */ }
+            try { previous.pause(); previous.remove?.(); } catch { /* audio cannot block simulation */ }
         }
         this.musicPhase = phase;
         if (phase === 'ended') return;
@@ -182,7 +190,13 @@ export class AudioManager {
         try {
             const result = audio.play();
             if (result && typeof result.catch === 'function') {
-                void result.catch(() => { if (this.music === audio) this.musicPlaying = false; });
+                void result.catch(error => {
+                    if (this.music !== audio) return;
+                    this.musicPlaying = false;
+                    if (error?.name === 'NotAllowedError') {
+                        console.debug('Background music autoplay blocked by browser; waiting for user interaction.');
+                    }
+                });
             }
         } catch { this.musicPlaying = false; }
     }
@@ -219,7 +233,11 @@ export class AudioManager {
 }
 
 function defaultAudioFactory(src: string): AudioLike {
-    return new Audio(src);
+    const audio = new Audio(src);
+    audio.hidden = true;
+    // Attach media to the page for browser lifecycle and playback inspection.
+    document.body?.append(audio);
+    return audio;
 }
 
 export const audioManager = new AudioManager();
