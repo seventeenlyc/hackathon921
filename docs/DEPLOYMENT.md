@@ -177,4 +177,4 @@ PR 与部署是两个独立的 workflow：PR 上跑 `CI`，合并到 `main` 才�
 
 当前线上版本已具备 AI 决策代理和运行时。issue #6 的 P0 验证（两个不同 Prompt 产生可见不同的 AI 行为）仍未通过，不能据此宣称验证完成。
 
-天机阵头像和运行时贴图使用无损 WebP，通过 Vite 静态 import 产生哈希 URL；部署需完整上传 `dist/assets/`，不要按 PNG 扩展名筛选资源。36 张转换素材的体积和哈希记录见 `docs/texture-compression.json`。
+天机阵头像和运行时贴图使用缩放后的有损 WebP，通过 Vite 静态 import 产生哈希 URL；部署需完整上传 `dist/assets/`，不要按 PNG 扩展名筛选资源。42 张转换素材的体积和哈希记录见 `docs/texture-compression.json`。

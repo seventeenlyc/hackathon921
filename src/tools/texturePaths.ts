@@ -18,12 +18,12 @@ import sniperTower from '../assets/entities/towers/sniper.webp';
 import homeBase from '../assets/entities/home/home.webp';
 import enemyBase from '../assets/entities/home/enermy.webp';
 import tianjiRock from '../assets/obstacles/tianji-rock.webp';
-import obstacle1 from '../assets/obstacles/obstacle_01.png';
-import obstacle2 from '../assets/obstacles/obstacle_02.png';
-import obstacle3 from '../assets/obstacles/obstacle_03.png';
-import obstacle4 from '../assets/obstacles/obstacle_04.png';
-import obstacle5 from '../assets/obstacles/obstacle_05.png';
-import obstacle6 from '../assets/obstacles/obstacle_06.png';
+import obstacle1 from '../assets/obstacles/obstacle_01.webp';
+import obstacle2 from '../assets/obstacles/obstacle_02.webp';
+import obstacle3 from '../assets/obstacles/obstacle_03.webp';
+import obstacle4 from '../assets/obstacles/obstacle_04.webp';
+import obstacle5 from '../assets/obstacles/obstacle_05.webp';
+import obstacle6 from '../assets/obstacles/obstacle_06.webp';
 
 import simpleEnemyRight from '../assets/entities/enemies/simple-right.webp';
 import simpleEnemyDown from '../assets/entities/enemies/simple-down.webp';
