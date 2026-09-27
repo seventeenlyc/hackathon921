@@ -12,6 +12,8 @@ import {textureManager} from "../../tools/TextureManager";
 export abstract class Enemy extends Renderable implements Point {
     protected static readonly TEXTURE_SIZE_SCALE = 1.15;
     abstract texturePath: string;
+    textureDirections?: Record<'up' | 'right' | 'down' | 'left', string>;
+    private facing: 'up' | 'right' | 'down' | 'left' = 'up';
     abstract speed: number;
     abstract life: number;
     abstract cash: number;
@@ -54,6 +56,8 @@ export abstract class Enemy extends Renderable implements Point {
             const target = this.path[this.targetIndex];
 
             if (target) {
+                const previousX = this.x;
+                const previousY = this.y;
                 const angle = Math.atan2(target.y - this.y, target.x - this.x);
                 const nearEqualX = this.x >= target.x - this.speed && this.x <= target.x + this.speed;
                 const nearEqualY = this.y >= target.y - this.speed && this.y <= target.y + this.speed;
@@ -68,6 +72,16 @@ export abstract class Enemy extends Renderable implements Point {
                     this.y += Math.sin(angle) * this.speed;
                 } else {
                     this.y = target.y
+                }
+
+                // Facing follows actual displacement, including snaps to a path
+                // node. Idle enemies retain their last direction.
+                const dx = this.x - previousX;
+                const dy = this.y - previousY;
+                if (dx !== 0 || dy !== 0) {
+                    this.facing = Math.abs(dx) >= Math.abs(dy)
+                        ? (dx > 0 ? 'right' : 'left')
+                        : (dy > 0 ? 'down' : 'up');
                 }
 
                 if (nearEqualX && nearEqualY) {
@@ -93,7 +107,12 @@ export abstract class Enemy extends Renderable implements Point {
     draw(ctx: CanvasRenderingContext2D): void {
         this.effects.forEach(e => e.draw(ctx));
 
-        textureManager.draw(ctx, this.texturePath, this.x, this.y, this.textureSize, this.textureSize);
+        const sprite = this.textureDirections?.[this.facing] ?? this.texturePath;
+        const drawn = textureManager.draw(ctx, sprite, this.x, this.y, this.textureSize, this.textureSize);
+        // Keep the entity visible while a newly selected direction loads.
+        if (!drawn && sprite !== this.texturePath) {
+            textureManager.draw(ctx, this.texturePath, this.x, this.y, this.textureSize, this.textureSize);
+        }
 
         if (this.damageTaken > 0) {
             this.drawHealthBar(ctx);

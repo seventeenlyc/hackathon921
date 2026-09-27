@@ -23,8 +23,15 @@ const textureFiles = [
   'src/assets/obstacles/obstacle_03.png',
   'src/assets/obstacles/obstacle_04.png',
   'src/assets/obstacles/obstacle_05.png',
-  'src/assets/obstacles/obstacle_06.png'
+  'src/assets/obstacles/obstacle_06.png',
+  'src/assets/obstacles/tianji-rock.png'
 ];
+
+for (const role of ['simple', 'fast', 'armored', 'healer', 'boss']) {
+  for (const direction of ['right', 'down', 'left']) {
+    textureFiles.push('src/assets/entities/enemies/' + role + '-' + direction + '.png');
+  }
+}
 
 const renderers = [
   'src/entities/enemies/Enemy.ts',
@@ -60,17 +67,17 @@ for (const relativePath of textureFiles) {
 // Keep source-design → runtime-role mappings and distinctness pinned (issue #67).
 const sprites = [
   // Source: tower art in catalogue order.
-  ['towers', 'canon', 'CanonTower', 'canonTower', 1203, 1213],
-  ['towers', 'gatling', 'GatlingTower', 'gatlingTower', 1203, 1213],
-  ['towers', 'slow', 'SlowTower', 'slowTower', 1203, 1213],
-  ['towers', 'sniper', 'SniperTower', 'sniperTower', 1203, 1213],
-  ['towers', 'laser', 'LaserTower', 'laserTower', 1203, 1213],
+  ['towers', 'canon', 'CanonTower', 'canonTower', 1254, 1254],
+  ['towers', 'gatling', 'GatlingTower', 'gatlingTower', 1254, 1254],
+  ['towers', 'slow', 'SlowTower', 'slowTower', 1254, 1254],
+  ['towers', 'sniper', 'SniperTower', 'sniperTower', 1254, 1254],
+  ['towers', 'laser', 'LaserTower', 'laserTower', 1254, 1254],
   // Source: enemy art in catalogue order.
-  ['enemies', 'simple', 'SimpleEnemy', 'simpleEnemy', 1203, 1213],
-  ['enemies', 'fast', 'FastEnemy', 'fastEnemy', 1203, 1213],
-  ['enemies', 'armored', 'ArmoredEnemy', 'armoredEnemy', 1203, 1213],
-  ['enemies', 'healer', 'HealerEnemy', 'healerEnemy', 1203, 1213],
-  ['enemies', 'boss', 'BossEnemy', 'bossEnemy', 1203, 1213]
+  ['enemies', 'simple', 'SimpleEnemy', 'simpleEnemy', 1254, 1254],
+  ['enemies', 'fast', 'FastEnemy', 'fastEnemy', 1254, 1254],
+  ['enemies', 'armored', 'ArmoredEnemy', 'armoredEnemy', 1254, 1254],
+  ['enemies', 'healer', 'HealerEnemy', 'healerEnemy', 1254, 1254],
+  ['enemies', 'boss', 'BossEnemy', 'bossEnemy', 1254, 1254]
 ];
 const texturePathsSource = fs.readFileSync(path.join(projectRoot, 'src/tools/texturePaths.ts'), 'utf8');
 const hashes = new Set();
@@ -89,6 +96,17 @@ for (const [group, role, entity, imported, width, height] of sprites) {
   hashes.add(hash);
 }
 assert.equal(hashes.size, 10, 'expected ten distinct runtime sprites');
+
+for (const role of ['simple', 'fast', 'armored', 'healer', 'boss']) {
+  for (const direction of ['right', 'down', 'left']) {
+    const relativePath = `src/assets/entities/enemies/${role}-${direction}.png`;
+    assert.deepEqual(readPngSize(relativePath), {width: 1254, height: 1254});
+    const hash = crypto.createHash('sha256').update(fs.readFileSync(path.join(projectRoot, relativePath))).digest('hex');
+    assert.ok(!hashes.has(hash), `Duplicate direction art: ${relativePath}`);
+    hashes.add(hash);
+  }
+}
+assert.equal(hashes.size, 25, 'five towers and twenty distinct enemy direction sprites');
 
 for (const relativePath of renderers) {
   const source = fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');

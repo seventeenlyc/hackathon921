@@ -9,10 +9,10 @@ const texturePaths = Object.fromEntries(
 );
 // The forward muzzle direction in each source PNG, measured from the sprite center.
 const muzzleAngles = {
-    canon: Math.atan2(36.5, 38.5),
-    gatling: Math.atan2(35, 76.5),
-    sniper: Math.atan2(10.5, 103),
-    laser: Math.atan2(39.5, 57.5),
+    canon: -Math.PI / 2,
+    gatling: -Math.PI / 2,
+    sniper: -Math.PI / 2,
+    laser: -Math.PI / 2,
 };
 const shots = [];
 

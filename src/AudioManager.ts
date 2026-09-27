@@ -6,12 +6,14 @@ export interface AudioLike {
     onerror: HTMLAudioElement['onerror'];
     play(): void | Promise<void>;
     pause(): void;
+    remove?(): void;
 }
 
 export type AudioFactory = (src: string) => AudioLike;
 
 interface AudioEnvironment {
     visibility?: Pick<Document, 'hidden' | 'addEventListener'>;
+    random?: () => number;
 }
 
 const AUDIO_PATHS = {
@@ -19,8 +21,7 @@ const AUDIO_PATHS = {
     gameOver: '/audio/game-over.wav',
 } as const;
 
-// BGM was removed with the licensed demo tracks (2026-09-25 de-branding);
-// only the two locally generated WAV cues remain.
+const FIGHT_TRACKS = ['fight1', 'fight2', 'fight3'] as const;
 /** Optional, non-blocking audio state; the game engine owns every wave and tick. */
 export class AudioManager {
     private readonly visibility?: AudioEnvironment['visibility'];
@@ -32,11 +33,17 @@ export class AudioManager {
     private gameOverPlayed = false;
     private waveActive = false;
     private masterVolume = 1;
+    private music: AudioLike | null = null;
+    private musicPlaying = false;
+    private musicPhase: 'selection' | 'fight' | 'boss' | 'ended' = 'selection';
+    private lastFight = '';
+    private readonly random: () => number;
 
     constructor(
         private readonly factory: AudioFactory = defaultAudioFactory,
         environment: AudioEnvironment = {},
     ) {
+        this.random = environment.random ?? Math.random;
         this.visibility = environment.visibility ?? (typeof document === 'undefined' ? undefined : document);
         this.visibility?.addEventListener('visibilitychange', () => this.onVisibilityChange());
     }
@@ -48,6 +55,7 @@ export class AudioManager {
         this.gameOverPlayed = false;
         this.paused = false;
         this.runActive = true;
+        if (this.musicPhase === 'ended') this.musicPhase = 'selection';
     }
 
     /** PAUSED freezes audio, but PLANNING is still part of the live run. */
@@ -55,6 +63,7 @@ export class AudioManager {
         if (this.paused === paused) return;
         this.paused = paused;
         if (paused) this.pauseCues();
+        this.syncMusic();
     }
 
     playWaveReached(): void {
@@ -79,6 +88,7 @@ export class AudioManager {
     playGameOver(): void {
         if (this.gameOverPlayed) return;
         this.runActive = false;
+        this.changeMusic('ended');
         this.gameOverPlayed = true;
         this.pauseCues();
         if (this.muted || this.visibility?.hidden) return;
@@ -100,6 +110,7 @@ export class AudioManager {
         if (this.muted === muted) return;
         this.muted = muted;
         if (muted) this.pauseCues();
+        this.syncMusic();
     }
 
     isMuted(): boolean { return this.muted; }
@@ -107,8 +118,87 @@ export class AudioManager {
     setVolume(volume: number): void {
         if (!Number.isFinite(volume)) return;
         this.masterVolume = Math.max(0, Math.min(1, volume));
+        if (this.music) this.music.volume = 0.24 * this.masterVolume;
         if (this.wave) this.wave.volume = 0.18 * this.masterVolume;
         if (this.gameOver) this.gameOver.volume = 0.2 * this.masterVolume;
+    }
+
+    /** Attempt autoplay when the selection page opens, before any player interaction. */
+    startSelection(): void {
+        if (this.musicPhase !== 'selection') return;
+        if (!this.music) this.changeMusic('selection');
+        else this.syncMusic();
+    }
+
+    /** Retry blocked autoplay only on a player gesture; never restart a playing track. */
+    unlock(): void {
+        if (!this.music && this.musicPhase === 'selection') this.changeMusic('selection');
+        else this.syncMusic();
+    }
+
+    /** The engine reports whether this wave actually added attack routes. */
+    setRouteExpansion(expanded: boolean): void {
+        if (!this.runActive) return;
+        const phase = expanded ? 'boss' : 'fight';
+        if (phase !== this.musicPhase) this.changeMusic(phase);
+    }
+
+    private changeMusic(phase: typeof this.musicPhase): void {
+        const previous = this.music;
+        this.music = null;
+        this.musicPlaying = false;
+        if (previous) {
+            previous.onended = null;
+            previous.onerror = null;
+            try { previous.pause(); previous.remove?.(); } catch { /* audio cannot block simulation */ }
+        }
+        this.musicPhase = phase;
+        if (phase === 'ended') return;
+        let name: string = phase === 'selection' ? 'selected' : 'boss';
+        if (phase === 'fight') {
+            const choices = FIGHT_TRACKS.filter(track => track !== this.lastFight);
+            const sample = this.random();
+            const index = Number.isFinite(sample) ? Math.min(choices.length - 1, Math.max(0, Math.floor(sample * choices.length))) : 0;
+            name = choices[index];
+            this.lastFight = name;
+        }
+        try {
+            const audio = this.factory(`/audio/background/${name}.mp3`);
+            this.music = audio;
+            audio.loop = phase !== 'fight';
+            audio.volume = 0.24 * this.masterVolume;
+            audio.onended = () => {
+                if (this.music === audio && this.musicPhase === 'fight') this.changeMusic('fight');
+            };
+            audio.onerror = () => { if (this.music === audio) this.musicPlaying = false; };
+            this.syncMusic();
+        } catch { /* missing media is non-fatal */ }
+    }
+
+    private syncMusic(): void {
+        const audio = this.music;
+        if (!audio) return;
+        if (this.paused || this.muted || this.visibility?.hidden) {
+            if (this.musicPlaying) {
+                this.musicPlaying = false;
+                try { audio.pause(); } catch { /* non-fatal */ }
+            }
+            return;
+        }
+        if (this.musicPlaying) return;
+        this.musicPlaying = true;
+        try {
+            const result = audio.play();
+            if (result && typeof result.catch === 'function') {
+                void result.catch(error => {
+                    if (this.music !== audio) return;
+                    this.musicPlaying = false;
+                    if (error?.name === 'NotAllowedError') {
+                        console.debug('Background music autoplay blocked by browser; waiting for user interaction.');
+                    }
+                });
+            }
+        } catch { this.musicPlaying = false; }
     }
 
     private canPlay(): boolean {
@@ -117,6 +207,7 @@ export class AudioManager {
 
     private onVisibilityChange(): void {
         if (this.visibility?.hidden) this.pauseCues();
+        this.syncMusic();
     }
 
     private pauseCues(): void {
@@ -142,7 +233,11 @@ export class AudioManager {
 }
 
 function defaultAudioFactory(src: string): AudioLike {
-    return new Audio(src);
+    const audio = new Audio(src);
+    audio.hidden = true;
+    // Attach media to the page for browser lifecycle and playback inspection.
+    document.body?.append(audio);
+    return audio;
 }
 
 export const audioManager = new AudioManager();

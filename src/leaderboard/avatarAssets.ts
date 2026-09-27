@@ -7,7 +7,7 @@
  * Kept apart from AvatarCatalog so the catalogue stays a pure module that
  * headless tests can load without an image loader.
  *
- * The icons are neutral geometric badges generated for this project (no
+ * The images are original Tian Ji Zhen portraits generated for this project (no
  * third-party artwork).
  */
 import sentinel from '../assets/avatars/01_sentinel.png';

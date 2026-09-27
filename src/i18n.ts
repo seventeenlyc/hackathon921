@@ -24,8 +24,8 @@ interface Entry {
 }
 
 const STRINGS: { [key: string]: Entry } = {
-    'app.title': {zh: 'Prompt Defense — AI 塔防', en: 'Prompt Defense — AI Tower Defense'},
-    'app.name': {zh: 'Prompt Defense', en: 'Prompt Defense'},
+    'app.title': {zh: '天机阵 — Prompt Defense', en: 'Prompt Defense — AI Tower Defense'},
+    'app.name': {zh: '天机阵', en: 'Prompt Defense'},
     'header.subtitle': {zh: 'Prompt 驱动 · AI 塔防', en: 'PROMPT-DRIVEN · AI TOWER DEFENSE'},
 
     // Shell / battlefield UI (previously hardcoded in index.html).
@@ -150,15 +150,15 @@ const STRINGS: { [key: string]: Entry } = {
 
     // Unit display names / descriptions. Display-only: the engine keeps the
     // protocol `name` / `description` fields untranslated for the AI snapshot.
-    'tower.canon.name': {zh: 'Canon 塔', en: 'Canon Tower'},
+    'tower.canon.name': {zh: '震雷符炮', en: 'Canon Tower'},
     'tower.canon.description': {zh: '标准火力塔。部署成本低，适合前期快速建立防线。', en: 'Standard fire-support tower. Low deployment cost, ideal for establishing an early defense.'},
-    'tower.gatling.name': {zh: 'Gatling 塔', en: 'Gatling Tower'},
+    'tower.gatling.name': {zh: '千机剑匣', en: 'Gatling Tower'},
     'tower.gatling.description': {zh: '高速压制火力塔，以持续射击压制密集目标。', en: 'High-rate suppression tower designed for sustained fire against concentrated targets.'},
-    'tower.slow.name': {zh: 'Slower 塔', en: 'Slower Tower'},
+    'tower.slow.name': {zh: '寒玉阵眼', en: 'Slower Tower'},
     'tower.slow.description': {zh: '电子战支援塔，可迟滞敌方单位推进。', en: 'Electronic-warfare support tower capable of slowing hostile advances.'},
-    'tower.sniper.name': {zh: 'Sniper 塔', en: 'Sniper Tower'},
+    'tower.sniper.name': {zh: '穿云神弩', en: 'Sniper Tower'},
     'tower.sniper.description': {zh: '远程精确火力塔。射程和单次火力极高，但射击间隔较长。', en: 'Long-range precision-fire tower. Exceptional range and damage, with a long firing interval.'},
-    'tower.laser.name': {zh: 'Laser 塔', en: 'Laser Tower'},
+    'tower.laser.name': {zh: '紫霄天镜', en: 'Laser Tower'},
     'tower.laser.description': {zh: '定向能火力塔。持续锁定同一目标时，输出会逐步提升。', en: 'Directed-energy tower whose output increases while maintaining lock on the same target.'},
 
     // Runtime-composed unit strings (previously hardcoded in InterfaceManager).
@@ -225,15 +225,15 @@ const STRINGS: { [key: string]: Entry } = {
     'tower.stat.rate': {zh: '射速', en: 'RATE'},
     'tower.stat.range': {zh: '射程', en: 'RANGE'},
     'tower.rateContinuous': {zh: '持续', en: 'CONT.'},
-    'enemy.simple.name': {zh: '基础型', en: 'GRUNT'},
+    'enemy.simple.name': {zh: '铜甲傀儡', en: 'GRUNT'},
     'enemy.simple.desc': {zh: '数量最多的基础敌性单位，成群涌向核心。', en: 'The most common hostile; swarms the core in numbers.'},
-    'enemy.fast.name': {zh: '突袭型', en: 'RUNNER'},
+    'enemy.fast.name': {zh: '赤羽飞梭', en: 'RUNNER'},
     'enemy.fast.desc': {zh: '高速突进型，行动最快，需要提前拦截。', en: 'Fastest mover on the field; intercept it early.'},
-    'enemy.armored.name': {zh: '装甲型', en: 'ARMORED'},
+    'enemy.armored.name': {zh: '玄武重卫', en: 'ARMORED'},
     'enemy.armored.desc': {zh: '重装甲单位，需要集中火力击穿。', en: 'Heavy armor; concentrate fire to break through.'},
-    'enemy.healer.name': {zh: '修复型', en: 'REPAIRER'},
+    'enemy.healer.name': {zh: '续灵灯使', en: 'REPAIRER'},
     'enemy.healer.desc': {zh: '修复周围敌方单位，应当优先排除。', en: 'Repairs nearby hostiles; neutralize it first.'},
-    'enemy.boss.name': {zh: '压制体', en: 'SUPPRESSOR'},
+    'enemy.boss.name': {zh: '噬阵饕餮', en: 'SUPPRESSOR'},
     'enemy.boss.desc': {zh: '高耐久压制单位，突破后威胁最大。', en: 'High-durability suppressor; the gravest threat.'},
 
     // 登录浮窗：文案区分中英文；标题/眉标复用 app.name、header.subtitle、shell.eyebrow 既有 key。
@@ -246,17 +246,17 @@ const STRINGS: { [key: string]: Entry } = {
     'gate.random': {zh: '随机档案', en: 'RANDOM PROFILE'},
     'gate.continue': {zh: '接入系统', en: 'ACCESS'},
     'gate.langToggle': {zh: 'EN', en: '中文'},
-    'gate.footerLeft': {zh: 'Prompt Defense', en: 'PROMPT DEFENSE'},
+    'gate.footerLeft': {zh: '天机阵', en: 'PROMPT DEFENSE'},
     'gate.footerRight': {zh: '指挥链路 // 待机', en: 'COMMAND LINK // STANDBY'},
     'gate.invalid': {zh: '代号无效 — 请输入 1–16 个有效字符。', en: 'INVALID CODENAME — Use 1–16 valid characters.'},
-    'gate.avatar.sentinel': {zh: '哨兵', en: 'SENTINEL'},
-    'gate.avatar.vector': {zh: '矢量', en: 'VECTOR'},
-    'gate.avatar.nexus': {zh: '枢纽', en: 'NEXUS'},
-    'gate.avatar.orbit': {zh: '轨道', en: 'ORBIT'},
-    'gate.avatar.prism': {zh: '棱镜', en: 'PRISM'},
-    'gate.avatar.cipher': {zh: '密文', en: 'CIPHER'},
-    'gate.avatar.atlas': {zh: '擎天', en: 'ATLAS'},
-    'gate.avatar.helix': {zh: '螺旋', en: 'HELIX'},
+    'gate.avatar.sentinel': {zh: '观星', en: 'GUANXING'},
+    'gate.avatar.vector': {zh: '司阵', en: 'SIZHEN'},
+    'gate.avatar.nexus': {zh: '铸甲', en: 'ZHUJIA'},
+    'gate.avatar.orbit': {zh: '飞羽', en: 'FEIYU'},
+    'gate.avatar.prism': {zh: '丹青', en: 'DANQING'},
+    'gate.avatar.cipher': {zh: '照夜', en: 'ZHAOYE'},
+    'gate.avatar.atlas': {zh: '紫微', en: 'ZIWEI'},
+    'gate.avatar.helix': {zh: '灵枢', en: 'LINGSHU'},
 
     // 开发模式（人工 QA）：扳手入口、解锁面板、不计榜提示。
     'dev.wrenchLabel': {zh: '开发模式入口', en: 'Developer mode access'},

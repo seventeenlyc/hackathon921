@@ -47,7 +47,7 @@ class WavesManager {
     public waveCounter = 1
     public looping = true;
     public onWaveReached: ((wave: number) => void) | null = null;
-    public onWaveStarted: ((wave: number) => void) | null = null;
+    public onWaveStarted: ((wave: number, routesExpanded: boolean) => void) | null = null;
     private planner: Planner = idlePlanner;
     private started = false;
     /** Breathing room between waves in human mode; 0 in AI mode. */
@@ -82,7 +82,9 @@ class WavesManager {
 
         while (this.looping) {
             // Apply this wave's routes before planning so the agent sees them.
+            const previousRoutes = map.enemyBases.length;
             map.setSpawnCount(spawnCountForWave(this.waveCounter));
+            const routesExpanded = map.enemyBases.length > previousRoutes;
 
             // Human mode: a fixed pause between waves, since there is no AI think
             // time to create one. It elapses only while stepping, so PAUSE freezes
@@ -123,7 +125,7 @@ class WavesManager {
                     }
                     if (!notifiedWaveStarted && map.enemyBases.length > 0) {
                         notifiedWaveStarted = true;
-                        this.onWaveStarted?.(this.waveCounter);
+                        this.onWaveStarted?.(this.waveCounter, routesExpanded);
                     }
                     await gameLoop.sleep(delay)
                 }

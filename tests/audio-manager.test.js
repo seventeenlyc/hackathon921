@@ -2,179 +2,247 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const ts = require('typescript');
-
-// The licensed demo BGM and its phase/special-track machinery were removed in
-// the 2026-09-25 de-branding. These tests cover the AudioManager surface that
-// remains: the two locally generated WAV cues (wave / game-over), mute, pause,
-// visibility, and master volume. They must run without a DOM.
-
-function loadAudioManager() {
-    const source = fs.readFileSync(path.join(__dirname, '..', 'src', 'AudioManager.ts'), 'utf8');
-    const js = ts.transpileModule(source, {
-        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2017 },
-    }).outputText;
-    const loaded = {exports: {}};
-    // The module no longer expects the BGM build-time `define`s.
-    new Function('module', 'exports', js)(loaded, loaded.exports);
-    return loaded.exports.AudioManager;
-}
-
-class FakeVisibility {
-    hidden = false;
-    listeners = {};
-    addEventListener(name, listener) { (this.listeners[name] ||= []).push(listener); }
-    dispatch(name) { for (const listener of this.listeners[name] || []) listener(); }
-}
-
+const source = fs.readFileSync(path.join(__dirname, '../src/AudioManager.ts'), 'utf8');
+const loaded = { exports: {} };
+new Function('module', 'exports', ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2017 } }).outputText)(loaded, loaded.exports);
+const { AudioManager } = loaded.exports;
 class FakeAudio {
     constructor(src) {
-        this.src = src;
-        this.loop = false;
-        this.currentTime = 0;
-        this.volume = 1;
-        this.playCount = 0;
-        this.pauseCount = 0;
-        this.onended = null;
-        this.onerror = null;
+        Object.assign(this, { src, loop: false, currentTime: 0, volume: 1, playCount: 0, pauseCount: 0, onended: null, onerror: null });
     }
-    play() { this.playCount += 1; return undefined; }
-    pause() { this.pauseCount += 1; }
-    end() { this.onended?.(); }
-    error() { this.onerror?.(); }
+    play() {
+        this.playCount++;
+    }
+    pause() {
+        this.pauseCount++;
+    }
+    end() {
+        this.onended?.();
+    }
 }
-
+function fixture() {
+    const created = [];
+    const visibility = { hidden: false, addEventListener(n, f) {
+            this.listener = f;
+        } };
+    const manager = new AudioManager(src => {
+        const a = new FakeAudio(src);
+        created.push(a);
+        return a;
+    }, { visibility, random: () => 0 });
+    return { manager, created, visibility };
+}
 async function test(name, fn) {
-    try { await fn(); console.log('PASS: ' + name); }
-    catch (error) { console.error('FAIL: ' + name, error); process.exitCode = 1; }
+    try {
+        await fn();
+        console.log('PASS: ' + name);
+    }
+    catch (e) {
+        console.error('FAIL: ' + name, e);
+        process.exitCode = 1;
+    }
 }
-
 (async () => {
-    const AudioManager = loadAudioManager();
-
-    await test('IDLE is silent and there is no BGM machinery', () => {
-        const created = [];
-        const manager = new AudioManager(src => { const a = new FakeAudio(src); created.push(a); return a; });
-        // The old startMusic() is gone; calling it must not exist on the API.
-        assert.equal(typeof manager.startMusic, 'undefined');
-        assert.equal(typeof manager.setWave, 'undefined');
-        assert.equal(typeof manager.duckForMissionComplete, 'undefined');
-        assert.equal(typeof manager.musicPhase, 'undefined');
-        assert.deepEqual(created, []);
+    await test('selection starts on page reveal and loops without stacking', () => {
+        const { manager: m, created: c } = fixture();
+        assert.equal(c.length, 0);
+        m.startSelection();
+        assert.equal(c[0].src, '/audio/background/selected.mp3');
+        assert.equal(c[0].loop, true);
+        m.unlock();
+        assert.equal(c[0].playCount, 1);
     });
-
-    await test('beginRun resets run state without playing any music', () => {
-        const created = [];
-        const manager = new AudioManager(src => { const a = new FakeAudio(src); created.push(a); return a; });
-        manager.beginRun(1);
-        assert.deepEqual(created, [], 'no music is created on run start');
+    await test('run start preserves selection until the first actual enemy spawn', () => {
+        const {manager: m, created: c} = fixture();
+        m.startSelection();
+        const selected = c[0];
+        selected.currentTime = 12;
+        m.beginRun(1);
+        assert.equal(c.length, 1);
+        assert.equal(selected.pauseCount, 0);
+        assert.equal(selected.currentTime, 12);
+        m.setRouteExpansion(false);
+        assert.equal(selected.pauseCount, 1);
+        assert.ok(c.at(-1).src.includes('fight'));
     });
-
-    await test('playWaveReached plays the wave cue once; a second call while active is a no-op', () => {
-        const created = [];
-        const manager = new AudioManager(src => { const a = new FakeAudio(src); created.push(a); return a; });
-        manager.beginRun(1);
-        manager.playWaveReached();
-        assert.equal(created.length, 1);
-        assert.equal(created[0].src, '/audio/wave.wav');
-        assert.equal(created[0].playCount, 1);
-        // While the cue is still active, a second call must not replay or stack.
-        manager.playWaveReached();
-        assert.equal(created.length, 1);
-        assert.equal(created[0].playCount, 1);
-        // After the cue ends it can fire again.
-        created[0].end();
-        manager.playWaveReached();
-        assert.equal(created[0].playCount, 2);
+    await test('normal battle rotates distinct tracks without consecutive repeats', () => {
+        const { manager: m, created: c } = fixture();
+        m.unlock();
+        m.beginRun(1);
+        m.setRouteExpansion(false);
+        const first = c.at(-1);
+        assert.ok(first.src.includes('fight'));
+        assert.ok(c[0].pauseCount);
+        m.beginRun(1);
+        m.setRouteExpansion(false);
+        assert.equal(first.playCount, 1);
+        first.end();
+        const next = c.at(-1);
+        assert.notEqual(next.src, first.src);
+        next.end();
+        assert.notEqual(c.at(-1).src, next.src);
     });
-
-    await test('game over stops cues and plays the game-over cue once', () => {
-        const created = [];
-        const manager = new AudioManager(src => { const a = new FakeAudio(src); created.push(a); return a; });
-        manager.beginRun(1);
-        manager.playWaveReached();
-        const waveCue = created[0];
-        manager.playGameOver();
-        assert.ok(waveCue.pauseCount > 0, 'the wave cue is paused on game over');
-        assert.equal(created.at(-1).src, '/audio/game-over.wav');
-        assert.equal(created.at(-1).playCount, 1);
-        // Repeated game-over calls are suppressed within the same run.
-        manager.playGameOver();
-        assert.equal(created.at(-1).playCount, 1);
+    await test('Route expansion transition cuts immediately and repeated wave notifications preserve position', () => {
+        const { manager: m, created: c } = fixture();
+        m.beginRun(1);
+        m.setRouteExpansion(false);
+        const fight = c.at(-1);
+        m.setRouteExpansion(true);
+        const boss = c.at(-1);
+        assert.equal(boss.src, '/audio/background/boss.mp3');
+        assert.equal(boss.loop, true);
+        assert.ok(fight.pauseCount);
+        boss.currentTime = 17;
+        m.setRouteExpansion(true);
+        assert.equal(boss.playCount, 1);
+        assert.equal(boss.currentTime, 17);
+        fight.end();
+        assert.equal(c.at(-1), boss);
+        m.setRouteExpansion(false);
+        assert.ok(boss.pauseCount);
+        assert.ok(c.at(-1).src.includes('fight'));
     });
-
-    await test('mute pauses cues and unmute does not auto-resume music', () => {
-        const created = [];
-        const manager = new AudioManager(src => { const a = new FakeAudio(src); created.push(a); return a; });
-        manager.beginRun(1);
-        manager.playWaveReached();
-        const cue = created[0];
-        manager.setMuted(true);
-        assert.ok(cue.pauseCount > 0);
-        manager.setMuted(false);
-        assert.deepEqual(created, [cue], 'unmuting never creates a music track');
-    });
-
-    await test('pause pauses cues; resume does not start music', () => {
-        const created = [];
-        const manager = new AudioManager(src => { const a = new FakeAudio(src); created.push(a); return a; });
-        manager.beginRun(1);
-        manager.playWaveReached();
-        const cue = created[0];
-        manager.setPaused(true);
-        assert.ok(cue.pauseCount > 0);
-        manager.setPaused(false);
-        assert.deepEqual(created, [cue]);
-    });
-
-    await test('a hidden tab pauses cues and never resumes music on return', () => {
-        const visibility = new FakeVisibility();
-        const created = [];
-        const manager = new AudioManager(src => { const a = new FakeAudio(src); created.push(a); return a; },
-            {visibility});
-        manager.beginRun(1);
-        manager.playWaveReached();
-        const cue = created[0];
-        visibility.hidden = true;
-        visibility.dispatch('visibilitychange');
-        assert.ok(cue.pauseCount > 0);
-        visibility.hidden = false;
-        visibility.dispatch('visibilitychange');
-        assert.deepEqual(created, [cue], 'no music is created on becoming visible');
-    });
-
-    await test('master volume scales the cues and is clamped', () => {
-        const created = [];
-        const manager = new AudioManager(src => { const a = new FakeAudio(src); created.push(a); return a; });
-        manager.beginRun(1);
-        manager.playWaveReached();
-        const waveCue = created[0];
-        manager.setVolume(0.5);
-        assert.equal(waveCue.volume, 0.18 * 0.5);
-        manager.playGameOver();
-        const overCue = created.at(-1);
-        assert.equal(overCue.volume, 0.2 * 0.5);
-        manager.setVolume(5);
-        assert.ok(overCue.volume <= 0.2 && waveCue.volume <= 0.18);
-        manager.setVolume(-1);
-        assert.equal(waveCue.volume, 0);
-    });
-
-    await test('the two cue assets are real PCM WAV files', () => {
-        for (const name of ['wave.wav', 'game-over.wav']) {
-            const file = fs.readFileSync(path.join(__dirname, '..', 'public', 'audio', name));
-            assert.equal(file.toString('ascii', 0, 4), 'RIFF');
-            assert.equal(file.toString('ascii', 8, 12), 'WAVE');
-            assert.equal(file.toString('ascii', 12, 16), 'fmt ');
-            assert.ok(file.length > 44);
+    await test('pause mute and hidden tab resume one track at its existing position', () => {
+        const { manager: m, created: c, visibility: v } = fixture();
+        m.beginRun(1);
+        m.setRouteExpansion(false);
+        const music = c[0];
+        music.currentTime = 23;
+        for (const method of ['setPaused', 'setMuted']) {
+            m[method](true);
+            m.unlock();
+            const count = music.playCount;
+            m[method](false);
+            assert.equal(music.playCount, count + 1);
+            assert.equal(music.currentTime, 23);
         }
+        v.hidden = true;
+        v.listener();
+        const count = music.playCount;
+        v.hidden = false;
+        v.listener();
+        assert.equal(music.playCount, count + 1);
+        assert.equal(c.length, 1);
     });
-
-    await test('no licensed demo audio remains in the public audio folder', () => {
-        const dir = path.join(__dirname, '..', 'public', 'audio');
-        const entries = fs.readdirSync(dir);
-        assert.deepEqual(entries.sort(), ['game-over.wav', 'wave.wav'],
-            'only the two generated cues remain; the background/ folder and all demo tracks are gone');
-        assert.ok(!fs.existsSync(path.join(dir, 'background')),
-            'the background/ playlist folder must not exist');
+    await test('wave cue does not stack; game over stops music and plays cue once', () => {
+        const { manager: m, created: c } = fixture();
+        m.beginRun(1);
+        m.setRouteExpansion(false);
+        m.playWaveReached();
+        const wave = c.at(-1);
+        m.playWaveReached();
+        assert.equal(wave.playCount, 1);
+        wave.end();
+        m.playWaveReached();
+        assert.equal(wave.playCount, 2);
+        m.playGameOver();
+        const over = c.at(-1);
+        assert.equal(over.src, '/audio/game-over.wav');
+        assert.ok(c[0].pauseCount);
+        m.playGameOver();
+        m.unlock();
+        assert.equal(over.playCount, 1);
+        assert.equal(c.length, 3);
+    });
+    await test('volume clamps and scales music and cues', () => {
+        const { manager: m, created: c } = fixture();
+        m.beginRun(1);
+        m.setRouteExpansion(false);
+        m.playWaveReached();
+        m.setVolume(.5);
+        assert.equal(c[0].volume, .24 * .5);
+        assert.equal(c[1].volume, .18 * .5);
+        m.playGameOver();
+        assert.equal(c[2].volume, .2 * .5);
+        m.setVolume(-1);
+        assert.equal(c[1].volume, 0);
+        assert.equal(c[2].volume, 0);
+        m.setVolume(5);
+        assert.equal(c[2].volume, .2);
+    });
+    await test('autoplay rejection retries on interaction and missing media is nonfatal', async () => {
+        const c = [];
+        const m = new AudioManager(src => {
+            const a = new FakeAudio(src);
+            a.play = () => {
+                a.playCount++;
+                return a.playCount === 1 ? Promise.reject(new Error('blocked')) : Promise.resolve();
+            };
+            c.push(a);
+            return a;
+        });
+        m.unlock();
+        await Promise.resolve();
+        m.unlock();
+        assert.equal(c[0].playCount, 2);
+        const broken = new AudioManager(() => {
+            throw new Error('missing');
+        });
+        assert.doesNotThrow(() => {
+            broken.unlock();
+            broken.beginRun(1);
+            broken.setRouteExpansion(true);
+            broken.playWaveReached();
+            broken.playGameOver();
+        });
+    });
+    await test('invalid run and muted start never play audio', () => {
+        const { manager: m, created: c } = fixture();
+        m.beginRun(0);
+        assert.equal(c.length, 0);
+        m.setMuted(true);
+        m.unlock();
+        m.beginRun(1);
+        m.setRouteExpansion(false);
+        assert.ok(c.every(a => a.playCount === 0));
+        m.setMuted(false);
+        assert.equal(c.at(-1).playCount, 1);
+    });
+    await test('cue failure releases its latch and pause/mute/visibility suppress cues', async () => {
+        const { manager: m, created: c, visibility: v } = fixture();
+        m.beginRun(1);
+        m.setRouteExpansion(false);
+        m.playWaveReached();
+        const cue = c.at(-1);
+        cue.onerror();
+        m.playWaveReached();
+        assert.equal(cue.playCount, 2);
+        for (const setter of ['setPaused', 'setMuted']) {
+            m[setter](true);
+            assert.ok(cue.pauseCount > 0);
+            m.playWaveReached();
+            assert.equal(cue.playCount, 2);
+            m[setter](false);
+        }
+        v.hidden = true;
+        v.listener();
+        m.playWaveReached();
+        assert.equal(cue.playCount, 2);
+        m.playGameOver();
+        assert.equal(c.length, 2, 'hidden result does not play its cue');
+        v.hidden = false;
+        v.listener();
+        m.beginRun(1);
+        m.setRouteExpansion(false);
+        m.playGameOver();
+        assert.equal(c.at(-1).src, '/audio/game-over.wav');
+        assert.equal(c.at(-1).playCount, 1);
+    });
+    await test('only supplied music and generated WAV cues are shipped', () => {
+        const dir = path.join(__dirname, '../public/audio');
+        assert.deepEqual(fs.readdirSync(dir).sort(), ['background', 'game-over.wav', 'wave.wav']);
+        assert.deepEqual(fs.readdirSync(path.join(dir, 'background')).sort(), ['boss.mp3', 'fight1.mp3', 'fight2.mp3', 'fight3.mp3', 'selected.mp3']);
+        for (const name of ['wave.wav', 'game-over.wav']) {
+            const b = fs.readFileSync(path.join(dir, name));
+            assert.equal(b.toString('ascii', 0, 4), 'RIFF');
+            assert.equal(b.toString('ascii', 8, 12), 'WAVE');
+        }
+        const hashes = new Set();
+        for (const name of fs.readdirSync(path.join(dir, 'background'))) {
+            const b = fs.readFileSync(path.join(dir, 'background', name));
+            assert.ok(b.length > 1000);
+            hashes.add(require('node:crypto').createHash('sha256').update(b).digest('hex'));
+        }
+        assert.equal(hashes.size, 5);
     });
 })();

@@ -99,4 +99,18 @@ test('session avatar resets with a fresh page session like the nickname', () => 
     assert.strictEqual(second.getSessionAvatar(), null);
 });
 
-console.log('Avatar catalog and session avatar checks passed.');
+test('Tian Ji Zhen portraits are eight distinct square PNG assets', () => {
+    const crypto = require('node:crypto');
+    const hashes = new Set();
+    catalog.AVATARS.forEach((avatar, index) => {
+        const number = String(index + 1).padStart(2, '0');
+        const bytes = fs.readFileSync(path.join(root, 'src/assets/avatars', `${number}_${avatar.id}.png`));
+        assert.equal(bytes.subarray(12, 16).toString('ascii'), 'IHDR');
+        assert.equal(bytes.readUInt32BE(16), 1254);
+        assert.equal(bytes.readUInt32BE(20), 1254);
+        hashes.add(crypto.createHash('sha256').update(bytes).digest('hex'));
+    });
+    assert.equal(hashes.size, 8);
+});
+
+console.log('Avatar catalog, portrait assets and session avatar checks passed.');

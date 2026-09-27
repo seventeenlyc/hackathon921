@@ -86,9 +86,9 @@ class Map extends EventEmitter {
         const gridWidth = Map.GRID_W * Map.TILE_SIZE;
         const gridHeight = Map.GRID_H * Map.TILE_SIZE;
 
-        ctx.fillStyle = '#1f2125'
+        ctx.fillStyle = '#112025'
         ctx.fillRect(0, 0, gridWidth, gridHeight);
-        ctx.strokeStyle = "#25272b";
+        ctx.strokeStyle = "#1b2c30";
         ctx.lineWidth = 1;
         ctx.beginPath()
 

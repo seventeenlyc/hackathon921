@@ -6,6 +6,7 @@ import {texturePaths} from "../../tools/texturePaths";
 
 export class HealerEnemy extends Enemy {
     texturePath = texturePaths.enemies.healer;
+    textureDirections = texturePaths.enemyDirections?.healer;
     life: number = 200;
     speed: number = 2.5;
     cash: number = 10;
